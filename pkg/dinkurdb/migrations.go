@@ -90,6 +90,6 @@ func (c *client) Migrate() error {
 			return err
 		}
 		migration.Version = LatestMigrationVersion
-		return c.db.Save(&migration).Error
+		return tx.db.Save(&migration).Error
 	})
 }
