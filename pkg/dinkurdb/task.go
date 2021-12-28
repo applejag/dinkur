@@ -1,33 +1,32 @@
 package dinkurdb
 
 import (
-	"errors"
+	"fmt"
 	"time"
-
-	"gorm.io/gorm"
 )
-
-func nilNotFoundError(err error) error {
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil
-	}
-	return err
-}
 
 func (c *client) ActiveTask() (*Task, error) {
 	if c.db == nil {
 		return nil, ErrNotConnected
 	}
-	return getActiveTask(c.db)
-}
-
-func getActiveTask(db *gorm.DB) (*Task, error) {
 	var task Task
-	err := db.Where(Task{End: nil}, task_Field_End).First(&task).Error
+	err := c.db.Where(Task{End: nil}, task_Field_End).First(&task).Error
 	if err != nil {
 		return nil, nilNotFoundError(err)
 	}
 	return &task, nil
+}
+
+func (c *client) GetTask(id uint) (Task, error) {
+	if c.db == nil {
+		return Task{}, ErrNotConnected
+	}
+	var task Task
+	err := c.db.First(&task, id).Error
+	if err != nil {
+		return Task{}, err
+	}
+	return task, nil
 }
 
 type NewTask struct {
@@ -57,49 +56,47 @@ func (c *client) StartTask(task NewTask) (StartedTask, error) {
 	if task.End != nil && task.End.Before(start) {
 		return StartedTask{}, ErrTaskEndBeforeStart
 	}
-	dbTask := Task{
+	newTask := Task{
 		Name:  task.Name,
 		Start: start,
 		End:   task.End,
 	}
-	return startTask(c.db, dbTask)
+	var activeTask *Task
+	c.transaction(func(tx *client) error {
+		var err error
+		activeTask, err = tx.ActiveTask()
+		if err != nil {
+			return fmt.Errorf("get previously active task: %w", err)
+		}
+		_, err = tx.StopActiveTask()
+		if err != nil {
+			return fmt.Errorf("stop previously active task: %w", err)
+		}
+		if activeTask != nil {
+			updatedTask, err := tx.GetTask(activeTask.ID)
+			if err != nil {
+				return fmt.Errorf("get updated previously active task: %w", err)
+			}
+			activeTask = &updatedTask
+		}
+		err = tx.db.Create(&newTask).Error
+		if err != nil {
+			return fmt.Errorf("create new active task: %w", err)
+		}
+		return nil
+	})
+	return StartedTask{
+		New:      newTask,
+		Previous: activeTask,
+	}, nil
 }
 
 func (c *client) StopActiveTask() (bool, error) {
 	if c.db == nil {
 		return false, ErrNotConnected
 	}
-	rows, err := stopAllTasks(c.db)
-	return rows > 0, err
-}
-
-func startTask(db *gorm.DB, task Task) (StartedTask, error) {
-	var activeTask *Task
-	db.Transaction(func(tx *gorm.DB) error {
-		var err error
-		activeTask, err = getActiveTask(tx)
-		if err != nil {
-			return err
-		}
-		_, err = stopAllTasks(tx)
-		if err != nil {
-			return err
-		}
-		err = db.Create(&task).Error
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	return StartedTask{
-		New:      task,
-		Previous: activeTask,
-	}, nil
-}
-
-func stopAllTasks(db *gorm.DB) (int64, error) {
-	res := db.Model(&Task{}).
+	res := c.db.Model(&Task{}).
 		Where(&Task{End: nil}, task_Field_End).
 		Update(task_Column_End, time.Now())
-	return res.RowsAffected, res.Error
+	return res.RowsAffected > 0, res.Error
 }

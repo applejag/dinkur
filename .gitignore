@@ -1,1 +1,6 @@
+# Database files
 *.db
+
+# Built binaries
+*.exe
+/dinkur

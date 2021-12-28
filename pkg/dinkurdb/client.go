@@ -24,19 +24,33 @@ func NewClient() Client {
 }
 
 type client struct {
-	db *gorm.DB
+	db            *gorm.DB
+	prevMigStatus MigrationStatus
 }
 
-func (c *client) Connect(sqliteDSN string) (err error) {
+func (c *client) Connect(sqliteDSN string) error {
 	if c.db != nil {
 		return ErrAlreadyConnected
 	}
+	var err error
 	c.db, err = gorm.Open(sqlite.Open(sqliteDSN), &gorm.Config{
 		Logger: logger.Discard,
-		//Logger: logger.Default.LogMode(logger.Info),
+		//Logger: logger.New(log.New(colorable.NewColorableStdout(), "\r\n", log.LstdFlags), logger.Config{
+		//	SlowThreshold:             200 * time.Millisecond,
+		//	LogLevel:                  logger.Info,
+		//	IgnoreRecordNotFoundError: false,
+		//	Colorful:                  true,
+		//}),
 	})
-
-	return
+	if err != nil {
+		return err
+	}
+	sqlDB, err := c.db.DB()
+	if err != nil {
+		return err
+	}
+	sqlDB.SetMaxOpenConns(1)
+	return nil
 }
 
 func (c *client) Ping() error {
@@ -63,4 +77,12 @@ func (c *client) Close() error {
 	}
 	c.db = nil
 	return nil
+}
+
+func (c *client) transaction(f func(tx *client) error) error {
+	return c.db.Transaction(func(tx *gorm.DB) error {
+		newClient := *c
+		newClient.db = tx
+		return f(&newClient)
+	})
 }
