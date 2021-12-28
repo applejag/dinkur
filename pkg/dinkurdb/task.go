@@ -65,6 +65,9 @@ func (c *client) StartTask(task NewTask) (StartedTask, error) {
 	c.transaction(func(tx *client) error {
 		var err error
 		activeTask, err = tx.StopActiveTask()
+		if err != nil {
+			return err
+		}
 		err = tx.db.Create(&newTask).Error
 		if err != nil {
 			return fmt.Errorf("create new active task: %w", err)
