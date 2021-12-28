@@ -30,6 +30,10 @@ with `zsh`, `fish`, and `powershell`):
 dinkur completion bash --help
 ```
 
+## Usage
+
+Full documentation can be found at [docs/cmd/dinkur.md](docs/cmd/dinkur.md)
+
 ## Development
 
 Requires Go v1.17 (or higher)

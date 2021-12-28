@@ -43,9 +43,9 @@ func init() {
 			fmt.Println("Started task:", startedTask.New)
 		},
 	}
-	rootCmd.AddCommand(inCmd)
+	RootCMD.AddCommand(inCmd)
 
-	inCmd.Flags().StringVarP(&flagStart, "start", "s", "now", `Start time of task`)
+	inCmd.Flags().StringVarP(&flagStart, "start", "s", "now", `start time of task`)
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

@@ -14,8 +14,8 @@ import (
 var cfgFile = cfgpath.Path()
 var db dinkurdb.Client
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
+// RootCMD represents the base command when called without any subcommands
+var RootCMD = &cobra.Command{
 	Use:   "dinkur",
 	Short: "The Dinkur CLI",
 	Long:  `Through these subcommands you can access your time-tracked tasks.`,
@@ -39,7 +39,7 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	db = dinkurdb.NewClient()
 	defer db.Close()
-	err := rootCmd.Execute()
+	err := RootCMD.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
@@ -52,7 +52,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", cfgFile, "config file")
+	RootCMD.PersistentFlags().StringVar(&cfgFile, "config", cfgFile, "config file")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

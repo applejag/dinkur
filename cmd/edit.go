@@ -21,7 +21,7 @@ a specific task using the --id or -i flag.`,
 }
 
 func init() {
-	rootCmd.AddCommand(editCmd)
+	RootCMD.AddCommand(editCmd)
 
 	// Here you will define your flags and configuration settings.
 

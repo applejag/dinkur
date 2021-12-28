@@ -24,7 +24,7 @@ authentication token can be used, is outputted to the console.`,
 }
 
 func init() {
-	rootCmd.AddCommand(daemonCmd)
+	RootCMD.AddCommand(daemonCmd)
 
 	// Here you will define your flags and configuration settings.
 
