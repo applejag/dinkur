@@ -14,8 +14,17 @@ var outCmd = &cobra.Command{
 	Short:   "Check out/end the currently active task",
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("err: this feature has not yet been implemented")
-		os.Exit(1)
+		connectAndMigrateDB()
+		stoppedTask, err := db.StopActiveTask()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error stopping task:", err)
+		}
+		if stoppedTask != nil {
+			fmt.Println("Stopped task:", stoppedTask)
+		} else {
+			fmt.Println("No active task to stop.")
+			os.Exit(1)
+		}
 	},
 }
 

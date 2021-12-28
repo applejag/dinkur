@@ -64,21 +64,7 @@ func (c *client) StartTask(task NewTask) (StartedTask, error) {
 	var activeTask *Task
 	c.transaction(func(tx *client) error {
 		var err error
-		activeTask, err = tx.ActiveTask()
-		if err != nil {
-			return fmt.Errorf("get previously active task: %w", err)
-		}
-		_, err = tx.StopActiveTask()
-		if err != nil {
-			return fmt.Errorf("stop previously active task: %w", err)
-		}
-		if activeTask != nil {
-			updatedTask, err := tx.GetTask(activeTask.ID)
-			if err != nil {
-				return fmt.Errorf("get updated previously active task: %w", err)
-			}
-			activeTask = &updatedTask
-		}
+		activeTask, err = tx.StopActiveTask()
 		err = tx.db.Create(&newTask).Error
 		if err != nil {
 			return fmt.Errorf("create new active task: %w", err)
@@ -91,7 +77,34 @@ func (c *client) StartTask(task NewTask) (StartedTask, error) {
 	}, nil
 }
 
-func (c *client) StopActiveTask() (bool, error) {
+func (c *client) StopActiveTask() (*Task, error) {
+	if c.db == nil {
+		return nil, ErrNotConnected
+	}
+	var activeTask *Task
+	err := c.transaction(func(tx *client) error {
+		var err error
+		activeTask, err = tx.ActiveTask()
+		if err != nil {
+			return fmt.Errorf("get previously active task: %w", err)
+		}
+		_, err = tx.stopAllTasks()
+		if err != nil {
+			return fmt.Errorf("stop previously active task: %w", err)
+		}
+		if activeTask != nil {
+			updatedTask, err := tx.GetTask(activeTask.ID)
+			if err != nil {
+				return fmt.Errorf("get updated previously active task: %w", err)
+			}
+			activeTask = &updatedTask
+		}
+		return nil
+	})
+	return activeTask, err
+}
+
+func (c *client) stopAllTasks() (bool, error) {
 	if c.db == nil {
 		return false, ErrNotConnected
 	}

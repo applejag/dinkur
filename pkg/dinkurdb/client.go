@@ -14,9 +14,10 @@ type Client interface {
 	Migrate() error
 	MigrationStatus() (MigrationStatus, error)
 
+	GetTask(id uint) (Task, error)
 	StartTask(task NewTask) (StartedTask, error)
 	ActiveTask() (*Task, error)
-	StopActiveTask() (bool, error)
+	StopActiveTask() (*Task, error)
 }
 
 func NewClient() Client {
