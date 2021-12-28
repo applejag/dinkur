@@ -5,11 +5,14 @@ Task and time tracking utility.
 ## Install
 
 ```console
-$ go install --tags fts5 github.com/dinkur/dinkur@latest
+$ go install -tags='fts5' -ldflags='-s -w' github.com/dinkur/dinkur@latest
 ```
 
-> The `--tags fts5` flags adds [Sqlite FTS5](https://www.sqlite.org/fts5.html)
+> The `-tags='fts5'` flag adds [Sqlite FTS5](https://www.sqlite.org/fts5.html)
 > support, which is used for better and more performant full-text search.
+>
+> The `-ldflag='-s -w'` removes debug symbols, reducing the binary size from
+> about 24M down to 8M.
 
 For you CLI-power users, we recommend aliasing it to `ur`.
 
