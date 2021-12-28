@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -13,7 +14,8 @@ var inCmd = &cobra.Command{
 	Short:   "Check in/start tracking a new task",
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("in called")
+		fmt.Println("err: this feature has not yet been implemented")
+		os.Exit(1)
 	},
 }
 

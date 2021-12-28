@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -13,7 +14,8 @@ var listCmd = &cobra.Command{
 	Short:   "List your tasks",
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("list called")
+		fmt.Println("err: this feature has not yet been implemented")
+		os.Exit(1)
 	},
 }
 

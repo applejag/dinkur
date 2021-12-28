@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -12,7 +13,8 @@ var statusCmd = &cobra.Command{
 	Short: "Show status of the database and daemon",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("status called")
+		fmt.Println("err: this feature has not yet been implemented")
+		os.Exit(1)
 	},
 }
 

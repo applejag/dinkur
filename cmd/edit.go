@@ -1,11 +1,8 @@
-/*
-Copyright © 2021 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -14,11 +11,12 @@ import (
 var editCmd = &cobra.Command{
 	Use:     "edit",
 	Aliases: []string{"e"},
-	Short:   "Edit a task",
+	Short:   "Edit the latest or a specific task",
 	Long: `Applies changes to the currently active task, or the latest task, or
 a specific task using the --id or -i flag.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("edit called")
+		fmt.Println("err: this feature has not yet been implemented")
+		os.Exit(1)
 	},
 }
 
