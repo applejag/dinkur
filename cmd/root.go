@@ -29,7 +29,7 @@ var RootCMD = &cobra.Command{
 		if activeTask != nil {
 			fmt.Println("Current task:", *activeTask)
 		} else {
-			fmt.Println("You have no current task.")
+			fmt.Println("You have no active task.")
 		}
 	},
 }
