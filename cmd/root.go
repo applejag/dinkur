@@ -24,14 +24,18 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/dinkur/dinkur/internal/cfgpath"
+	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/pkg/dinkurdb"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var cfgFile = cfgpath.Path()
+var flagColor = "auto"
 var db dinkurdb.Client
 
 // RootCMD represents the base command when called without any subcommands
@@ -39,6 +43,18 @@ var RootCMD = &cobra.Command{
 	Use:   "dinkur",
 	Short: "The Dinkur CLI",
 	Long:  `Through these subcommands you can access your time-tracked tasks.`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		switch strings.ToLower(flagColor) {
+		case "auto":
+			// Do nothing, fatih/color is on auto by default
+		case "never":
+			color.NoColor = true
+		case "always":
+			color.NoColor = false
+		default:
+			console.PrintFatal("Error parsing --color:", fmt.Errorf(`invalid value %q: only "auto", "always", or "never" may be used`, flagColor))
+		}
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -60,6 +76,7 @@ func init() {
 	// will be global for your application.
 
 	RootCMD.PersistentFlags().StringVar(&cfgFile, "config", cfgFile, "config file")
+	RootCMD.PersistentFlags().StringVar(&flagColor, "color", flagColor, `colored output: "auto", "always", or "never"`)
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
