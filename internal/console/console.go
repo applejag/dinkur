@@ -113,6 +113,8 @@ func PrintTaskEdit(update dinkurdb.UpdatedTask) {
 	var anyEdit bool
 	var sb strings.Builder
 	taskLabelColor.Fprint(&sb, "Updated task ")
+	taskIDColor.Fprint(&sb, "#", update.Updated.ID)
+	sb.WriteByte(' ')
 	writeTaskName(&sb, update.Updated.Name)
 	taskLabelColor.Fprint(&sb, ":")
 	fmt.Fprintln(&sb)
@@ -153,5 +155,5 @@ func PrintTaskEdit(update dinkurdb.UpdatedTask) {
 		taskEditNoneColor.Fprint(&sb, "No changes were applied.")
 		fmt.Fprintln(&sb)
 	}
-	fmt.Fprintln(stdout, sb.String())
+	fmt.Fprint(stdout, sb.String())
 }
