@@ -65,7 +65,7 @@ Warning: Removing a task cannot be undone!`,
 		},
 	}
 
-	RootCMD.AddCommand(removeCmd)
+	RootCmd.AddCommand(removeCmd)
 
 	removeCmd.Flags().UintVarP(&flagID, "id", "i", 0, "ID of task to be removed (required)")
 	removeCmd.MarkFlagRequired("id")

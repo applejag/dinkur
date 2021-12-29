@@ -60,7 +60,7 @@ a specific task using the --id or -i flag.`,
 		},
 	}
 
-	RootCMD.AddCommand(editCmd)
+	RootCmd.AddCommand(editCmd)
 
 	editCmd.Flags().StringP("start", "s", "", `start time of task`)
 	editCmd.Flags().StringP("end", "e", "", `end time of task; task will be unmarked as active if set`)

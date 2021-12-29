@@ -48,7 +48,7 @@ var statusCmd = &cobra.Command{
 }
 
 func init() {
-	RootCMD.AddCommand(statusCmd)
+	RootCmd.AddCommand(statusCmd)
 
 	// Here you will define your flags and configuration settings.
 

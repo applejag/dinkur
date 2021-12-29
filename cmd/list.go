@@ -75,7 +75,7 @@ func init() {
 		},
 	}
 
-	RootCMD.AddCommand(listCmd)
+	RootCmd.AddCommand(listCmd)
 
 	listCmd.Flags().UintVarP(&flagLimit, "limit", "l", flagLimit, "limit the number of results, relative to the last result; 0 will disable limit")
 	listCmd.Flags().StringP("start", "s", flagStart, "list tasks starting after or at date time")

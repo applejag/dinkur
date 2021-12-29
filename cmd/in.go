@@ -59,7 +59,7 @@ func init() {
 			}
 		},
 	}
-	RootCMD.AddCommand(inCmd)
+	RootCmd.AddCommand(inCmd)
 
 	inCmd.Flags().StringP("start", "s", "now", `start time of task`)
 	inCmd.Flags().StringP("end", "e", "", `end time of task; new task will not be active if set`)

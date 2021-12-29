@@ -43,8 +43,8 @@ func main() {
 		log.Fatalln("Error creating directory:", err)
 	}
 
-	cmd.RootCMD.PersistentFlags().Lookup("config").DefValue = "~/.config/dinkur/config.yaml"
-	if err := doc.GenMarkdownTree(cmd.RootCMD, path); err != nil {
+	cmd.RootCmd.PersistentFlags().Lookup("config").DefValue = "~/.config/dinkur/config.yaml"
+	if err := doc.GenMarkdownTree(cmd.RootCmd, path); err != nil {
 		log.Fatalln("Error generating markdown tree:", err)
 	}
 	log.Println("Write complete.")

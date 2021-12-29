@@ -38,8 +38,8 @@ var cfgFile = cfgpath.Path()
 var flagColor = "auto"
 var db dinkurdb.Client
 
-// RootCMD represents the base command when called without any subcommands
-var RootCMD = &cobra.Command{
+// RootCmd represents the base command when called without any subcommands
+var RootCmd = &cobra.Command{
 	Use:     "dinkur",
 	Version: "0.1.0-preview",
 	Short:   "The Dinkur CLI",
@@ -63,7 +63,7 @@ var RootCMD = &cobra.Command{
 func Execute() {
 	db = dinkurdb.NewClient()
 	defer db.Close()
-	err := RootCMD.Execute()
+	err := RootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
@@ -76,8 +76,8 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	RootCMD.PersistentFlags().StringVar(&cfgFile, "config", cfgFile, "config file")
-	RootCMD.PersistentFlags().StringVar(&flagColor, "color", flagColor, `colored output: "auto", "always", or "never"`)
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", cfgFile, "config file")
+	RootCmd.PersistentFlags().StringVar(&flagColor, "color", flagColor, `colored output: "auto", "always", or "never"`)
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
