@@ -22,6 +22,8 @@ package dinkurdb
 
 import (
 	"errors"
+	"math"
+	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -32,6 +34,7 @@ var (
 	ErrTaskNameEmpty      = errors.New("task name cannot be empty")
 	ErrTaskEndBeforeStart = errors.New("task end date cannot be before start date")
 	ErrNotFound           = gorm.ErrRecordNotFound
+	ErrLimitTooLarge      = errors.New("search limit is too large, maximum: " + strconv.Itoa(math.MaxInt))
 )
 
 func nilNotFoundError(err error) error {

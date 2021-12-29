@@ -22,16 +22,17 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/internal/flagutil"
+	"github.com/dinkur/dinkur/pkg/dinkurdb"
+	"github.com/dinkur/dinkur/pkg/timeutil"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	var (
-		flagToday bool
-		flagWeek  bool
 		flagLimit uint = 1000
 		flagStart string
 		flagEnd   string
@@ -42,20 +43,53 @@ func init() {
 		Aliases: []string{"ls", "l"},
 		Short:   "List your tasks",
 		Long:    ``,
+		ValidArgs: []string{
+			"today\tonly list today's tasks (default)",
+			"t\talias for 'today'",
+			"week\tonly list this week's tasks (monday to sunday)",
+			"w\talias for 'week'",
+		},
+		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			console.PrintFatal("Error:", "this feature has not yet been implemented")
-			start := flagutil.ParseTime(cmd, "start")
-			end := flagutil.ParseTime(cmd, "end")
-			fmt.Println("start:", start)
-			fmt.Println("end:", end)
+			connectAndMigrateDB()
+			search := dinkurdb.SearchTask{
+				Limit: flagLimit,
+			}
+			if len(args) > 0 {
+				search.Shorthand = parseShorthand(args[0])
+				if search.Shorthand == timeutil.TimeSpanNone {
+					console.PrintFatal("Error parsing argument:", fmt.Sprintf("invalid time span shorthand: %q", args[0]))
+				}
+			} else if !cmd.Flags().Changed("start") && !cmd.Flags().Changed("end") {
+				search.Shorthand = timeutil.TimeSpanThisDay
+			}
+			search.Start = flagutil.ParseTime(cmd, "start")
+			search.End = flagutil.ParseTime(cmd, "end")
+			tasks, err := db.ListTasks(search)
+			if err != nil {
+				console.PrintFatal("Error getting list of tasks:", err)
+			}
+			for _, task := range tasks {
+				console.PrintTaskWithDuration("-", task)
+			}
+			fmt.Printf("Total: %d tasks\n", len(tasks))
 		},
 	}
 
 	RootCMD.AddCommand(listCmd)
 
-	listCmd.Flags().BoolVar(&flagToday, "today", flagToday, "only list today's tasks")
-	listCmd.Flags().BoolVar(&flagWeek, "week", flagWeek, "only list this week's tasks")
 	listCmd.Flags().UintVarP(&flagLimit, "limit", "l", flagLimit, "limit the number of results, relative to the last result; 0 will disable limit")
 	listCmd.Flags().StringP("start", "s", flagStart, "list tasks starting after or at date time")
 	listCmd.Flags().StringP("end", "e", flagEnd, "list tasks ending before or at date time")
+}
+
+func parseShorthand(s string) timeutil.TimeSpanShorthand {
+	switch strings.ToLower(s) {
+	case "today", "t":
+		return timeutil.TimeSpanThisDay
+	case "week", "w":
+		return timeutil.TimeSpanThisWeek
+	default:
+		return timeutil.TimeSpanNone
+	}
 }

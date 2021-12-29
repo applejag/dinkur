@@ -33,7 +33,8 @@ type CommonFields struct {
 const (
 	task_Field_End = "End"
 
-	task_Column_End = "end"
+	task_Column_Start = "start"
+	task_Column_End   = "end"
 )
 
 type Task struct {
@@ -41,6 +42,10 @@ type Task struct {
 	Name  string    `gorm:"not null;default:''"`
 	Start time.Time `gorm:"not null;default:CURRENT_TIMESTAMP"`
 	End   *time.Time
+}
+
+func (t Task) IsActive() bool {
+	return t.End == nil
 }
 
 func (t Task) Elapsed() time.Duration {

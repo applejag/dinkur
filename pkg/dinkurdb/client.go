@@ -35,6 +35,7 @@ type Client interface {
 	MigrationStatus() (MigrationStatus, error)
 
 	GetTask(id uint) (Task, error)
+	ListTasks(SearchTask) ([]Task, error)
 	StartTask(task NewTask) (StartedTask, error)
 	ActiveTask() (*Task, error)
 	StopActiveTask() (*Task, error)

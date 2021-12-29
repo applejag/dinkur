@@ -22,7 +22,10 @@ package dinkurdb
 
 import (
 	"fmt"
+	"math"
 	"time"
+
+	"github.com/dinkur/dinkur/pkg/timeutil"
 )
 
 func (c *client) ActiveTask() (*Task, error) {
@@ -47,6 +50,54 @@ func (c *client) GetTask(id uint) (Task, error) {
 		return Task{}, err
 	}
 	return task, nil
+}
+
+type SearchTask struct {
+	Start *time.Time
+	End   *time.Time
+	Limit uint
+
+	Shorthand timeutil.TimeSpanShorthand
+}
+
+var (
+	task_SQL_End_LE_and_not_null = fmt.Sprintf("(%[1]s <= ? AND %[1]s IS NOT NULL)", task_Column_End)
+	task_SQL_End_LE_or_null      = fmt.Sprintf("(%[1]s <= ? OR %[1]s IS NULL)", task_Column_End)
+)
+
+func (c *client) ListTasks(search SearchTask) ([]Task, error) {
+	if search.Shorthand != timeutil.TimeSpanNone {
+		span := search.Shorthand.Span(time.Now())
+		search.Start = &span.Start
+		search.End = &span.End
+	}
+	if search.Limit > math.MaxInt {
+		return nil, ErrLimitTooLarge
+	}
+	var tasks []Task
+	q := c.db.Model(&Task{}).
+		Order(task_Column_Start + " desc").
+		Limit(int(search.Limit))
+	if search.Start != nil {
+		q = q.Where(task_Column_Start+" >= ?", *search.Start)
+	}
+	if search.End != nil {
+		// treat task.End==nil as task.End==time.Now()
+		if search.End.Before(time.Now()) {
+			// exclude task.End==nil, as end has not passed time.Now() yet
+			q = q.Where(task_SQL_End_LE_and_not_null, *search.End)
+		} else {
+			// include task.End==nil, as end has passed time.Now()
+			q = q.Where(task_SQL_End_LE_or_null, *search.End)
+		}
+	}
+	if err := q.Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+	// we sorted in descending order to get the last tasks.
+	// fix this by reversing "again"
+	reverseTaskSlice(tasks)
+	return tasks, nil
 }
 
 type NewTask struct {
@@ -135,4 +186,10 @@ func (c *client) stopAllTasks() (bool, error) {
 		Where(&Task{End: nil}, task_Field_End).
 		Update(task_Column_End, time.Now())
 	return res.RowsAffected > 0, res.Error
+}
+
+func reverseTaskSlice(slice []Task) {
+	for i, j := 0, len(slice)-1; i < j; i, j = i+1, j-1 {
+		slice[i], slice[j] = slice[j], slice[i]
+	}
 }
