@@ -106,10 +106,11 @@ func (c *client) ListTasks(search SearchTask) ([]Task, error) {
 }
 
 type EditTask struct {
-	ID    *uint
-	Name  *string
-	Start *time.Time
-	End   *time.Time
+	ID         *uint
+	Name       *string
+	Start      *time.Time
+	End        *time.Time
+	AppendName bool
 }
 
 type UpdatedTask struct {
@@ -139,7 +140,11 @@ func (c *client) EditTask(edit EditTask) (UpdatedTask, error) {
 		var anyEdit bool
 		update.Old = task
 		if edit.Name != nil {
-			task.Name = *edit.Name
+			if edit.AppendName {
+				task.Name = fmt.Sprint(task.Name, " ", *edit.Name)
+			} else {
+				task.Name = *edit.Name
+			}
 			anyEdit = true
 		}
 		if edit.Start != nil {

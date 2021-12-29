@@ -31,7 +31,8 @@ import (
 
 func init() {
 	var (
-		flagID uint
+		flagID     uint
+		flagAppend bool
 	)
 
 	var editCmd = &cobra.Command{
@@ -43,8 +44,9 @@ a specific task using the --id or -i flag.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectAndMigrateDB()
 			edit := dinkurdb.EditTask{
-				Start: flagutil.ParseTime(cmd, "start"),
-				End:   flagutil.ParseTime(cmd, "end"),
+				Start:      flagutil.ParseTime(cmd, "start"),
+				End:        flagutil.ParseTime(cmd, "end"),
+				AppendName: flagAppend,
 			}
 			if len(args) > 0 {
 				name := strings.Join(args, " ")
@@ -62,5 +64,6 @@ a specific task using the --id or -i flag.`,
 
 	editCmd.Flags().StringP("start", "s", "", `start time of task`)
 	editCmd.Flags().StringP("end", "e", "", `end time of task; task will be unmarked as active if set`)
+	editCmd.Flags().BoolVarP(&flagAppend, "append", "a", flagAppend, `add name to the end of the existing name, instead of replacing it`)
 	editCmd.Flags().UintVarP(&flagID, "id", "i", 0, `ID of task (default is active or latest task)`)
 }
