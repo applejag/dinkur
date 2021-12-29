@@ -22,16 +22,16 @@ package dinkur
 import "time"
 
 type CommonFields struct {
-	ID        uint
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        uint      `json:"id"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type Task struct {
 	CommonFields
-	Name  string
-	Start time.Time
-	End   *time.Time
+	Name  string     `json:"name"`
+	Start time.Time  `json:"start"`
+	End   *time.Time `json:"end"`
 }
 
 func (t Task) Elapsed() time.Duration {

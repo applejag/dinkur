@@ -21,7 +21,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/dinkur/dinkur/internal/console"
@@ -33,9 +35,10 @@ import (
 
 func init() {
 	var (
-		flagLimit uint = 1000
-		flagStart string
-		flagEnd   string
+		flagLimit  uint = 1000
+		flagStart  string
+		flagEnd    string
+		flagOutput = "pretty"
 	)
 
 	var listCmd = &cobra.Command{
@@ -68,10 +71,24 @@ func init() {
 			if err != nil {
 				console.PrintFatal("Error getting list of tasks:", err)
 			}
-			for _, task := range tasks {
-				console.PrintTaskWithDuration(" ", task)
+			switch strings.ToLower(flagOutput) {
+			case "pretty":
+				for _, t := range tasks {
+					console.PrintTaskWithDuration(" ", t)
+				}
+				fmt.Printf("Total: %d tasks\n", len(tasks))
+			case "json":
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				enc.Encode(tasks)
+			case "jsonl":
+				enc := json.NewEncoder(os.Stdout)
+				for _, t := range tasks {
+					enc.Encode(t)
+				}
+			default:
+				console.PrintFatal("Error parsing --output:", fmt.Errorf("invalid output format: %q", flagOutput))
 			}
-			fmt.Printf("Total: %d tasks\n", len(tasks))
 		},
 	}
 
@@ -80,6 +97,7 @@ func init() {
 	listCmd.Flags().UintVarP(&flagLimit, "limit", "l", flagLimit, "limit the number of results, relative to the last result; 0 will disable limit")
 	listCmd.Flags().StringP("start", "s", flagStart, "list tasks starting after or at date time")
 	listCmd.Flags().StringP("end", "e", flagEnd, "list tasks ending before or at date time")
+	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", or "jsonl"`)
 }
 
 func parseShorthand(s string) timeutil.TimeSpanShorthand {
