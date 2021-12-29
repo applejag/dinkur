@@ -9,6 +9,8 @@ module github.com/dinkur/dinkur
 go 1.17
 
 require (
+	github.com/fatih/color v1.13.0
+	github.com/mattn/go-colorable v0.1.12
 	github.com/olebedev/when v0.0.0-20211212231525-59bd4edcf9d6
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
@@ -19,14 +21,12 @@ require (
 require (
 	github.com/AlekSi/pointer v1.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
-	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.4 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-sqlite3 v1.14.9 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
