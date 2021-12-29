@@ -51,10 +51,29 @@ Full documentation can be found at [docs/cmd/dinkur.md](docs/cmd/dinkur.md)
 
 ## Development
 
-Requires [Go](https://go.dev/) v1.17 (or higher)
+Prerequisites:
+
+- To build and run the code:
+
+  - [Go](https://go.dev/) v1.17 (or higher)
+
+- To modify the Protocol Buffer definition and regenerate server & client:
+
+  - [Protocol Buffer compiler](https://grpc.io/docs/protoc-installation/)
+    (`protoc`) v3. Make sure to add it to your PATH
+
+  - [Protocol Buffer compiler Go plugins](https://grpc.io/docs/languages/go/quickstart/#prerequisites).
+    Can be installed by running `make deps`
 
 ```sh
+# Run the Dinkur CLI:
 go run --tags fts5 .
+
+# Regenerates gRPC code (requires protoc + Go plugins):
+make grpc
+
+# Regenerates CLI markdown documentation:
+make docs
 ```
 
 ## License
