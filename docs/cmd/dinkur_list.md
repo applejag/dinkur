@@ -9,10 +9,11 @@ dinkur list [today|t|week|w] [flags]
 ### Options
 
 ```
-  -e, --end string     list tasks ending before or at date time
-  -h, --help           help for list
-  -l, --limit uint     limit the number of results, relative to the last result; 0 will disable limit (default 1000)
-  -s, --start string   list tasks starting after or at date time
+  -e, --end string      list tasks ending before or at date time
+  -h, --help            help for list
+  -l, --limit uint      limit the number of results, relative to the last result; 0 will disable limit (default 1000)
+  -o, --output string   set output format: "pretty", "json", or "jsonl" (default "pretty")
+  -s, --start string    list tasks starting after or at date time
 ```
 
 ### Options inherited from parent commands
