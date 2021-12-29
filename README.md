@@ -8,6 +8,8 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # Dinkur
 
+[![REUSE status](https://api.reuse.software/badge/github.com/dinkur/dinkur)](https://api.reuse.software/info/github.com/dinkur/dinkur)
+
 Task and time tracking utility.
 
 ## Install
