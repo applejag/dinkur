@@ -8,3 +8,7 @@ Source: https://github.com/dinkur/dinkur
 # Files: src/*
 # Copyright: $YEAR $NAME <$CONTACT>
 # License: ...
+
+Files: docs/cmd/*.md
+Copyright: 2021 Kalle Fagerberg
+License: CC-BY-4.0
