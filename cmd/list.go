@@ -39,7 +39,7 @@ func init() {
 	)
 
 	var listCmd = &cobra.Command{
-		Use:     "list",
+		Use:     "list [today|t|week|w]",
 		Aliases: []string{"ls", "l"},
 		Short:   "List your tasks",
 		Long:    ``,
