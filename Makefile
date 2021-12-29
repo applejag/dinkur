@@ -4,9 +4,13 @@
 # SPDX-FileCopyrightText: 2021 Kalle Fagerberg
 # SPDX-License-Identifier: CC0-1.0
 
-.PHONY: install clean deps grpc docs
+.PHONY: install clean tidy deps grpc docs
 
+ifeq ($(OS),Windows_NT)
 dinkur.exe:
+else
+dinkur:
+endif
 	go build -tags='fts5' -ldflags='-s -w'
 
 install:
@@ -14,6 +18,8 @@ install:
 
 clean:
 	rm -rfv ./dinkur.exe ./dinkur
+
+tidy:
 	go mod tidy
 
 deps:
