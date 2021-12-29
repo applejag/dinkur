@@ -68,8 +68,12 @@ var (
 func (c *client) ListTasks(search SearchTask) ([]Task, error) {
 	if search.Shorthand != timeutil.TimeSpanNone {
 		span := search.Shorthand.Span(time.Now())
-		search.Start = &span.Start
-		search.End = &span.End
+		if search.Start == nil {
+			search.Start = &span.Start
+		}
+		if search.End == nil {
+			search.End = &span.End
+		}
 	}
 	if search.Limit > math.MaxInt {
 		return nil, ErrLimitTooLarge

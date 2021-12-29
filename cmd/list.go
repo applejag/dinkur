@@ -53,15 +53,14 @@ func init() {
 		Run: func(cmd *cobra.Command, args []string) {
 			connectAndMigrateDB()
 			search := dinkurdb.SearchTask{
-				Limit: flagLimit,
+				Limit:     flagLimit,
+				Shorthand: timeutil.TimeSpanThisDay,
 			}
 			if len(args) > 0 {
 				search.Shorthand = parseShorthand(args[0])
 				if search.Shorthand == timeutil.TimeSpanNone {
 					console.PrintFatal("Error parsing argument:", fmt.Sprintf("invalid time span shorthand: %q", args[0]))
 				}
-			} else if !cmd.Flags().Changed("start") && !cmd.Flags().Changed("end") {
-				search.Shorthand = timeutil.TimeSpanThisDay
 			}
 			search.Start = flagutil.ParseTime(cmd, "start")
 			search.End = flagutil.ParseTime(cmd, "end")
