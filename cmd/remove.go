@@ -22,45 +22,51 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
+	"time"
 
 	"github.com/dinkur/dinkur/internal/console"
-	"github.com/dinkur/dinkur/internal/flagutil"
-	"github.com/dinkur/dinkur/pkg/dinkurdb"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	var inCmd = &cobra.Command{
-		Use:     "in <task name>",
-		Args:    cobra.ArbitraryArgs,
-		Aliases: []string{"i", "start", "new"},
-		Short:   "Check in/start tracking a new task",
-		Long:    ``,
+	var (
+		flagID uint
+	)
+
+	// removeCmd represents the remove command
+	var removeCmd = &cobra.Command{
+		Use:     "remove",
+		Aliases: []string{"rm", "r"},
+		Short:   "Removes a task",
+		Long: `Removes a task from your task data store.
+You must provide the flag --id to specify which task to remove.
+No bulk removal is supported.
+
+Warning: Removing a task cannot be undone!`,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectAndMigrateDB()
-			newTask := dinkurdb.NewTask{
-				Name:  strings.Join(args, " "),
-				Start: flagutil.ParseTime(cmd, "start"),
-				End:   flagutil.ParseTime(cmd, "end"),
-			}
-			startedTask, err := db.StartTask(newTask)
+			task, err := db.DeleteTask(flagID)
 			if err != nil {
-				console.PrintFatal("Error starting task:", err)
+				console.PrintFatal("Error removing task:", err)
 			}
-			if startedTask.Previous != nil {
-				console.PrintTaskWithDuration("Stopped task:", *startedTask.Previous)
-			}
-			if startedTask.New.End != nil {
-				console.PrintTaskWithDuration("Added task:", startedTask.New)
-				fmt.Println("You have no active task.")
+			console.PrintTask("Deleted task:", task)
+			fmt.Println()
+			fmt.Println("If this was a mistake, you can add it back in with:")
+			if task.End != nil {
+				fmt.Printf("  $ dinkur in --start %q --end %q %q\n",
+					task.Start.Format(time.RFC3339),
+					task.End.Format(time.RFC3339),
+					task.Name)
 			} else {
-				console.PrintTask("Started task:", startedTask.New)
+				fmt.Printf("  $ dinkur in --start %q %q\n",
+					task.Start.Format(time.RFC3339),
+					task.Name)
 			}
 		},
 	}
-	RootCMD.AddCommand(inCmd)
 
-	inCmd.Flags().StringP("start", "s", "now", `start time of task`)
-	inCmd.Flags().StringP("end", "e", "", `end time of task; new task will not be active if set`)
+	RootCMD.AddCommand(removeCmd)
+
+	removeCmd.Flags().UintVarP(&flagID, "id", "i", 0, "ID of task to be removed (required)")
+	removeCmd.MarkFlagRequired("id")
 }

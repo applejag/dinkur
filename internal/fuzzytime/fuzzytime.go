@@ -49,7 +49,29 @@ func Parse(s string) (time.Time, error) {
 	if t, ok := ParseDelta(s); ok {
 		return t, nil
 	}
+	if t, ok := ParseKnownLayouts(s); ok {
+		return t, nil
+	}
 	return ParseWhen(s)
+}
+
+var knownLayouts = []string{
+	time.RFC3339,
+	time.RFC3339Nano,
+	time.RFC822,
+	time.RFC822Z,
+	time.RFC850,
+	time.RFC1123,
+	time.RFC1123Z,
+}
+
+func ParseKnownLayouts(s string) (time.Time, bool) {
+	for _, layout := range knownLayouts {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t, true
+		}
+	}
+	return time.Time{}, false
 }
 
 func ParseWhen(s string) (time.Time, error) {

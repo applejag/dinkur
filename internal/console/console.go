@@ -37,6 +37,7 @@ var (
 	timeFormat    = "15:04"
 	durationTrunc = time.Second
 
+	taskIDColor        = color.New(color.FgHiBlack)
 	taskLabelColor     = color.New(color.FgWhite, color.Italic)
 	taskNameColor      = color.New(color.FgHiYellow, color.Bold)
 	taskTimeDelimColor = color.New(color.FgHiBlack)
@@ -55,6 +56,8 @@ func PrintTaskWithDuration(label string, task dinkurdb.Task) {
 	var sb strings.Builder
 	taskLabelColor.Fprint(&sb, label)
 	sb.WriteByte(' ')
+	taskIDColor.Fprint(&sb, "#", task.ID)
+	sb.WriteByte(' ')
 	writeTaskName(&sb, task.Name)
 	sb.WriteByte(' ')
 	writeTaskTimeSpan(&sb, task.Start, task.End)
@@ -66,6 +69,8 @@ func PrintTaskWithDuration(label string, task dinkurdb.Task) {
 func PrintTask(label string, task dinkurdb.Task) {
 	var sb strings.Builder
 	taskLabelColor.Fprint(&sb, label)
+	sb.WriteByte(' ')
+	taskIDColor.Fprint(&sb, "#", task.ID)
 	sb.WriteByte(' ')
 	writeTaskName(&sb, task.Name)
 	sb.WriteByte(' ')

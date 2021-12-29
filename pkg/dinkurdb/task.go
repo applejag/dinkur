@@ -200,6 +200,22 @@ func (c *client) getTaskToEdit(id *uint) (Task, error) {
 	return task, err
 }
 
+func (c *client) DeleteTask(id uint) (Task, error) {
+	if c.db == nil {
+		return Task{}, ErrNotConnected
+	}
+	var task Task
+	err := c.transaction(func(tx *client) error {
+		var err error
+		task, err = tx.GetTask(id)
+		if err != nil {
+			return fmt.Errorf("get task to delete: %w", err)
+		}
+		return tx.db.Delete(&Task{}, id).Error
+	})
+	return task, err
+}
+
 type NewTask struct {
 	Name  string
 	Start *time.Time

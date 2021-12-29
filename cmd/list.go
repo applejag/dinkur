@@ -69,7 +69,7 @@ func init() {
 				console.PrintFatal("Error getting list of tasks:", err)
 			}
 			for _, task := range tasks {
-				console.PrintTaskWithDuration("-", task)
+				console.PrintTaskWithDuration(" ", task)
 			}
 			fmt.Printf("Total: %d tasks\n", len(tasks))
 		},
