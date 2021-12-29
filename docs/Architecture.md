@@ -1,3 +1,11 @@
+<!--
+Dinkur the task time tracking utility.
+<https://github.com/dinkur/dinkur>
+
+SPDX-FileCopyrightText: 2021 Kalle Fagerberg
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
 # Architecture
 
 When used via CLI:

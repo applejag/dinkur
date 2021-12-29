@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Dinkur
+Upstream-Contact: Kalle Fagerberg <kalle.f8@protonmail.com>
+Source: https://github.com/dinkur/dinkur
+
+# Sample paragraph, commented out:
+#
+# Files: src/*
+# Copyright: $YEAR $NAME <$CONTACT>
+# License: ...

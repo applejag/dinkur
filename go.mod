@@ -1,3 +1,9 @@
+// Dinkur the task time tracking utility.
+// <https://github.com/dinkur/dinkur>
+//
+// SPDX-FileCopyrightText: 2021 Kalle Fagerberg
+// SPDX-License-Identifier: CC0-1.0
+
 module github.com/dinkur/dinkur
 
 go 1.17
