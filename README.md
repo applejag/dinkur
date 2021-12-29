@@ -56,3 +56,13 @@ Requires [Go](https://go.dev/) v1.17 (or higher)
 ```sh
 go run --tags fts5 .
 ```
+
+## License
+
+This repository is created and maintained by Kalle Fagerberg
+([@jilleJr](https://github.com/jilleJr)).
+
+The code in this project is licensed under GNU General Public License v3.0
+or later ([LICENSES/GPL-3.0-or-later.txt](LICENSES/GPL-3.0-or-later.txt)),
+and documentation is licensed under Creative Commons Attribution 4.0
+International ([LICENSES/CC-BY-4.0.txt](LICENSES/CC-BY-4.0.txt)).
