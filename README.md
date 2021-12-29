@@ -4,6 +4,8 @@ Task and time tracking utility.
 
 ## Install
 
+Requires [Go](https://go.dev/) v1.17 (or higher)
+
 ```console
 $ go install -tags='fts5' -ldflags='-s -w' github.com/dinkur/dinkur@latest
 ```
@@ -39,7 +41,7 @@ Full documentation can be found at [docs/cmd/dinkur.md](docs/cmd/dinkur.md)
 
 ## Development
 
-Requires Go v1.17 (or higher)
+Requires [Go](https://go.dev/) v1.17 (or higher)
 
 ```sh
 go run --tags fts5 .
