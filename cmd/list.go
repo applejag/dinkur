@@ -22,33 +22,40 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
+	"github.com/dinkur/dinkur/internal/console"
+	"github.com/dinkur/dinkur/internal/flagutil"
 	"github.com/spf13/cobra"
 )
 
-// listCmd represents the list command
-var listCmd = &cobra.Command{
-	Use:     "list",
-	Aliases: []string{"ls", "l"},
-	Short:   "List your tasks",
-	Long:    ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("err: this feature has not yet been implemented")
-		os.Exit(1)
-	},
-}
-
 func init() {
+	var (
+		flagToday bool
+		flagWeek  bool
+		flagLimit uint = 1000
+		flagStart string
+		flagEnd   string
+	)
+
+	var listCmd = &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls", "l"},
+		Short:   "List your tasks",
+		Long:    ``,
+		Run: func(cmd *cobra.Command, args []string) {
+			console.PrintFatal("Error:", "this feature has not yet been implemented")
+			start := flagutil.ParseTime(cmd, "start")
+			end := flagutil.ParseTime(cmd, "end")
+			fmt.Println("start:", start)
+			fmt.Println("end:", end)
+		},
+	}
+
 	RootCMD.AddCommand(listCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	listCmd.Flags().BoolVar(&flagToday, "today", flagToday, "only list today's tasks")
+	listCmd.Flags().BoolVar(&flagWeek, "week", flagWeek, "only list this week's tasks")
+	listCmd.Flags().UintVarP(&flagLimit, "limit", "l", flagLimit, "limit the number of results, relative to the last result; 0 will disable limit")
+	listCmd.Flags().StringP("start", "s", flagStart, "list tasks starting after or at date time")
+	listCmd.Flags().StringP("end", "e", flagEnd, "list tasks ending before or at date time")
 }

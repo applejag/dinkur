@@ -22,7 +22,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/dinkur/dinkur/internal/console"
 	"github.com/spf13/cobra"
@@ -38,8 +37,7 @@ var statusCmd = &cobra.Command{
 		connectAndMigrateDB()
 		activeTask, err := db.ActiveTask()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error getting active task:", err)
-			os.Exit(1)
+			console.PrintFatal("Error getting active task:", err)
 		}
 		if activeTask != nil {
 			console.PrintTaskWithDuration("Current task:", *activeTask)

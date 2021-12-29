@@ -21,9 +21,7 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
+	"github.com/dinkur/dinkur/internal/console"
 	"github.com/spf13/cobra"
 )
 
@@ -35,8 +33,7 @@ var editCmd = &cobra.Command{
 	Long: `Applies changes to the currently active task, or the latest task, or
 a specific task using the --id or -i flag.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("err: this feature has not yet been implemented")
-		os.Exit(1)
+		console.PrintFatal("Error:", "this feature has not yet been implemented")
 	},
 }
 

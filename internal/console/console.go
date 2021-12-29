@@ -21,6 +21,7 @@ package console
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 
 var (
 	stdout        = colorable.NewColorableStdout()
+	stderr        = colorable.NewColorableStderr()
 	timeFormat    = "15:04"
 	durationTrunc = time.Second
 
@@ -41,6 +43,9 @@ var (
 	taskEndColor       = color.New(color.FgHiGreen)
 	taskEndNilColor    = color.New(color.FgGreen, color.Italic)
 	taskDurationColor  = color.New(color.FgCyan)
+
+	fatalLabelColor = color.New(color.FgHiRed, color.Bold)
+	fatalValueColor = color.New(color.FgRed)
 )
 
 func PrintTaskWithDuration(label string, task dinkurdb.Task) {
@@ -72,4 +77,13 @@ func prepareTaskString(label string, task dinkurdb.Task) *strings.Builder {
 		taskEndNilColor.Fprintf(&sb, "now…")
 	}
 	return &sb
+}
+
+func PrintFatal(label string, v interface{}) {
+	var sb strings.Builder
+	fatalLabelColor.Fprint(&sb, label)
+	sb.WriteByte(' ')
+	fatalValueColor.Fprint(&sb, v)
+	fmt.Fprintln(stderr, sb.String())
+	os.Exit(1)
 }

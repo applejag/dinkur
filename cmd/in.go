@@ -22,21 +22,15 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/dinkur/dinkur/internal/console"
-	"github.com/dinkur/dinkur/internal/fuzzytime"
+	"github.com/dinkur/dinkur/internal/flagutil"
 	"github.com/dinkur/dinkur/pkg/dinkurdb"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	var (
-		flagStart string
-		flagEnd   string
-	)
-
 	var inCmd = &cobra.Command{
 		Use:     "in",
 		Args:    cobra.ArbitraryArgs,
@@ -45,35 +39,14 @@ func init() {
 		Long:    ``,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectAndMigrateDB()
-			newTask := dinkurdb.NewTask{Name: strings.Join(args, " ")}
-			if cmd.Flags().Changed("start") {
-				if flagStart == "" {
-					fmt.Fprintln(os.Stderr, "Error parsing --start: cannot be empty")
-					os.Exit(1)
-				}
-				start, err := fuzzytime.Parse(flagStart)
-				if err != nil {
-					fmt.Fprintln(os.Stderr, "Error parsing --start:", err)
-					os.Exit(1)
-				}
-				newTask.Start = &start
-			}
-			if cmd.Flags().Changed("end") {
-				if flagEnd == "" {
-					fmt.Fprintln(os.Stderr, "Error parsing --end: cannot be empty")
-					os.Exit(1)
-				}
-				end, err := fuzzytime.Parse(flagEnd)
-				if err != nil {
-					fmt.Fprintln(os.Stderr, "Error parsing --end:", err)
-					os.Exit(1)
-				}
-				newTask.End = &end
+			newTask := dinkurdb.NewTask{
+				Name:  strings.Join(args, " "),
+				Start: flagutil.ParseTime(cmd, "start"),
+				End:   flagutil.ParseTime(cmd, "end"),
 			}
 			startedTask, err := db.StartTask(newTask)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, "Error starting task:", err)
-				os.Exit(1)
+				console.PrintFatal("Error starting task:", err)
 			}
 			if startedTask.Previous != nil {
 				console.PrintTaskWithDuration("Stopped task:", *startedTask.Previous)
@@ -88,6 +61,6 @@ func init() {
 	}
 	RootCMD.AddCommand(inCmd)
 
-	inCmd.Flags().StringVarP(&flagStart, "start", "s", "now", `start time of task`)
-	inCmd.Flags().StringVarP(&flagEnd, "end", "e", "", `end time of task; new task will not be active if set`)
+	inCmd.Flags().StringP("start", "s", "now", `start time of task`)
+	inCmd.Flags().StringP("end", "e", "", `end time of task; new task will not be active if set`)
 }

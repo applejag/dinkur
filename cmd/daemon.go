@@ -21,9 +21,7 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
+	"github.com/dinkur/dinkur/internal/console"
 	"github.com/spf13/cobra"
 )
 
@@ -38,8 +36,7 @@ This daemon is used by Dinkur clients, and allows more features such as the
 Information about the daemon, such as which port was selected and what
 authentication token can be used, is outputted to the console.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("err: this feature has not yet been implemented")
-		os.Exit(1)
+		console.PrintFatal("Error:", "this feature has not yet been implemented")
 	},
 }
 

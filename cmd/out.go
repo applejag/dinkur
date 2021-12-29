@@ -38,7 +38,7 @@ var outCmd = &cobra.Command{
 		connectAndMigrateDB()
 		stoppedTask, err := db.StopActiveTask()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error stopping task:", err)
+			console.PrintFatal("Error stopping task:", err)
 		}
 		if stoppedTask != nil {
 			console.PrintTaskWithDuration("Stopped task:", *stoppedTask)
