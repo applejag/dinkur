@@ -40,9 +40,10 @@ var db dinkurdb.Client
 
 // RootCMD represents the base command when called without any subcommands
 var RootCMD = &cobra.Command{
-	Use:   "dinkur",
-	Short: "The Dinkur CLI",
-	Long:  `Through these subcommands you can access your time-tracked tasks.`,
+	Use:     "dinkur",
+	Version: "0.1.0-preview",
+	Short:   "The Dinkur CLI",
+	Long:    `Through these subcommands you can access your time-tracked tasks.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		switch strings.ToLower(flagColor) {
 		case "auto":
