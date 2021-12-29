@@ -21,32 +21,46 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/dinkur/dinkur/internal/console"
+	"github.com/dinkur/dinkur/internal/flagutil"
+	"github.com/dinkur/dinkur/pkg/dinkurdb"
 	"github.com/spf13/cobra"
 )
 
-// editCmd represents the edit command
-var editCmd = &cobra.Command{
-	Use:     "edit",
-	Aliases: []string{"e"},
-	Short:   "Edit the latest or a specific task",
-	Long: `Applies changes to the currently active task, or the latest task, or
-a specific task using the --id or -i flag.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		console.PrintFatal("Error:", "this feature has not yet been implemented")
-	},
-}
-
 func init() {
+	var (
+		flagID uint
+	)
+
+	var editCmd = &cobra.Command{
+		Use:     "edit [new name of task]",
+		Aliases: []string{"e"},
+		Short:   "Edit the latest or a specific task",
+		Long: `Applies changes to the currently active task, or the latest task, or
+a specific task using the --id or -i flag.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			connectAndMigrateDB()
+			edit := dinkurdb.EditTask{
+				Start: flagutil.ParseTime(cmd, "start"),
+				End:   flagutil.ParseTime(cmd, "end"),
+			}
+			if len(args) > 0 {
+				name := strings.Join(args, " ")
+				edit.Name = &name
+			}
+			update, err := db.EditTask(edit)
+			if err != nil {
+				console.PrintFatal("Error editing task:", err)
+			}
+			console.PrintTaskEdit(update)
+		},
+	}
+
 	RootCMD.AddCommand(editCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// editCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// editCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	editCmd.Flags().StringP("start", "s", "", `start time of task`)
+	editCmd.Flags().StringP("end", "e", "", `end time of task; task will be unmarked as active if set`)
+	editCmd.Flags().UintVarP(&flagID, "id", "i", 0, `ID of task (default is active or latest task)`)
 }

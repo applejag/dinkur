@@ -21,6 +21,7 @@
 package dinkurdb
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"time"
@@ -102,6 +103,101 @@ func (c *client) ListTasks(search SearchTask) ([]Task, error) {
 	// fix this by reversing "again"
 	reverseTaskSlice(tasks)
 	return tasks, nil
+}
+
+type EditTask struct {
+	ID    *uint
+	Name  *string
+	Start *time.Time
+	End   *time.Time
+}
+
+type UpdatedTask struct {
+	Old     Task
+	Updated Task
+}
+
+func (c *client) EditTask(edit EditTask) (UpdatedTask, error) {
+	if c.db == nil {
+		return UpdatedTask{}, ErrNotConnected
+	}
+	if edit.Name != nil && *edit.Name == "" {
+		return UpdatedTask{}, ErrTaskNameEmpty
+	}
+	if edit.Start != nil && edit.End != nil && edit.Start.After(*edit.End) {
+		return UpdatedTask{}, ErrTaskEndBeforeStart
+	}
+	var update UpdatedTask
+	err := c.transaction(func(tx *client) error {
+		task, err := tx.getTaskToEdit(edit.ID)
+		if err != nil {
+			if errors.Is(err, ErrNotFound) {
+				return fmt.Errorf("no task to edit, failed finding latest task: %w", err)
+			}
+			return fmt.Errorf("get task to edit: %w", err)
+		}
+		var anyEdit bool
+		update.Old = task
+		if edit.Name != nil {
+			task.Name = *edit.Name
+			anyEdit = true
+		}
+		if edit.Start != nil {
+			task.Start = *edit.Start
+			anyEdit = true
+		}
+		if edit.End != nil {
+			task.End = edit.End
+			anyEdit = true
+		}
+		if task.Elapsed() < 0 {
+			return ErrTaskEndBeforeStart
+		}
+		if anyEdit {
+			if err := tx.db.Save(&task).Error; err != nil {
+				return fmt.Errorf("save updated task: %w", err)
+			}
+		}
+		update.Updated = task
+		return nil
+	})
+	return update, err
+}
+
+func (c *client) getTaskToEdit(id *uint) (Task, error) {
+	var task Task
+	err := c.transaction(func(tx *client) error {
+		if id != nil {
+			taskByID, err := tx.GetTask(*id)
+			if err != nil {
+				return fmt.Errorf("get task by ID: %d: %w", *id, err)
+			}
+			task = taskByID
+			return nil
+		}
+		activeTask, err := tx.ActiveTask()
+		if err != nil {
+			return fmt.Errorf("get active task: %w", err)
+		}
+		if activeTask != nil {
+			task = *activeTask
+			return nil
+		}
+		now := time.Now()
+		tasks, err := tx.ListTasks(SearchTask{
+			Limit: 1,
+			End:   &now,
+		})
+		if err != nil {
+			return fmt.Errorf("list latest 1 task: %w", err)
+		}
+		if len(tasks) == 0 {
+			return ErrNotFound
+		}
+		task = tasks[0]
+		return nil
+	})
+	return task, err
 }
 
 type NewTask struct {

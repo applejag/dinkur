@@ -32,7 +32,7 @@ import (
 
 func init() {
 	var inCmd = &cobra.Command{
-		Use:     "in",
+		Use:     "in <task name>",
 		Args:    cobra.ArbitraryArgs,
 		Aliases: []string{"i", "start", "new"},
 		Short:   "Check in/start tracking a new task",

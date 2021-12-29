@@ -21,6 +21,7 @@ package console
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -43,40 +44,53 @@ var (
 	taskEndColor       = color.New(color.FgHiGreen)
 	taskEndNilColor    = color.New(color.FgGreen, color.Italic)
 	taskDurationColor  = color.New(color.FgCyan)
+	taskEditDelimColor = color.New(color.FgHiMagenta)
+	taskEditNoneColor  = color.New(color.FgHiBlack, color.Italic)
 
 	fatalLabelColor = color.New(color.FgHiRed, color.Bold)
 	fatalValueColor = color.New(color.FgRed)
 )
 
 func PrintTaskWithDuration(label string, task dinkurdb.Task) {
-	sb := prepareTaskString(label, task)
-	taskTimeDelimColor.Fprint(sb, ", ")
-	taskDurationColor.Fprint(sb, task.Elapsed().Truncate(durationTrunc))
-	taskTimeDelimColor.Fprint(sb, " elapsed)")
+	var sb strings.Builder
+	taskLabelColor.Fprint(&sb, label)
+	sb.WriteByte(' ')
+	writeTaskName(&sb, task.Name)
+	sb.WriteByte(' ')
+	writeTaskTimeSpan(&sb, task.Start, task.End)
+	sb.WriteByte(' ')
+	writeTaskDuration(&sb, task.Elapsed())
 	fmt.Fprintln(stdout, sb.String())
 }
 
 func PrintTask(label string, task dinkurdb.Task) {
-	sb := prepareTaskString(label, task)
-	taskTimeDelimColor.Fprint(sb, ")")
-	fmt.Fprintln(stdout, sb.String())
-}
-
-func prepareTaskString(label string, task dinkurdb.Task) *strings.Builder {
 	var sb strings.Builder
 	taskLabelColor.Fprint(&sb, label)
 	sb.WriteByte(' ')
-	taskNameColor.Fprint(&sb, `"`, task.Name, `"`)
+	writeTaskName(&sb, task.Name)
 	sb.WriteByte(' ')
-	taskTimeDelimColor.Fprint(&sb, "(")
-	taskStartColor.Fprintf(&sb, task.Start.Format(timeFormat))
-	taskTimeDelimColor.Fprint(&sb, " => ")
-	if task.End != nil {
-		taskEndColor.Fprintf(&sb, task.End.Format(timeFormat))
+	writeTaskTimeSpan(&sb, task.Start, task.End)
+	fmt.Fprintln(stdout, sb.String())
+}
+
+func writeTaskName(w io.Writer, name string) {
+	taskNameColor.Fprint(w, `"`, name, `"`)
+}
+
+func writeTaskTimeSpan(w io.Writer, start time.Time, end *time.Time) {
+	taskStartColor.Fprintf(w, start.Format(timeFormat))
+	taskTimeDelimColor.Fprint(w, " - ")
+	if end != nil {
+		taskEndColor.Fprintf(w, end.Format(timeFormat))
 	} else {
-		taskEndNilColor.Fprintf(&sb, "now…")
+		taskEndNilColor.Fprintf(w, "now…")
 	}
-	return &sb
+}
+
+func writeTaskDuration(w io.Writer, dur time.Duration) {
+	taskTimeDelimColor.Fprint(w, "(")
+	taskDurationColor.Fprint(w, dur.Truncate(durationTrunc))
+	taskTimeDelimColor.Fprint(w, ")")
 }
 
 func PrintFatal(label string, v interface{}) {
@@ -86,4 +100,53 @@ func PrintFatal(label string, v interface{}) {
 	fatalValueColor.Fprint(&sb, v)
 	fmt.Fprintln(stderr, sb.String())
 	os.Exit(1)
+}
+
+func PrintTaskEdit(update dinkurdb.UpdatedTask) {
+	const editPrefix = "  "
+	const editDelim = "   =>   "
+	var anyEdit bool
+	var sb strings.Builder
+	taskLabelColor.Fprint(&sb, "Updated task ")
+	writeTaskName(&sb, update.Updated.Name)
+	taskLabelColor.Fprint(&sb, ":")
+	fmt.Fprintln(&sb)
+	if update.Old.Name != update.Updated.Name {
+		sb.WriteString(editPrefix)
+		writeTaskName(&sb, update.Old.Name)
+		taskEditDelimColor.Fprint(&sb, editDelim)
+		writeTaskName(&sb, update.Updated.Name)
+		fmt.Fprintln(&sb)
+		anyEdit = true
+	}
+	var (
+		oldStartUnix = update.Old.Start.UnixMilli()
+		oldEndUnix   int64
+		newStartUnix = update.Updated.Start.UnixMilli()
+		newEndUnix   int64
+	)
+	if update.Old.End != nil {
+		oldEndUnix = update.Old.End.Unix()
+	}
+	if update.Updated.End != nil {
+		newEndUnix = update.Updated.End.Unix()
+	}
+	if oldStartUnix != newStartUnix || oldEndUnix != newEndUnix {
+		sb.WriteString(editPrefix)
+		writeTaskTimeSpan(&sb, update.Old.Start, update.Old.End)
+		sb.WriteByte(' ')
+		writeTaskDuration(&sb, update.Old.Elapsed())
+		taskEditDelimColor.Fprint(&sb, editDelim)
+		writeTaskTimeSpan(&sb, update.Updated.Start, update.Updated.End)
+		sb.WriteByte(' ')
+		writeTaskDuration(&sb, update.Updated.Elapsed())
+		fmt.Fprintln(&sb)
+		anyEdit = true
+	}
+	if !anyEdit {
+		sb.WriteString(editPrefix)
+		taskEditNoneColor.Fprint(&sb, "No changes were applied.")
+		fmt.Fprintln(&sb)
+	}
+	fmt.Fprintln(stdout, sb.String())
 }

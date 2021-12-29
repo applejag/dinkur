@@ -36,6 +36,7 @@ type Client interface {
 
 	GetTask(id uint) (Task, error)
 	ListTasks(SearchTask) ([]Task, error)
+	EditTask(edit EditTask) (UpdatedTask, error)
 	StartTask(task NewTask) (StartedTask, error)
 	ActiveTask() (*Task, error)
 	StopActiveTask() (*Task, error)
