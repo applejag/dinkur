@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dinkur/dinkur/pkg/dinkurdb"
+	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/fatih/color"
 	"github.com/mattn/go-colorable"
 )
@@ -52,7 +52,7 @@ var (
 	fatalValueColor = color.New(color.FgRed)
 )
 
-func PrintTaskWithDuration(label string, task dinkurdb.Task) {
+func PrintTaskWithDuration(label string, task dinkur.Task) {
 	var sb strings.Builder
 	taskLabelColor.Fprint(&sb, label)
 	sb.WriteByte(' ')
@@ -66,7 +66,7 @@ func PrintTaskWithDuration(label string, task dinkurdb.Task) {
 	fmt.Fprintln(stdout, sb.String())
 }
 
-func PrintTask(label string, task dinkurdb.Task) {
+func PrintTask(label string, task dinkur.Task) {
 	var sb strings.Builder
 	taskLabelColor.Fprint(&sb, label)
 	sb.WriteByte(' ')
@@ -107,7 +107,7 @@ func PrintFatal(label string, v interface{}) {
 	os.Exit(1)
 }
 
-func PrintTaskEdit(update dinkurdb.UpdatedTask) {
+func PrintTaskEdit(update dinkur.UpdatedTask) {
 	const editPrefix = "  "
 	const editDelim = "   =>   "
 	var anyEdit bool

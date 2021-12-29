@@ -26,7 +26,7 @@ import (
 
 	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/internal/flagutil"
-	"github.com/dinkur/dinkur/pkg/dinkurdb"
+	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/spf13/cobra"
 )
 
@@ -38,8 +38,8 @@ func init() {
 		Short:   "Check in/start tracking a new task",
 		Long:    ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			connectAndMigrateDB()
-			newTask := dinkurdb.NewTask{
+			connectClientOrExit()
+			newTask := dinkur.NewTask{
 				Name:  strings.Join(args, " "),
 				Start: flagutil.ParseTime(cmd, "start"),
 				End:   flagutil.ParseTime(cmd, "end"),

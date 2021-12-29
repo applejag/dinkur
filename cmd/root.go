@@ -28,6 +28,7 @@ import (
 
 	"github.com/dinkur/dinkur/internal/cfgpath"
 	"github.com/dinkur/dinkur/internal/console"
+	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/dinkurdb"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -36,7 +37,7 @@ import (
 
 var cfgFile = cfgpath.Path()
 var flagColor = "auto"
-var db dinkurdb.Client
+var db dinkur.Client
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -61,7 +62,7 @@ var RootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	db = dinkurdb.NewClient()
+	db = dinkurdb.NewClient("dinkur.db", dinkurdb.Options{})
 	defer db.Close()
 	err := RootCmd.Execute()
 	if err != nil {
@@ -99,13 +100,9 @@ func initConfig() {
 	}
 }
 
-func connectAndMigrateDB() {
-	if err := db.Connect("dinkur.db"); err != nil {
-		fmt.Fprintln(os.Stderr, "Error connecting to database:", err)
-		os.Exit(1)
-	}
-	if err := db.Migrate(); err != nil {
-		fmt.Fprintln(os.Stderr, "Error migrating database:", err)
+func connectClientOrExit() {
+	if err := db.Connect(); err != nil {
+		fmt.Fprintln(os.Stderr, "Error initializing database client:", err)
 		os.Exit(1)
 	}
 }

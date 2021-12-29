@@ -21,43 +21,33 @@
 package dinkurdb
 
 import (
+	"github.com/dinkur/dinkur/pkg/dinkur"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
-type Client interface {
-	Connect(filename string) error
-	Ping() error
-	Close() error
-
-	Migrate() error
-	MigrationStatus() (MigrationStatus, error)
-
-	GetTask(id uint) (Task, error)
-	ListTasks(SearchTask) ([]Task, error)
-	EditTask(edit EditTask) (UpdatedTask, error)
-	DeleteTask(id uint) (Task, error)
-	StartTask(task NewTask) (StartedTask, error)
-	ActiveTask() (*Task, error)
-	StopActiveTask() (*Task, error)
+type Options struct {
+	SkipMigrateOnConnect bool
 }
 
-func NewClient() Client {
-	return &client{}
+func NewClient(dsn string, opt Options) dinkur.Client {
+	return &client{Options: opt, sqliteDsn: dsn}
 }
 
 type client struct {
+	Options
+	sqliteDsn     string
 	db            *gorm.DB
-	prevMigStatus MigrationStatus
+	prevMigStatus dinkur.MigrationStatus
 }
 
-func (c *client) Connect(sqliteDSN string) error {
+func (c *client) Connect() error {
 	if c.db != nil {
 		return ErrAlreadyConnected
 	}
 	var err error
-	c.db, err = gorm.Open(sqlite.Open(sqliteDSN), &gorm.Config{
+	c.db, err = gorm.Open(sqlite.Open(c.sqliteDsn), &gorm.Config{
 		Logger: logger.Discard,
 		//Logger: logger.New(log.New(colorable.NewColorableStdout(), "\r\n", log.LstdFlags), logger.Config{
 		//	SlowThreshold:             200 * time.Millisecond,
@@ -74,6 +64,9 @@ func (c *client) Connect(sqliteDSN string) error {
 		return err
 	}
 	sqlDB.SetMaxOpenConns(1)
+	if !c.SkipMigrateOnConnect {
+		return c.Migrate()
+	}
 	return nil
 }
 

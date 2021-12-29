@@ -26,39 +26,48 @@ import (
 	"math"
 	"time"
 
+	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/timeutil"
 )
 
-func (c *client) ActiveTask() (*Task, error) {
+func (c *client) ActiveTask() (*dinkur.Task, error) {
+	dbTask, err := c.activeDBTask()
+	if err != nil {
+		return nil, err
+	}
+	return convTaskPtr(dbTask), nil
+}
+
+func (c *client) activeDBTask() (*Task, error) {
 	if c.db == nil {
 		return nil, ErrNotConnected
 	}
-	var task Task
-	err := c.db.Where(Task{End: nil}, task_Field_End).First(&task).Error
+	var dbTask Task
+	err := c.db.Where(Task{End: nil}, task_Field_End).First(&dbTask).Error
 	if err != nil {
 		return nil, nilNotFoundError(err)
 	}
-	return &task, nil
+	return &dbTask, nil
 }
 
-func (c *client) GetTask(id uint) (Task, error) {
+func (c *client) GetTask(id uint) (dinkur.Task, error) {
+	dbTask, err := c.getDBTask(id)
+	if err != nil {
+		return dinkur.Task{}, err
+	}
+	return convTask(dbTask), nil
+}
+
+func (c *client) getDBTask(id uint) (Task, error) {
 	if c.db == nil {
 		return Task{}, ErrNotConnected
 	}
-	var task Task
-	err := c.db.First(&task, id).Error
+	var dbTask Task
+	err := c.db.First(&dbTask, id).Error
 	if err != nil {
 		return Task{}, err
 	}
-	return task, nil
-}
-
-type SearchTask struct {
-	Start *time.Time
-	End   *time.Time
-	Limit uint
-
-	Shorthand timeutil.TimeSpanShorthand
+	return dbTask, nil
 }
 
 var (
@@ -66,7 +75,15 @@ var (
 	task_SQL_End_LE_or_null      = fmt.Sprintf("(%[1]s <= ? OR %[1]s IS NULL)", task_Column_End)
 )
 
-func (c *client) ListTasks(search SearchTask) ([]Task, error) {
+func (c *client) ListTasks(search dinkur.SearchTask) ([]dinkur.Task, error) {
+	dbTasks, err := c.listDBTasks(search)
+	if err != nil {
+		return nil, err
+	}
+	return convTaskSlice(dbTasks), nil
+}
+
+func (c *client) listDBTasks(search dinkur.SearchTask) ([]Task, error) {
 	if search.Shorthand != timeutil.TimeSpanNone {
 		span := search.Shorthand.Span(time.Now())
 		if search.Start == nil {
@@ -79,7 +96,7 @@ func (c *client) ListTasks(search SearchTask) ([]Task, error) {
 	if search.Limit > math.MaxInt {
 		return nil, ErrLimitTooLarge
 	}
-	var tasks []Task
+	var dbTasks []Task
 	q := c.db.Model(&Task{}).
 		Order(task_Column_Start + " desc").
 		Limit(int(search.Limit))
@@ -96,41 +113,28 @@ func (c *client) ListTasks(search SearchTask) ([]Task, error) {
 			q = q.Where(task_SQL_End_LE_or_null, *search.End)
 		}
 	}
-	if err := q.Find(&tasks).Error; err != nil {
+	if err := q.Find(&dbTasks).Error; err != nil {
 		return nil, err
 	}
 	// we sorted in descending order to get the last tasks.
 	// fix this by reversing "again"
-	reverseTaskSlice(tasks)
-	return tasks, nil
+	reverseTaskSlice(dbTasks)
+	return dbTasks, nil
 }
 
-type EditTask struct {
-	ID         *uint
-	Name       *string
-	Start      *time.Time
-	End        *time.Time
-	AppendName bool
-}
-
-type UpdatedTask struct {
-	Old     Task
-	Updated Task
-}
-
-func (c *client) EditTask(edit EditTask) (UpdatedTask, error) {
+func (c *client) EditTask(edit dinkur.EditTask) (dinkur.UpdatedTask, error) {
 	if c.db == nil {
-		return UpdatedTask{}, ErrNotConnected
+		return dinkur.UpdatedTask{}, ErrNotConnected
 	}
 	if edit.Name != nil && *edit.Name == "" {
-		return UpdatedTask{}, ErrTaskNameEmpty
+		return dinkur.UpdatedTask{}, ErrTaskNameEmpty
 	}
 	if edit.Start != nil && edit.End != nil && edit.Start.After(*edit.End) {
-		return UpdatedTask{}, ErrTaskEndBeforeStart
+		return dinkur.UpdatedTask{}, ErrTaskEndBeforeStart
 	}
-	var update UpdatedTask
+	var update dinkur.UpdatedTask
 	err := c.transaction(func(tx *client) error {
-		task, err := tx.getTaskToEdit(edit.ID)
+		dbTask, err := tx.getDBTaskToEdit(edit.ID)
 		if err != nil {
 			if errors.Is(err, ErrNotFound) {
 				return fmt.Errorf("no task to edit, failed finding latest task: %w", err)
@@ -138,78 +142,78 @@ func (c *client) EditTask(edit EditTask) (UpdatedTask, error) {
 			return fmt.Errorf("get task to edit: %w", err)
 		}
 		var anyEdit bool
-		update.Old = task
+		update.Old = convTask(dbTask)
 		if edit.Name != nil {
 			if edit.AppendName {
-				task.Name = fmt.Sprint(task.Name, " ", *edit.Name)
+				dbTask.Name = fmt.Sprint(dbTask.Name, " ", *edit.Name)
 			} else {
-				task.Name = *edit.Name
+				dbTask.Name = *edit.Name
 			}
 			anyEdit = true
 		}
 		if edit.Start != nil {
-			task.Start = *edit.Start
+			dbTask.Start = *edit.Start
 			anyEdit = true
 		}
 		if edit.End != nil {
-			task.End = edit.End
+			dbTask.End = edit.End
 			anyEdit = true
 		}
-		if task.Elapsed() < 0 {
+		if dbTask.Elapsed() < 0 {
 			return ErrTaskEndBeforeStart
 		}
 		if anyEdit {
-			if err := tx.db.Save(&task).Error; err != nil {
+			if err := tx.db.Save(&dbTask).Error; err != nil {
 				return fmt.Errorf("save updated task: %w", err)
 			}
 		}
-		update.Updated = task
+		update.Updated = convTask(dbTask)
 		return nil
 	})
 	return update, err
 }
 
-func (c *client) getTaskToEdit(id *uint) (Task, error) {
-	var task Task
+func (c *client) getDBTaskToEdit(id *uint) (Task, error) {
+	var dbTask Task
 	err := c.transaction(func(tx *client) error {
 		if id != nil {
-			taskByID, err := tx.GetTask(*id)
+			dbTaskByID, err := tx.getDBTask(*id)
 			if err != nil {
 				return fmt.Errorf("get task by ID: %d: %w", *id, err)
 			}
-			task = taskByID
+			dbTask = dbTaskByID
 			return nil
 		}
-		activeTask, err := tx.ActiveTask()
+		activeDBTask, err := tx.activeDBTask()
 		if err != nil {
 			return fmt.Errorf("get active task: %w", err)
 		}
-		if activeTask != nil {
-			task = *activeTask
+		if activeDBTask != nil {
+			dbTask = *activeDBTask
 			return nil
 		}
 		now := time.Now()
-		tasks, err := tx.ListTasks(SearchTask{
+		dbTasks, err := tx.listDBTasks(dinkur.SearchTask{
 			Limit: 1,
 			End:   &now,
 		})
 		if err != nil {
 			return fmt.Errorf("list latest 1 task: %w", err)
 		}
-		if len(tasks) == 0 {
+		if len(dbTasks) == 0 {
 			return ErrNotFound
 		}
-		task = tasks[0]
+		dbTask = dbTasks[0]
 		return nil
 	})
-	return task, err
+	return dbTask, err
 }
 
-func (c *client) DeleteTask(id uint) (Task, error) {
+func (c *client) DeleteTask(id uint) (dinkur.Task, error) {
 	if c.db == nil {
-		return Task{}, ErrNotConnected
+		return dinkur.Task{}, ErrNotConnected
 	}
-	var task Task
+	var task dinkur.Task
 	err := c.transaction(func(tx *client) error {
 		var err error
 		task, err = tx.GetTask(id)
@@ -221,23 +225,12 @@ func (c *client) DeleteTask(id uint) (Task, error) {
 	return task, err
 }
 
-type NewTask struct {
-	Name  string
-	Start *time.Time
-	End   *time.Time
-}
-
-type StartedTask struct {
-	New      Task
-	Previous *Task
-}
-
-func (c *client) StartTask(task NewTask) (StartedTask, error) {
+func (c *client) StartTask(task dinkur.NewTask) (dinkur.StartedTask, error) {
 	if c.db == nil {
-		return StartedTask{}, ErrNotConnected
+		return dinkur.StartedTask{}, ErrNotConnected
 	}
 	if task.Name == "" {
-		return StartedTask{}, ErrTaskNameEmpty
+		return dinkur.StartedTask{}, ErrTaskNameEmpty
 	}
 	var start time.Time
 	if task.Start != nil {
@@ -246,37 +239,35 @@ func (c *client) StartTask(task NewTask) (StartedTask, error) {
 		start = time.Now()
 	}
 	if task.End != nil && task.End.Before(start) {
-		return StartedTask{}, ErrTaskEndBeforeStart
+		return dinkur.StartedTask{}, ErrTaskEndBeforeStart
 	}
-	newTask := Task{
+	dbTask := Task{
 		Name:  task.Name,
 		Start: start,
 		End:   task.End,
 	}
-	var activeTask *Task
+	var startedTask dinkur.StartedTask
 	c.transaction(func(tx *client) error {
 		var err error
-		activeTask, err = tx.StopActiveTask()
+		startedTask.Previous, err = tx.StopActiveTask()
 		if err != nil {
 			return err
 		}
-		err = tx.db.Create(&newTask).Error
+		err = tx.db.Create(&dbTask).Error
 		if err != nil {
 			return fmt.Errorf("create new active task: %w", err)
 		}
+		startedTask.New = convTask(dbTask)
 		return nil
 	})
-	return StartedTask{
-		New:      newTask,
-		Previous: activeTask,
-	}, nil
+	return startedTask, nil
 }
 
-func (c *client) StopActiveTask() (*Task, error) {
+func (c *client) StopActiveTask() (*dinkur.Task, error) {
 	if c.db == nil {
 		return nil, ErrNotConnected
 	}
-	var activeTask *Task
+	var activeTask *dinkur.Task
 	err := c.transaction(func(tx *client) error {
 		var err error
 		activeTask, err = tx.ActiveTask()

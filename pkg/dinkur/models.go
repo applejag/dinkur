@@ -1,7 +1,6 @@
 // Dinkur the task time tracking utility.
 // <https://github.com/dinkur/dinkur>
 //
-// Copyright (C) 2021 Kalle Fagerberg
 // SPDX-FileCopyrightText: 2021 Kalle Fagerberg
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -18,39 +17,20 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package dinkurdb
+package dinkur
 
-import (
-	"time"
-
-	"github.com/dinkur/dinkur/pkg/dinkur"
-)
+import "time"
 
 type CommonFields struct {
-	ID        uint `gorm:"primarykey"`
+	ID        uint
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-func convCommonFields(f CommonFields) dinkur.CommonFields {
-	return dinkur.CommonFields{
-		ID:        f.ID,
-		CreatedAt: f.CreatedAt,
-		UpdatedAt: f.UpdatedAt,
-	}
-}
-
-const (
-	task_Field_End = "End"
-
-	task_Column_Start = "start"
-	task_Column_End   = "end"
-)
-
 type Task struct {
 	CommonFields
-	Name  string    `gorm:"not null;default:''"`
-	Start time.Time `gorm:"not null;default:CURRENT_TIMESTAMP"`
+	Name  string
+	Start time.Time
 	End   *time.Time
 }
 
@@ -62,34 +42,4 @@ func (t Task) Elapsed() time.Duration {
 		end = time.Now()
 	}
 	return end.Sub(t.Start)
-}
-
-func convTask(t Task) dinkur.Task {
-	return dinkur.Task{
-		CommonFields: convCommonFields(t.CommonFields),
-		Name:         t.Name,
-		Start:        t.Start,
-		End:          t.End,
-	}
-}
-
-func convTaskPtr(t *Task) *dinkur.Task {
-	if t == nil {
-		return nil
-	}
-	dinkurTask := convTask(*t)
-	return &dinkurTask
-}
-
-func convTaskSlice(slice []Task) []dinkur.Task {
-	result := make([]dinkur.Task, len(slice))
-	for i, t := range slice {
-		result[i] = convTask(t)
-	}
-	return result
-}
-
-type Migration struct {
-	CommonFields
-	Version int
 }

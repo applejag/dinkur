@@ -24,63 +24,38 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/dinkur/dinkur/pkg/dinkur"
 	"gorm.io/gorm"
 )
 
-const LatestMigrationVersion = 1
-
-type MigrationStatus byte
-
-const (
-	MigrationUnknown MigrationStatus = iota
-	MigrationNeverApplied
-	MigrationOutdated
-	MigrationUpToDate
-)
-
-func (s MigrationStatus) String() string {
-	switch s {
-	case MigrationUnknown:
-		return "unknown"
-	case MigrationNeverApplied:
-		return "never applied"
-	case MigrationOutdated:
-		return "outdated"
-	case MigrationUpToDate:
-		return "up to date"
-	default:
-		return fmt.Sprintf("%T(%d)", s, s)
-	}
-}
-
-func (c *client) MigrationStatus() (MigrationStatus, error) {
+func (c *client) MigrationStatus() (dinkur.MigrationStatus, error) {
 	if c.db == nil {
-		return MigrationUnknown, ErrNotConnected
+		return dinkur.MigrationUnknown, ErrNotConnected
 	}
-	if c.prevMigStatus != MigrationUnknown {
+	if c.prevMigStatus != dinkur.MigrationUnknown {
 		return c.prevMigStatus, nil
 	}
 	status, err := getMigrationStatus(c.db)
 	if err != nil {
-		return MigrationUnknown, err
+		return dinkur.MigrationUnknown, err
 	}
 	c.prevMigStatus = status
 	return status, nil
 }
 
-func getMigrationStatus(db *gorm.DB) (MigrationStatus, error) {
+func getMigrationStatus(db *gorm.DB) (dinkur.MigrationStatus, error) {
 	m := db.Migrator()
 	if !m.HasTable(&Migration{}) {
-		return MigrationNeverApplied, nil
+		return dinkur.MigrationNeverApplied, nil
 	}
 	var latest Migration
 	if err := db.First(&latest).Error; err != nil {
-		return MigrationUnknown, nilNotFoundError(err)
+		return dinkur.MigrationUnknown, nilNotFoundError(err)
 	}
-	if latest.Version < LatestMigrationVersion {
-		return MigrationOutdated, nil
+	if latest.Version < dinkur.LatestMigrationVersion {
+		return dinkur.MigrationOutdated, nil
 	}
-	return MigrationUpToDate, nil
+	return dinkur.MigrationUpToDate, nil
 }
 
 func (c *client) Migrate() error {
@@ -92,7 +67,7 @@ func (c *client) Migrate() error {
 		if err != nil {
 			return fmt.Errorf("check migration status: %w", err)
 		}
-		if status == MigrationUpToDate {
+		if status == dinkur.MigrationUpToDate {
 			return nil
 		}
 		tables := []interface{}{
@@ -109,7 +84,7 @@ func (c *client) Migrate() error {
 			!errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
-		migration.Version = LatestMigrationVersion
+		migration.Version = dinkur.LatestMigrationVersion
 		return tx.db.Save(&migration).Error
 	})
 }

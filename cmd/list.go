@@ -26,7 +26,7 @@ import (
 
 	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/internal/flagutil"
-	"github.com/dinkur/dinkur/pkg/dinkurdb"
+	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/timeutil"
 	"github.com/spf13/cobra"
 )
@@ -51,8 +51,8 @@ func init() {
 		},
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			connectAndMigrateDB()
-			search := dinkurdb.SearchTask{
+			connectClientOrExit()
+			search := dinkur.SearchTask{
 				Limit:     flagLimit,
 				Shorthand: timeutil.TimeSpanThisDay,
 			}

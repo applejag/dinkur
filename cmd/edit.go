@@ -25,7 +25,7 @@ import (
 
 	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/internal/flagutil"
-	"github.com/dinkur/dinkur/pkg/dinkurdb"
+	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/spf13/cobra"
 )
 
@@ -42,8 +42,8 @@ func init() {
 		Long: `Applies changes to the currently active task, or the latest task, or
 a specific task using the --id or -i flag.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			connectAndMigrateDB()
-			edit := dinkurdb.EditTask{
+			connectClientOrExit()
+			edit := dinkur.EditTask{
 				Start:      flagutil.ParseTime(cmd, "start"),
 				End:        flagutil.ParseTime(cmd, "end"),
 				AppendName: flagAppend,
