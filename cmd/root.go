@@ -39,19 +39,6 @@ var RootCMD = &cobra.Command{
 	Use:   "dinkur",
 	Short: "The Dinkur CLI",
 	Long:  `Through these subcommands you can access your time-tracked tasks.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		connectAndMigrateDB()
-		activeTask, err := db.ActiveTask()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error getting active task:", err)
-			os.Exit(1)
-		}
-		if activeTask != nil {
-			fmt.Println("Current task:", *activeTask)
-		} else {
-			fmt.Println("You have no active task.")
-		}
-	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

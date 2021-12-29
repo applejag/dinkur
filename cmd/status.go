@@ -24,17 +24,28 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/dinkur/dinkur/internal/console"
 	"github.com/spf13/cobra"
 )
 
 // statusCmd represents the status command
 var statusCmd = &cobra.Command{
-	Use:   "status",
-	Short: "Show status of the database and daemon",
-	Long:  ``,
+	Use:     "status",
+	Aliases: []string{"s"},
+	Short:   "Show status of active task",
+	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("err: this feature has not yet been implemented")
-		os.Exit(1)
+		connectAndMigrateDB()
+		activeTask, err := db.ActiveTask()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error getting active task:", err)
+			os.Exit(1)
+		}
+		if activeTask != nil {
+			console.PrintTaskWithDuration("Current task:", *activeTask)
+		} else {
+			fmt.Println("You have no active task.")
+		}
 	},
 }
 

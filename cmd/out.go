@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/dinkur/dinkur/internal/console"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +41,7 @@ var outCmd = &cobra.Command{
 			fmt.Fprintln(os.Stderr, "Error stopping task:", err)
 		}
 		if stoppedTask != nil {
-			fmt.Println("Stopped task:", stoppedTask)
+			console.PrintTaskWithDuration("Stopped task:", *stoppedTask)
 		} else {
 			fmt.Println("No active task to stop.")
 			os.Exit(1)

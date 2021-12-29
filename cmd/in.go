@@ -25,6 +25,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/internal/fuzzytime"
 	"github.com/dinkur/dinkur/pkg/dinkurdb"
 	"github.com/spf13/cobra"
@@ -33,6 +34,7 @@ import (
 func init() {
 	var (
 		flagStart string
+		flagEnd   string
 	)
 
 	var inCmd = &cobra.Command{
@@ -44,7 +46,11 @@ func init() {
 		Run: func(cmd *cobra.Command, args []string) {
 			connectAndMigrateDB()
 			newTask := dinkurdb.NewTask{Name: strings.Join(args, " ")}
-			if flagStart != "" {
+			if cmd.Flags().Changed("start") {
+				if flagStart == "" {
+					fmt.Fprintln(os.Stderr, "Error parsing --start: cannot be empty")
+					os.Exit(1)
+				}
 				start, err := fuzzytime.Parse(flagStart)
 				if err != nil {
 					fmt.Fprintln(os.Stderr, "Error parsing --start:", err)
@@ -52,27 +58,36 @@ func init() {
 				}
 				newTask.Start = &start
 			}
+			if cmd.Flags().Changed("end") {
+				if flagEnd == "" {
+					fmt.Fprintln(os.Stderr, "Error parsing --end: cannot be empty")
+					os.Exit(1)
+				}
+				end, err := fuzzytime.Parse(flagEnd)
+				if err != nil {
+					fmt.Fprintln(os.Stderr, "Error parsing --end:", err)
+					os.Exit(1)
+				}
+				newTask.End = &end
+			}
 			startedTask, err := db.StartTask(newTask)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "Error starting task:", err)
 				os.Exit(1)
 			}
 			if startedTask.Previous != nil {
-				fmt.Println("Stopped task:", *startedTask.Previous)
+				console.PrintTaskWithDuration("Stopped task:", *startedTask.Previous)
 			}
-			fmt.Println("Started task:", startedTask.New)
+			if startedTask.New.End != nil {
+				console.PrintTaskWithDuration("Started task:", startedTask.New)
+				fmt.Println("You have no active task.")
+			} else {
+				console.PrintTask("Started task:", startedTask.New)
+			}
 		},
 	}
 	RootCMD.AddCommand(inCmd)
 
 	inCmd.Flags().StringVarP(&flagStart, "start", "s", "now", `start time of task`)
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// inCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// inCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	inCmd.Flags().StringVarP(&flagEnd, "end", "e", "", `end time of task; new task will not be active if set`)
 }

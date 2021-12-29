@@ -43,6 +43,16 @@ type Task struct {
 	End   *time.Time
 }
 
+func (t Task) Elapsed() time.Duration {
+	var end time.Time
+	if t.End != nil {
+		end = *t.End
+	} else {
+		end = time.Now()
+	}
+	return end.Sub(t.Start)
+}
+
 type Migration struct {
 	CommonFields
 	Version int
