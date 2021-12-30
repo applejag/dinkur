@@ -21,6 +21,7 @@
 package dinkurdb
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"math"
@@ -71,8 +72,10 @@ func (c *client) getDBTask(id uint) (Task, error) {
 }
 
 var (
-	task_SQL_End_LE_and_not_null = fmt.Sprintf("(%[1]s <= ? AND %[1]s IS NOT NULL)", task_Column_End)
-	task_SQL_End_LE_or_null      = fmt.Sprintf("(%[1]s <= ? OR %[1]s IS NULL)", task_Column_End)
+	task_SQL_Between = fmt.Sprintf(
+		"(%[2]s IS NOT NULL AND @time BETWEEN %[1]s AND %[2]s) OR (%[2]s IS NULL AND @time BETWEEN %[1]s AND CURRENT_TIMESTAMP)",
+		task_Column_Start, task_Column_End,
+	)
 )
 
 func (c *client) ListTasks(search dinkur.SearchTask) ([]dinkur.Task, error) {
@@ -104,17 +107,10 @@ func (c *client) listDBTasks(search dinkur.SearchTask) ([]Task, error) {
 		Order(task_Column_Start + " desc").
 		Limit(int(search.Limit))
 	if search.Start != nil {
-		q = q.Where(task_Column_Start+" >= ?", *search.Start)
+		q = q.Or(c.db.Where(task_SQL_Between, sql.Named("time", *search.Start)))
 	}
 	if search.End != nil {
-		// treat task.End==nil as task.End==time.Now()
-		if search.End.Before(time.Now()) {
-			// exclude task.End==nil, as end has not passed time.Now() yet
-			q = q.Where(task_SQL_End_LE_and_not_null, *search.End)
-		} else {
-			// include task.End==nil, as end has passed time.Now()
-			q = q.Where(task_SQL_End_LE_or_null, *search.End)
-		}
+		q = q.Or(c.db.Where(task_SQL_Between, sql.Named("time", *search.End)))
 	}
 	if err := q.Find(&dbTasks).Error; err != nil {
 		return nil, err
