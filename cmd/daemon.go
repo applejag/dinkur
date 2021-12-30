@@ -27,7 +27,6 @@ import (
 
 	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/pkg/dinkurd"
-	"github.com/dinkur/dinkur/pkg/dinkurdb"
 	"github.com/spf13/cobra"
 )
 
@@ -42,8 +41,8 @@ This daemon is used by Dinkur clients, and allows more features such as the
 Information about the daemon, such as which port was selected and what
 authentication token can be used, is outputted to the console.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		dbClient := dinkurdb.NewClient("dinkur.db", dinkurdb.Options{})
-		if err := dbClient.Connect(); err != nil {
+		dbClient, err := connectToDBClient()
+		if err != nil {
 			console.PrintFatal("Error connecting to database for daemon:", err)
 		}
 		opt := dinkurd.DefaultOptions

@@ -22,8 +22,11 @@ package dinkurdb
 
 import (
 	"errors"
+	"log"
+	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
+	"github.com/mattn/go-colorable"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -38,6 +41,8 @@ func nilNotFoundError(err error) error {
 
 type Options struct {
 	SkipMigrateOnConnect bool
+	DebugLogging         bool
+	DebugColorful        bool
 }
 
 func NewClient(dsn string, opt Options) dinkur.Client {
@@ -70,13 +75,7 @@ func (c *client) Connect() error {
 	}
 	var err error
 	c.db, err = gorm.Open(sqlite.Open(c.sqliteDsn), &gorm.Config{
-		Logger: logger.Discard,
-		//Logger: logger.New(log.New(colorable.NewColorableStdout(), "\r\n", log.LstdFlags), logger.Config{
-		//	SlowThreshold:             200 * time.Millisecond,
-		//	LogLevel:                  logger.Info,
-		//	IgnoreRecordNotFoundError: false,
-		//	Colorful:                  true,
-		//}),
+		Logger: getLogger(c.Options),
 	})
 	if err != nil {
 		return err
@@ -90,6 +89,18 @@ func (c *client) Connect() error {
 		return c.Migrate()
 	}
 	return nil
+}
+
+func getLogger(opt Options) logger.Interface {
+	if opt.DebugLogging {
+		return logger.New(log.New(colorable.NewColorableStderr(), "\r\n", log.LstdFlags), logger.Config{
+			SlowThreshold:             200 * time.Millisecond,
+			LogLevel:                  logger.Info,
+			IgnoreRecordNotFoundError: false,
+			Colorful:                  opt.DebugColorful,
+		})
+	}
+	return logger.Discard
 }
 
 func (c *client) Ping() error {

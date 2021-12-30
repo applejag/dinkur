@@ -110,18 +110,18 @@ func connectClientOrExit() {
 func connectClient() (dinkur.Client, error) {
 	switch strings.ToLower(flagClient) {
 	case "db":
+		printDebug("Using DB client.")
 		dbClient, err := connectToDBClient()
 		if err != nil {
 			return nil, fmt.Errorf("DB client: %w", err)
 		}
-		printDebug("Using DB client.")
 		return dbClient, nil
 	case "grpc":
+		printDebug("Using gRPC client.")
 		grpcClient, err := connectToGRPCClient()
 		if err != nil {
 			return nil, fmt.Errorf("gRPC client: %w", err)
 		}
-		printDebug("Using gRPC client.")
 		return grpcClient, nil
 	default:
 		return nil, fmt.Errorf(`invalid value %q: only "db" or "grpc" may be used`, flagClient)
@@ -140,7 +140,10 @@ func connectToGRPCClient() (dinkur.Client, error) {
 }
 
 func connectToDBClient() (dinkur.Client, error) {
-	c := dinkurdb.NewClient("dinkur.db", dinkurdb.Options{})
+	c := dinkurdb.NewClient("dinkur.db", dinkurdb.Options{
+		DebugLogging:  flagVerbose,
+		DebugColorful: !color.NoColor,
+	})
 	return c, c.Connect()
 }
 
