@@ -26,6 +26,16 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
+func FormatDuration(d time.Duration) string {
+	var (
+		totalSeconds = int(d.Seconds())
+		hours        = totalSeconds / 60 / 60
+		minutes      = totalSeconds / 60 % 60
+		seconds      = totalSeconds % 60
+	)
+	return fmt.Sprintf("%d:%02d:%02d", hours, minutes, seconds)
+}
+
 func newDate(year int, month time.Month, day int) date {
 	return date{year, month, day}
 }

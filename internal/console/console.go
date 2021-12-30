@@ -113,7 +113,7 @@ func writeTaskTimeSpan(w io.Writer, start time.Time, end *time.Time) {
 
 func writeTaskDuration(w io.Writer, dur time.Duration) {
 	taskTimeDelimColor.Fprint(w, "(")
-	taskDurationColor.Fprint(w, dur.Truncate(durationTrunc))
+	taskDurationColor.Fprint(w, FormatDuration(dur))
 	taskTimeDelimColor.Fprint(w, ")")
 }
 
@@ -195,7 +195,7 @@ func PrintTaskList(tasks []dinkur.Task) {
 	var t table
 	t.SetSpacing("  ")
 	t.SetPrefix("  ")
-	t.WriteColoredRow(tableHeaderColor, "ID", "NAME", "DAY", "START", "END", "DUR")
+	t.WriteColoredRow(tableHeaderColor, "ID", "NAME", "DAY", "START", "END", "DURATION")
 	for i, group := range groupTasksByDate(tasks) {
 		if i > 0 {
 			t.CommitRow() // commit empty delimiting row
@@ -211,11 +211,17 @@ func PrintTaskList(tasks []dinkur.Task) {
 			}
 			t.WriteCellWidth(taskStartColor.Sprint(task.Start.Format(timeFormatShort)), len(timeFormatShort))
 			if task.End != nil {
-				t.WriteCellWidth(taskEndColor.Sprint(task.End.Format(timeFormatShort)), len(timeFormatShort))
+				var endStr string
+				if newDate(task.End.Date()) != group.date {
+					endStr = task.End.Format(timeFormatLong)
+				} else {
+					endStr = task.End.Format(timeFormatShort)
+				}
+				t.WriteCellWidth(taskEndColor.Sprint(endStr), len(endStr))
 			} else {
 				t.WriteCellWidth(taskEndNilColor.Sprint(taskEndNilText), taskEndNilTextLen)
 			}
-			dur := task.Elapsed().Truncate(durationTrunc).String()
+			dur := FormatDuration(task.Elapsed())
 			t.WriteCellWidth(taskDurationColor.Sprint(dur), len(dur))
 			t.CommitRow()
 		}
@@ -232,7 +238,7 @@ func PrintTaskList(tasks []dinkur.Task) {
 		"",                                // DAY
 		sum.start.Format(timeFormatShort), // START
 		endStr,                            // END
-		sum.duration.Truncate(durationTrunc).String(), // DUR
+		FormatDuration(sum.duration),      // DURATION
 	)
 	t.Fprintln(stdout)
 }
