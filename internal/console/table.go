@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/fatih/color"
 )
@@ -50,13 +51,13 @@ func (t *table) SetSpacing(spacing string) {
 
 func (t *table) WriteColoredRow(c *color.Color, headers ...string) {
 	for _, cell := range headers {
-		t.WriteCellWidth(c.Sprint(cell), len(cell))
+		t.WriteCellWidth(c.Sprint(cell), utf8.RuneCountInString(cell))
 	}
 	t.CommitRow()
 }
 
 func (t *table) WriteCell(s string) {
-	t.pendingRow = append(t.pendingRow, tableCell{s, len(s)})
+	t.pendingRow = append(t.pendingRow, tableCell{s, utf8.RuneCountInString(s)})
 }
 
 func (t *table) WriteCellWidth(s string, width int) {
@@ -75,6 +76,7 @@ func (t *table) Println() {
 
 func (t *table) Fprintln(w io.Writer) {
 	var sb strings.Builder
+	rowsWithSpaces := len(t.colWidth) - 1
 	spaces := strings.Repeat(" ", t.WidestCellWidth())
 	colSpaces := make([]string, len(t.colWidth))
 	for i, w := range t.colWidth {
@@ -87,7 +89,9 @@ func (t *table) Fprintln(w io.Writer) {
 				sb.WriteString(t.spacing)
 			}
 			sb.WriteString(cell.s)
-			sb.WriteString(colSpaces[i][cell.w:])
+			if i < rowsWithSpaces {
+				sb.WriteString(colSpaces[i][cell.w:])
+			}
 		}
 		sb.WriteByte('\n')
 	}

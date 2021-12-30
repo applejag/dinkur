@@ -36,6 +36,7 @@ var (
 	stdout          = colorable.NewColorableStdout()
 	stderr          = colorable.NewColorableStderr()
 	timeFormatLong  = "Jan 02 15:04"
+	timeFormatDate  = "Jan 02"
 	timeFormatShort = "15:04"
 	durationTrunc   = time.Second
 
@@ -43,6 +44,7 @@ var (
 	taskLabelColor     = color.New(color.FgWhite, color.Italic)
 	taskNameColor      = color.New(color.FgHiYellow, color.Bold)
 	taskTimeDelimColor = color.New(color.FgHiBlack)
+	taskDateColor      = color.New(color.FgGreen)
 	taskStartColor     = color.New(color.FgHiGreen)
 	taskEndColor       = color.New(color.FgHiGreen)
 	taskEndNilColor    = color.New(color.FgGreen, color.Italic)
@@ -59,7 +61,8 @@ var (
 	fatalLabelColor = color.New(color.FgHiRed, color.Bold)
 	fatalValueColor = color.New(color.FgRed)
 
-	tableHeaderColor = color.New(color.FgWhite, color.Underline)
+	tableHeaderColor  = color.New(color.FgWhite, color.Underline, color.Bold)
+	tableSummaryColor = color.New(color.FgWhite, color.Italic)
 )
 
 func PrintTaskWithDuration(label string, task dinkur.Task) {
@@ -203,21 +206,101 @@ func PrintTaskList(tasks []dinkur.Task) {
 	var t table
 	t.SetSpacing("  ")
 	t.SetPrefix("  ")
-	t.WriteColoredRow(tableHeaderColor, "ID", "NAME", "START", "END", "DUR")
-	for _, task := range tasks {
-		t.WriteCellWidth(taskIDColor.Sprintf("#%d", task.ID), uintWidth(task.ID)+1)
-		t.WriteCellWidth(taskNameColor.Sprintf(`"%s"`, task.Name), utf8.RuneCountInString(task.Name)+2)
-		t.WriteCellWidth(taskStartColor.Sprint(task.Start.Format(timeFormatShort)), len(timeFormatShort))
-		if task.End != nil {
-			t.WriteCellWidth(taskEndColor.Sprint(task.End.Format(timeFormatShort)), len(timeFormatShort))
-		} else {
-			t.WriteCellWidth(taskEndNilColor.Sprint(taskEndNilText), taskEndNilTextLen)
+	t.WriteColoredRow(tableHeaderColor, "ID", "NAME", "DAY", "START", "END", "DUR")
+	for i, group := range groupTasksByDate(tasks) {
+		if i > 0 {
+			t.CommitRow() // commit empty delimiting row
 		}
-		dur := task.Elapsed().Truncate(durationTrunc).String()
-		t.WriteCellWidth(taskDurationColor.Sprint(dur), len(dur))
-		t.CommitRow()
+		for i, task := range group.tasks {
+			t.WriteCellWidth(taskIDColor.Sprintf("#%d", task.ID), uintWidth(task.ID)+1)
+			t.WriteCellWidth(taskNameColor.Sprint(task.Name), utf8.RuneCountInString(task.Name))
+			if i == 0 {
+				dateStr := task.Start.Format(timeFormatDate)
+				t.WriteCellWidth(taskDateColor.Sprint(dateStr), len(dateStr))
+			} else {
+				t.WriteCell("")
+			}
+			t.WriteCellWidth(taskStartColor.Sprint(task.Start.Format(timeFormatShort)), len(timeFormatShort))
+			if task.End != nil {
+				t.WriteCellWidth(taskEndColor.Sprint(task.End.Format(timeFormatShort)), len(timeFormatShort))
+			} else {
+				t.WriteCellWidth(taskEndNilColor.Sprint(taskEndNilText), taskEndNilTextLen)
+			}
+			dur := task.Elapsed().Truncate(durationTrunc).String()
+			t.WriteCellWidth(taskDurationColor.Sprint(dur), len(dur))
+			t.CommitRow()
+		}
 	}
+	sum := sumTasks(tasks)
+	t.CommitRow() // commit empty delimiting row
+	endStr := taskEndNilText
+	if sum.end != nil {
+		endStr = sum.end.Format(timeFormatShort)
+	}
+	t.WriteColoredRow(tableSummaryColor,
+		"", // ID
+		fmt.Sprintf("TOTAL: %d tasks", len(tasks)), // NAME
+		"",                                // DAY
+		sum.start.Format(timeFormatShort), // START
+		endStr,                            // END
+		sum.duration.Truncate(durationTrunc).String(), // DUR
+	)
 	t.Fprintln(stdout)
+}
+
+type taskDateGroup struct {
+	date  date
+	tasks []dinkur.Task
+}
+
+// groupTasksByDate assumes the slice is already sorted on task.Start
+func groupTasksByDate(tasks []dinkur.Task) []taskDateGroup {
+	if len(tasks) == 0 {
+		return nil
+	}
+	var groups []taskDateGroup
+	var group taskDateGroup
+	for _, t := range tasks {
+		d := newDate(t.Start.Date())
+		if d != group.date {
+			if len(group.tasks) > 0 {
+				groups = append(groups, group)
+			}
+			group = taskDateGroup{date: d}
+		}
+		group.tasks = append(group.tasks, t)
+	}
+	if len(group.tasks) > 0 {
+		groups = append(groups, group)
+	}
+	return groups
+}
+
+type taskSum struct {
+	start    time.Time
+	end      *time.Time
+	duration time.Duration
+}
+
+// sumTasks assumes the slice is already sorted on task.Start
+func sumTasks(tasks []dinkur.Task) taskSum {
+	if len(tasks) == 0 {
+		return taskSum{}
+	}
+	sum := taskSum{start: tasks[0].Start}
+	var anyNilEnd bool
+	for _, t := range tasks {
+		sum.duration += t.Elapsed()
+		if t.End == nil {
+			anyNilEnd = true
+		} else if sum.end == nil || t.End.After(*sum.end) {
+			sum.end = t.End
+		}
+	}
+	if anyNilEnd {
+		sum.end = nil
+	}
+	return sum
 }
 
 func uintWidth(i uint) int {
