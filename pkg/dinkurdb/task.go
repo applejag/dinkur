@@ -71,8 +71,24 @@ func (c *client) getDBTask(id uint) (Task, error) {
 }
 
 var (
+	task_SQL_Between_Start = fmt.Sprintf(
+		"(%[1]s >= @start) OR "+
+			"(%[2]s IS NOT NULL AND %[2]s >= @start) OR "+
+			"(%[2]s IS NULL AND CURRENT_TIMESTAMP >= @start)",
+		task_Column_Start, task_Column_End,
+	)
+
+	task_SQL_Between_End = fmt.Sprintf(
+		"(%[1]s <= @end) OR "+
+			"(%[2]s IS NOT NULL AND %[2]s <= @end) OR "+
+			"(%[2]s IS NULL AND CURRENT_TIMESTAMP <= @end)",
+		task_Column_Start, task_Column_End,
+	)
+
 	task_SQL_Between = fmt.Sprintf(
-		"(%[2]s IS NOT NULL AND @time BETWEEN %[1]s AND %[2]s) OR (%[2]s IS NULL AND @time BETWEEN %[1]s AND CURRENT_TIMESTAMP)",
+		"(%[1]s BETWEEN @start AND @end) OR "+
+			"(%[2]s IS NOT NULL AND %[2]s BETWEEN @start AND @end) OR "+
+			"(%[2]s IS NULL AND CURRENT_TIMESTAMP BETWEEN @start AND @end)",
 		task_Column_Start, task_Column_End,
 	)
 )
@@ -103,11 +119,13 @@ func (c *client) listDBTasks(search dinkur.SearchTask) ([]Task, error) {
 	q := c.db.Model(&Task{}).
 		Order(task_Column_Start + " desc").
 		Limit(int(search.Limit))
-	if search.Start != nil {
-		q = q.Or(c.db.Where(task_SQL_Between, sql.Named("time", *search.Start)))
-	}
-	if search.End != nil {
-		q = q.Or(c.db.Where(task_SQL_Between, sql.Named("time", *search.End)))
+	switch {
+	case search.Start != nil && search.End != nil:
+		q = q.Or(c.db.Where(task_SQL_Between, sql.Named("start", *search.Start), sql.Named("end", *search.End)))
+	case search.Start != nil:
+		q = q.Or(c.db.Where(task_SQL_Between_Start, sql.Named("start", *search.Start)))
+	case search.End != nil:
+		q = q.Or(c.db.Where(task_SQL_Between_End, sql.Named("end", *search.End)))
 	}
 	if err := q.Find(&dbTasks).Error; err != nil {
 		return nil, err
