@@ -32,10 +32,11 @@ import (
 )
 
 var (
-	stdout        = colorable.NewColorableStdout()
-	stderr        = colorable.NewColorableStderr()
-	timeFormat    = "15:04"
-	durationTrunc = time.Second
+	stdout          = colorable.NewColorableStdout()
+	stderr          = colorable.NewColorableStderr()
+	timeFormatLong  = "Jan 02 15:04"
+	timeFormatShort = "15:04"
+	durationTrunc   = time.Second
 
 	taskIDColor        = color.New(color.FgHiBlack)
 	taskLabelColor     = color.New(color.FgWhite, color.Italic)
@@ -87,13 +88,30 @@ func writeTaskName(w io.Writer, name string) {
 }
 
 func writeTaskTimeSpan(w io.Writer, start time.Time, end *time.Time) {
-	taskStartColor.Fprintf(w, start.Format(timeFormat))
+	today := newDate(time.Now().Date())
+	layout := timeFormatShort
+	if today != newDate(start.Date()) {
+		layout = timeFormatLong
+	} else if end != nil && newDate(end.Date()) != today {
+		layout = timeFormatLong
+	}
+	taskStartColor.Fprintf(w, start.Format(layout))
 	taskTimeDelimColor.Fprint(w, " - ")
 	if end != nil {
-		taskEndColor.Fprintf(w, end.Format(timeFormat))
+		taskEndColor.Fprintf(w, end.Format(layout))
 	} else {
 		taskEndNilColor.Fprintf(w, "now…")
 	}
+}
+
+func newDate(year int, month time.Month, day int) date {
+	return date{year, month, day}
+}
+
+type date struct {
+	year  int
+	month time.Month
+	day   int
 }
 
 func writeTaskDuration(w io.Writer, dur time.Duration) {
