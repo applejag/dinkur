@@ -51,15 +51,15 @@ By default, this will only list today's tasks. You can supply an argument
 to declare a different baseline. The --start and --end flags will always
 take precedence over the baseline.
 
-  %[1]s list all        # list all tasks, i.e. no baseline. Alias: "a"
-  %[1]s list past       # list all tasks before now.        Alias: "p"
-  %[1]s list future     # list all tasks since now.         Alias: "f"
-  %[1]s list today      # (default) list today's tasks.     Alias: "t"
-  %[1]s list week       # list this week's tasks.           Alias: "w"
-  %[1]s list yesterday  # list yesterday's tasks.           Alias: "y" or "ld"
-  %[1]s list lastweek   # list last week's tasks.           Alias: "lw"
-  %[1]s list tomorrow   # list tomorrow's tasks.            Alias: "nd"
-  %[1]s list nextweek   # list next week's tasks.           Alias: "nw"
+    %[1]s list all        # list all tasks, i.e. no baseline. Alias: "a"
+    %[1]s list past       # list all tasks before now.        Alias: "p"
+    %[1]s list future     # list all tasks since now.         Alias: "f"
+    %[1]s list today      # (default) list today's tasks.     Alias: "t"
+    %[1]s list week       # list this week's tasks.           Alias: "w"
+    %[1]s list yesterday  # list yesterday's tasks.           Alias: "y" or "ld"
+    %[1]s list lastweek   # list last week's tasks.           Alias: "lw"
+    %[1]s list tomorrow   # list tomorrow's tasks.            Alias: "nd"
+    %[1]s list nextweek   # list next week's tasks.           Alias: "nw"
 
 Day baselines sets the range 00:00:00 - 24:59:59.
 Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
