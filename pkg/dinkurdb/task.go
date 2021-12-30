@@ -121,11 +121,17 @@ func (c *client) listDBTasks(search dinkur.SearchTask) ([]Task, error) {
 		Limit(int(search.Limit))
 	switch {
 	case search.Start != nil && search.End != nil:
-		q = q.Or(c.db.Where(task_SQL_Between, sql.Named("start", *search.Start), sql.Named("end", *search.End)))
+		// adding/subtracting 1s to resolve rounding issues, as Sqlite's
+		// smallest time unit is a second.
+		start := (*search.Start).UTC().Add(-time.Second)
+		end := (*search.End).UTC().Add(time.Second)
+		q = q.Or(c.db.Where(task_SQL_Between, sql.Named("start", start), sql.Named("end", end)))
 	case search.Start != nil:
-		q = q.Or(c.db.Where(task_SQL_Between_Start, sql.Named("start", *search.Start)))
+		start := (*search.Start).UTC().Add(-time.Second)
+		q = q.Or(c.db.Where(task_SQL_Between_Start, sql.Named("start", start)))
 	case search.End != nil:
-		q = q.Or(c.db.Where(task_SQL_Between_End, sql.Named("end", *search.End)))
+		end := (*search.End).UTC().Add(time.Second)
+		q = q.Or(c.db.Where(task_SQL_Between_End, sql.Named("end", end)))
 	}
 	if err := q.Find(&dbTasks).Error; err != nil {
 		return nil, err
@@ -257,8 +263,8 @@ func (c *client) StartTask(task dinkur.NewTask) (dinkur.StartedTask, error) {
 	}
 	dbTask := Task{
 		Name:  task.Name,
-		Start: start,
-		End:   task.End,
+		Start: start.UTC(),
+		End:   timePtrUTC(task.End),
 	}
 	var startedTask dinkur.StartedTask
 	c.transaction(func(tx *client) error {

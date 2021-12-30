@@ -64,12 +64,28 @@ func (t Task) Elapsed() time.Duration {
 	return end.Sub(t.Start)
 }
 
+func timePtrUTC(t *time.Time) *time.Time {
+	if t == nil {
+		return nil
+	}
+	utcTime := (*t).UTC()
+	return &utcTime
+}
+
+func timePtrLocal(t *time.Time) *time.Time {
+	if t == nil {
+		return nil
+	}
+	utcTime := (*t).Local()
+	return &utcTime
+}
+
 func convTask(t Task) dinkur.Task {
 	return dinkur.Task{
 		CommonFields: convCommonFields(t.CommonFields),
 		Name:         t.Name,
-		Start:        t.Start,
-		End:          t.End,
+		Start:        t.Start.Local(),
+		End:          timePtrLocal(t.End),
 	}
 }
 
