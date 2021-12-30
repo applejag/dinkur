@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 )
 
-func Path() string {
+func getConfigPath() string {
 	appdata, ok := os.LookupEnv("APPDATA")
 	if ok {
 		return filepath.Join(appdata, "dinkur", "config.yml")
@@ -35,4 +35,16 @@ func Path() string {
 		return "dinkur.yml"
 	}
 	return filepath.Join(home, ".dinkur.yml")
+}
+
+func getDataPath() string {
+	appdata, ok := os.LookupEnv("APPDATA")
+	if ok {
+		return filepath.Join(appdata, "dinkur", "dinkur.db")
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "dinkur.db"
+	}
+	return filepath.Join(home, ".dinkur.db")
 }

@@ -18,6 +18,9 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
+//go:build !windows && !linux
+// +build !windows,!linux
+
 package cfgpath
 
 import (
@@ -26,25 +29,17 @@ import (
 )
 
 func getConfigPath() string {
-	const filename = "config.yml"
-	if xdgConfig, ok := os.LookupEnv("XDG_CONFIG_HOME"); ok {
-		return filepath.Join(xdgConfig, "dinkur", filename)
-	}
-	home, err := os.UserHomeDir()
+	configDir, err := os.UserHomeDir()
 	if err != nil {
 		return "dinkur.yml"
 	}
-	return filepath.Join(home, ".config", "dinkur", filename)
+	return filepath.Join(configDir, ".dinkur.yml")
 }
 
 func getDataPath() string {
-	const filename = "dinkur.db"
-	if xdgConfig, ok := os.LookupEnv("XDG_DATA_HOME"); ok {
-		return filepath.Join(xdgConfig, "dinkur", filename)
-	}
-	home, err := os.UserHomeDir()
+	configDir, err := os.UserHomeDir()
 	if err != nil {
-		return filename
+		return "dinkur.db"
 	}
-	return filepath.Join(home, ".local", "share", "dinkur", filename)
+	return filepath.Join(configDir, ".dinkur.db")
 }

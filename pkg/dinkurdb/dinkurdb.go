@@ -23,6 +23,8 @@ package dinkurdb
 import (
 	"errors"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
@@ -40,6 +42,7 @@ func nilNotFoundError(err error) error {
 }
 
 type Options struct {
+	MkdirAll             bool
 	SkipMigrateOnConnect bool
 	DebugLogging         bool
 	DebugColorful        bool
@@ -72,6 +75,10 @@ func (c *client) Connect() error {
 	}
 	if c.db != nil {
 		return dinkur.ErrAlreadyConnected
+	}
+	if c.MkdirAll {
+		dir := filepath.Dir(c.sqliteDsn)
+		os.MkdirAll(dir, os.ModeDir)
 	}
 	var err error
 	c.db, err = gorm.Open(sqlite.Open(c.sqliteDsn), &gorm.Config{

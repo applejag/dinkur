@@ -37,10 +37,12 @@ import (
 )
 
 var (
-	cfgFile     = cfgpath.Path()
-	flagColor   = "auto"
-	flagClient  = "db"
-	flagVerbose = false
+	cfgFile       = cfgpath.ConfigPath
+	dataFile      = cfgpath.DataPath
+	flagDataMkdir = true
+	flagColor     = "auto"
+	flagClient    = "db"
+	flagVerbose   = false
 
 	c dinkur.Client = dinkur.NilClient{}
 )
@@ -79,6 +81,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", cfgFile, "config file")
+	RootCmd.PersistentFlags().StringVar(&dataFile, "data", dataFile, "database file")
+	RootCmd.PersistentFlags().BoolVar(&flagDataMkdir, "data-mkdir", flagDataMkdir, "create directory for data if it doesn't exist")
 	RootCmd.PersistentFlags().StringVar(&flagColor, "color", flagColor, `colored output: "auto", "always", or "never"`)
 	RootCmd.PersistentFlags().StringVar(&flagClient, "client", flagClient, `Dinkur client: "db" or "grpc"`)
 	RootCmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", flagVerbose, `enables debug logging`)
@@ -140,7 +144,8 @@ func connectToGRPCClient() (dinkur.Client, error) {
 }
 
 func connectToDBClient() (dinkur.Client, error) {
-	c := dinkurdb.NewClient("dinkur.db", dinkurdb.Options{
+	c := dinkurdb.NewClient(dataFile, dinkurdb.Options{
+		MkdirAll:      flagDataMkdir,
 		DebugLogging:  flagVerbose,
 		DebugColorful: !color.NoColor,
 	})

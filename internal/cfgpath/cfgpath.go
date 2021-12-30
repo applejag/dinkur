@@ -18,20 +18,24 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
-//go:build !windows && !linux
-// +build !windows,!linux
-
 package cfgpath
 
-import (
-	"os"
-	"path/filepath"
+import "path/filepath"
+
+var (
+	ConfigDir      string
+	ConfigFilename string
+	ConfigPath     string
+
+	DataDir      string
+	DataFilename string
+	DataPath     string
 )
 
-func Path() string {
-	configDir, err := os.UserHomeDir()
-	if err != nil {
-		return "dinkur.yml"
-	}
-	return filepath.Join(configDir, ".dinkur.yml")
+func init() {
+	ConfigPath = getConfigPath()
+	ConfigDir, ConfigFilename = filepath.Split(ConfigPath)
+
+	DataPath = getDataPath()
+	DataDir, DataFilename = filepath.Split(DataPath)
 }
