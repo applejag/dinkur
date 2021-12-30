@@ -73,13 +73,13 @@ func (c *client) getDBTask(id uint) (Task, error) {
 var (
 	task_SQL_Between_Start = fmt.Sprintf(
 		"(%[1]s >= @start) OR "+
-			"(%[2]s IS NOT NULL AND %[2]s >= @start) OR "+
+			"(%[2]s IS NOT NULL AND %[1]s >= @start) OR "+
 			"(%[2]s IS NULL AND CURRENT_TIMESTAMP >= @start)",
 		task_Column_Start, task_Column_End,
 	)
 
 	task_SQL_Between_End = fmt.Sprintf(
-		"(%[1]s <= @end) OR "+
+		"(%[2]s <= @end) OR "+
 			"(%[2]s IS NOT NULL AND %[2]s <= @end) OR "+
 			"(%[2]s IS NULL AND CURRENT_TIMESTAMP <= @end)",
 		task_Column_Start, task_Column_End,
