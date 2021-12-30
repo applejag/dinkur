@@ -28,6 +28,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const LatestMigrationVersion = 2
+
 func (c *client) MigrationStatus() (dinkur.MigrationStatus, error) {
 	if err := c.assertConnected(); err != nil {
 		return dinkur.MigrationUnknown, err
@@ -52,7 +54,7 @@ func getMigrationStatus(db *gorm.DB) (dinkur.MigrationStatus, error) {
 	if err := db.First(&latest).Error; err != nil {
 		return dinkur.MigrationUnknown, nilNotFoundError(err)
 	}
-	if latest.Version < dinkur.LatestMigrationVersion {
+	if latest.Version < LatestMigrationVersion {
 		return dinkur.MigrationOutdated, nil
 	}
 	return dinkur.MigrationUpToDate, nil
@@ -84,7 +86,7 @@ func (c *client) Migrate() error {
 			!errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
-		migration.Version = dinkur.LatestMigrationVersion
+		migration.Version = LatestMigrationVersion
 		return tx.db.Save(&migration).Error
 	})
 }

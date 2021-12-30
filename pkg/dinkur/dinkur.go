@@ -86,8 +86,6 @@ type StartedTask struct {
 	Previous *Task
 }
 
-const LatestMigrationVersion = 1
-
 type MigrationStatus byte
 
 const (

@@ -49,9 +49,9 @@ const (
 
 type Task struct {
 	CommonFields
-	Name  string    `gorm:"not null;default:''"`
-	Start time.Time `gorm:"not null;default:CURRENT_TIMESTAMP"`
-	End   *time.Time
+	Name  string     `gorm:"not null;default:''"`
+	Start time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP;index"`
+	End   *time.Time `gorm:"index"`
 }
 
 func (t Task) Elapsed() time.Duration {
