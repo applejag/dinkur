@@ -42,24 +42,42 @@ func init() {
 	)
 
 	var listCmd = &cobra.Command{
-		Use:     "list [today|t|week|w]",
+		Use:     `list [baseline]`,
 		Aliases: []string{"ls", "l"},
 		Short:   "List your tasks",
-		Long:    ``,
+		Long: fmt.Sprintf(`Lists all your tasks.
+
+By default, this will only list today's tasks. You can supply an argument
+to declare a different baseline. The --start and --end flags will always
+take precedence over the baseline.
+
+  %[1]s list all        # list all tasks, i.e. no baseline. Alias: "a"
+  %[1]s list today      # (default) list today's tasks.     Alias: "t"
+  %[1]s list week       # list this week's tasks.           Alias: "w"
+  %[1]s list yesterday  # list yesterday's tasks.           Alias: "y" or "ld"
+  %[1]s list lastweek   # list last week's tasks.           Alias: "lw"
+  %[1]s list tomorrow   # list tomorrow's tasks.            Alias: "nd"
+  %[1]s list nextweek   # list next week's tasks.           Alias: "nw"
+
+Day baselines sets the range 00:00:00 - 24:59:59.
+Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
+`, RootCmd.Name()),
 		ValidArgs: []string{
+			"all\tlist all tasks",
+			"a\talias for 'all'",
 			"today\tonly list today's tasks (default)",
 			"t\talias for 'today'",
 			"week\tonly list this week's tasks (monday to sunday)",
 			"w\talias for 'week'",
 			"yesterday\tonly list yesterday's tasks",
 			"y\talias for 'yesterday'",
-			"-d\talias for 'yesterday'",
+			"ld\talias for 'yesterday'",
 			"lastweek\tonly list last (previous) week's tasks (monday to sunday)",
-			"-w\talias for 'lastweek'",
+			"lw\talias for 'lastweek'",
 			"tomorrow\tonly list tomorrow's tasks",
-			"+d\talias for 'tomorrow'",
+			"nd\talias for 'tomorrow'",
 			"nextweek\tonly list next week's tasks (monday to sunday)",
-			"+w\talias for 'nextweek'",
+			"nw\talias for 'nextweek'",
 		},
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -69,9 +87,10 @@ func init() {
 				Shorthand: timeutil.TimeSpanThisDay,
 			}
 			if len(args) > 0 {
-				search.Shorthand = parseShorthand(args[0])
-				if search.Shorthand == timeutil.TimeSpanNone {
+				if s, ok := parseShorthand(args[0]); !ok {
 					console.PrintFatal("Error parsing argument:", fmt.Sprintf("invalid time span shorthand: %q", args[0]))
+				} else {
+					search.Shorthand = s
 				}
 			}
 			search.Start = flagutil.ParseTime(cmd, "start")
@@ -112,21 +131,23 @@ func init() {
 	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", or "jsonl"`)
 }
 
-func parseShorthand(s string) timeutil.TimeSpanShorthand {
+func parseShorthand(s string) (timeutil.TimeSpanShorthand, bool) {
 	switch strings.ToLower(s) {
+	case "all", "a":
+		return timeutil.TimeSpanNone, true
 	case "today", "t":
-		return timeutil.TimeSpanThisDay
+		return timeutil.TimeSpanThisDay, true
 	case "week", "w":
-		return timeutil.TimeSpanThisWeek
-	case "yesterday", "y", "-d":
-		return timeutil.TimeSpanPrevDay
-	case "lastweek", "-w":
-		return timeutil.TimeSpanPrevWeek
-	case "tomorrow", "+d":
-		return timeutil.TimeSpanNextDay
-	case "nextweek", "+w":
-		return timeutil.TimeSpanNextWeek
+		return timeutil.TimeSpanThisWeek, true
+	case "yesterday", "y", "ld":
+		return timeutil.TimeSpanPrevDay, true
+	case "lastweek", "lw":
+		return timeutil.TimeSpanPrevWeek, true
+	case "tomorrow", "nd":
+		return timeutil.TimeSpanNextDay, true
+	case "nextweek", "nw":
+		return timeutil.TimeSpanNextWeek, true
 	default:
-		return timeutil.TimeSpanNone
+		return timeutil.TimeSpanNone, false
 	}
 }
