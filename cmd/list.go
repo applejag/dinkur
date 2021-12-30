@@ -52,6 +52,8 @@ to declare a different baseline. The --start and --end flags will always
 take precedence over the baseline.
 
   %[1]s list all        # list all tasks, i.e. no baseline. Alias: "a"
+  %[1]s list past       # list all tasks before now.        Alias: "p"
+  %[1]s list future     # list all tasks since now.         Alias: "f"
   %[1]s list today      # (default) list today's tasks.     Alias: "t"
   %[1]s list week       # list this week's tasks.           Alias: "w"
   %[1]s list yesterday  # list yesterday's tasks.           Alias: "y" or "ld"
@@ -65,6 +67,10 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 		ValidArgs: []string{
 			"all\tlist all tasks",
 			"a\talias for 'all'",
+			"past\tlist all tasks before now",
+			"p\talias for 'past'",
+			"future\tlist all tasks since now",
+			"f\talias for 'future'",
 			"today\tonly list today's tasks (default)",
 			"t\talias for 'today'",
 			"week\tonly list this week's tasks (monday to sunday)",
@@ -135,6 +141,10 @@ func parseShorthand(s string) (timeutil.TimeSpanShorthand, bool) {
 	switch strings.ToLower(s) {
 	case "all", "a":
 		return timeutil.TimeSpanNone, true
+	case "past", "p":
+		return timeutil.TimeSpanPast, true
+	case "future", "f":
+		return timeutil.TimeSpanFuture, true
 	case "today", "t":
 		return timeutil.TimeSpanThisDay, true
 	case "week", "w":

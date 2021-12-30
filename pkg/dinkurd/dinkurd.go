@@ -161,6 +161,10 @@ func convTimestampPtr(ts *timestamppb.Timestamp) *time.Time {
 
 func convShorthand(s dinkurapiv1.GetTaskListRequest_Shorthand) timeutil.TimeSpanShorthand {
 	switch s {
+	case dinkurapiv1.GetTaskListRequest_PAST:
+		return timeutil.TimeSpanPast
+	case dinkurapiv1.GetTaskListRequest_FUTURE:
+		return timeutil.TimeSpanFuture
 	case dinkurapiv1.GetTaskListRequest_THIS_DAY:
 		return timeutil.TimeSpanThisDay
 	case dinkurapiv1.GetTaskListRequest_THIS_MON_TO_SUN:

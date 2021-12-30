@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"github.com/dinkur/dinkur/pkg/timeutil"
 )
 
 func (c *client) ActiveTask() (*dinkur.Task, error) {
@@ -90,14 +89,12 @@ func (c *client) listDBTasks(search dinkur.SearchTask) ([]Task, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
-	if search.Shorthand != timeutil.TimeSpanNone {
-		span := search.Shorthand.Span(time.Now())
-		if search.Start == nil {
-			search.Start = &span.Start
-		}
-		if search.End == nil {
-			search.End = &span.End
-		}
+	span := search.Shorthand.Span(time.Now())
+	if search.Start == nil {
+		search.Start = span.Start
+	}
+	if search.End == nil {
+		search.End = span.End
 	}
 	if search.Limit > math.MaxInt {
 		return nil, dinkur.ErrLimitTooLarge

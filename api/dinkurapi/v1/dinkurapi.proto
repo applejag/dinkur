@@ -64,12 +64,14 @@ message GetTaskListRequest {
   uint64 limit = 3;
   enum Shorthand {
     NONE = 0;
-    THIS_DAY = 1;
-    THIS_MON_TO_SUN = 2;
-    PREV_DAY = 3;
-    PREV_MON_TO_SUN = 4;
-    NEXT_DAY = 5;
-    NEXT_MON_TO_SUN = 6;
+    PAST = 1;
+    FUTURE = 2;
+    THIS_DAY = 3;
+    THIS_MON_TO_SUN = 4;
+    PREV_DAY = 5;
+    PREV_MON_TO_SUN = 6;
+    NEXT_DAY = 7;
+    NEXT_MON_TO_SUN = 8;
   }
   Shorthand shorthand = 4;
 }

@@ -26,14 +26,16 @@ import (
 )
 
 type TimeSpan struct {
-	Start time.Time
-	End   time.Time
+	Start *time.Time
+	End   *time.Time
 }
 
 type TimeSpanShorthand byte
 
 const (
 	TimeSpanNone TimeSpanShorthand = iota
+	TimeSpanPast
+	TimeSpanFuture
 	TimeSpanThisDay
 	TimeSpanThisWeek
 	TimeSpanPrevDay
@@ -46,6 +48,10 @@ func (s TimeSpanShorthand) String() string {
 	switch s {
 	case TimeSpanNone:
 		return "none"
+	case TimeSpanPast:
+		return "past"
+	case TimeSpanFuture:
+		return "future"
 	case TimeSpanThisDay:
 		return "day"
 	case TimeSpanThisWeek:
@@ -65,6 +71,10 @@ func (s TimeSpanShorthand) String() string {
 
 func (s TimeSpanShorthand) Span(now time.Time) TimeSpan {
 	switch s {
+	case TimeSpanPast:
+		return TimeSpan{nil, &now}
+	case TimeSpanFuture:
+		return TimeSpan{&now, nil}
 	case TimeSpanThisDay:
 		return Day(now)
 	case TimeSpanThisWeek:
@@ -78,7 +88,7 @@ func (s TimeSpanShorthand) Span(now time.Time) TimeSpan {
 	case TimeSpanNextWeek:
 		return Week(now.Add(7 * 24 * time.Hour))
 	default:
-		return TimeSpan{now, now}
+		return TimeSpan{}
 	}
 }
 
@@ -86,11 +96,10 @@ func Day(now time.Time) TimeSpan {
 	var (
 		y, m, d = now.Date()
 		loc     = now.Location()
+		start   = time.Date(y, m, d, 0, 0, 0, 0, loc)
+		end     = time.Date(y, m, d, 23, 59, 59, 9999, loc)
 	)
-	return TimeSpan{
-		Start: time.Date(y, m, d, 0, 0, 0, 0, loc),
-		End:   time.Date(y, m, d, 23, 59, 59, 9999, loc),
-	}
+	return TimeSpan{&start, &end}
 }
 
 func Week(now time.Time) TimeSpan {
@@ -99,11 +108,10 @@ func Week(now time.Time) TimeSpan {
 		loc         = now.Location()
 		wd          = now.Weekday()
 		sinceMonday = DaysSinceMonday(wd)
+		start       = time.Date(y, m, d-sinceMonday, 0, 0, 0, 0, loc)
+		end         = time.Date(y, m, d+6-sinceMonday, 23, 59, 59, 9999, loc)
 	)
-	return TimeSpan{
-		Start: time.Date(y, m, d-sinceMonday, 0, 0, 0, 0, loc),
-		End:   time.Date(y, m, d+6-sinceMonday, 23, 59, 59, 9999, loc),
-	}
+	return TimeSpan{&start, &end}
 }
 
 func DaysSinceMonday(day time.Weekday) int {

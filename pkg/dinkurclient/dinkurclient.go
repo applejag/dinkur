@@ -73,6 +73,10 @@ func convTimestampOrZero(ts *timestamppb.Timestamp) time.Time {
 
 func convShorthand(s timeutil.TimeSpanShorthand) dinkurapiv1.GetTaskListRequest_Shorthand {
 	switch s {
+	case timeutil.TimeSpanPast:
+		return dinkurapiv1.GetTaskListRequest_PAST
+	case timeutil.TimeSpanFuture:
+		return dinkurapiv1.GetTaskListRequest_FUTURE
 	case timeutil.TimeSpanThisDay:
 		return dinkurapiv1.GetTaskListRequest_THIS_DAY
 	case timeutil.TimeSpanThisWeek:
