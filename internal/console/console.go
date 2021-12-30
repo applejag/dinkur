@@ -25,6 +25,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/fatih/color"
@@ -45,6 +46,8 @@ var (
 	taskStartColor     = color.New(color.FgHiGreen)
 	taskEndColor       = color.New(color.FgHiGreen)
 	taskEndNilColor    = color.New(color.FgGreen, color.Italic)
+	taskEndNilText     = "now…"
+	taskEndNilTextLen  = utf8.RuneCountInString(taskEndNilText)
 	taskDurationColor  = color.New(color.FgCyan)
 	taskEditDelimColor = color.New(color.FgHiMagenta)
 	taskEditNoneColor  = color.New(color.FgHiBlack, color.Italic)
@@ -55,6 +58,8 @@ var (
 
 	fatalLabelColor = color.New(color.FgHiRed, color.Bold)
 	fatalValueColor = color.New(color.FgRed)
+
+	tableHeaderColor = color.New(color.FgWhite, color.Underline)
 )
 
 func PrintTaskWithDuration(label string, task dinkur.Task) {
@@ -100,7 +105,7 @@ func writeTaskTimeSpan(w io.Writer, start time.Time, end *time.Time) {
 	if end != nil {
 		taskEndColor.Fprintf(w, end.Format(layout))
 	} else {
-		taskEndNilColor.Fprintf(w, "now…")
+		taskEndNilColor.Fprintf(w, taskEndNilText)
 	}
 }
 
@@ -192,4 +197,70 @@ func PrintTaskEdit(update dinkur.UpdatedTask) {
 		fmt.Fprintln(&sb)
 	}
 	fmt.Fprint(stdout, sb.String())
+}
+
+func PrintTaskList(tasks []dinkur.Task) {
+	var t table
+	t.SetSpacing("  ")
+	t.SetPrefix("  ")
+	t.WriteColoredRow(tableHeaderColor, "ID", "NAME", "START", "END", "DUR")
+	for _, task := range tasks {
+		t.WriteCellWidth(taskIDColor.Sprintf("#%d", task.ID), uintWidth(task.ID)+1)
+		t.WriteCellWidth(taskNameColor.Sprintf(`"%s"`, task.Name), utf8.RuneCountInString(task.Name)+2)
+		t.WriteCellWidth(taskStartColor.Sprint(task.Start.Format(timeFormatShort)), len(timeFormatShort))
+		if task.End != nil {
+			t.WriteCellWidth(taskEndColor.Sprint(task.End.Format(timeFormatShort)), len(timeFormatShort))
+		} else {
+			t.WriteCellWidth(taskEndNilColor.Sprint(taskEndNilText), taskEndNilTextLen)
+		}
+		dur := task.Elapsed().Truncate(durationTrunc).String()
+		t.WriteCellWidth(taskDurationColor.Sprint(dur), len(dur))
+		t.CommitRow()
+	}
+	t.Fprintln(stdout)
+}
+
+func uintWidth(i uint) int {
+	switch {
+	case i < 1e1:
+		return 1
+	case i < 1e2:
+		return 2
+	case i < 1e3:
+		return 3
+	case i < 1e4:
+		return 4
+	case i < 1e5:
+		return 5
+	case i < 1e6:
+		return 6
+	case i < 1e7:
+		return 7
+	case i < 1e8:
+		return 8
+	case i < 1e9:
+		return 9
+	case i < 1e10:
+		return 10
+	case i < 1e11:
+		return 11
+	case i < 1e12:
+		return 12
+	case i < 1e13:
+		return 13
+	case i < 1e14:
+		return 14
+	case i < 1e15:
+		return 15
+	case i < 1e16:
+		return 16
+	case i < 1e17:
+		return 17
+	case i < 1e18:
+		return 18
+	case i < 1e19:
+		return 19
+	default:
+		return 20
+	}
 }

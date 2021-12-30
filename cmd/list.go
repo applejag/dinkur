@@ -110,9 +110,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 			}
 			switch strings.ToLower(flagOutput) {
 			case "pretty":
-				for _, t := range tasks {
-					console.PrintTaskWithDuration(" ", t)
-				}
+				console.PrintTaskList(tasks)
 				fmt.Printf("Total: %d tasks\n", len(tasks))
 			case "json":
 				enc := json.NewEncoder(os.Stdout)
