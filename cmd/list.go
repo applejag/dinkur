@@ -67,7 +67,10 @@ func init() {
 			}
 			search.Start = flagutil.ParseTime(cmd, "start")
 			search.End = flagutil.ParseTime(cmd, "end")
-			tasks, err := db.ListTasks(search)
+			printDebugf("--start=%q", search.Start)
+			printDebugf("--end=%q", search.End)
+			printDebugf("--shorthand=%q", search.Shorthand)
+			tasks, err := c.ListTasks(search)
 			if err != nil {
 				console.PrintFatal("Error getting list of tasks:", err)
 			}

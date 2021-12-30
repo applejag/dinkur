@@ -22,22 +22,11 @@ package dinkurdb
 
 import (
 	"errors"
-	"math"
-	"strconv"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-)
-
-var (
-	ErrAlreadyConnected   = errors.New("client is already connected to database")
-	ErrNotConnected       = errors.New("client is not connected to database")
-	ErrTaskNameEmpty      = errors.New("task name cannot be empty")
-	ErrTaskEndBeforeStart = errors.New("task end date cannot be before start date")
-	ErrNotFound           = gorm.ErrRecordNotFound
-	ErrLimitTooLarge      = errors.New("search limit is too large, maximum: " + strconv.Itoa(math.MaxInt))
 )
 
 func nilNotFoundError(err error) error {
@@ -62,9 +51,22 @@ type client struct {
 	prevMigStatus dinkur.MigrationStatus
 }
 
+func (c *client) assertConnected() error {
+	if c == nil {
+		return dinkur.ErrClientIsNil
+	}
+	if c.db == nil {
+		return dinkur.ErrNotConnected
+	}
+	return nil
+}
+
 func (c *client) Connect() error {
+	if c == nil {
+		return dinkur.ErrClientIsNil
+	}
 	if c.db != nil {
-		return ErrAlreadyConnected
+		return dinkur.ErrAlreadyConnected
 	}
 	var err error
 	c.db, err = gorm.Open(sqlite.Open(c.sqliteDsn), &gorm.Config{
@@ -91,8 +93,8 @@ func (c *client) Connect() error {
 }
 
 func (c *client) Ping() error {
-	if c.db == nil {
-		return ErrNotConnected
+	if err := c.assertConnected(); err != nil {
+		return err
 	}
 	sql, err := c.db.DB()
 	if err != nil {
@@ -102,8 +104,8 @@ func (c *client) Ping() error {
 }
 
 func (c *client) Close() error {
-	if c.db == nil {
-		return ErrNotConnected
+	if err := c.assertConnected(); err != nil {
+		return err
 	}
 	sql, err := c.db.DB()
 	if err != nil {

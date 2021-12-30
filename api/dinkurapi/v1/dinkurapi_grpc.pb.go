@@ -18,6 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TaskerClient interface {
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*GetTaskResponse, error)
 	GetActiveTask(ctx context.Context, in *GetActiveTaskRequest, opts ...grpc.CallOption) (*GetActiveTaskResponse, error)
 	GetTaskList(ctx context.Context, in *GetTaskListRequest, opts ...grpc.CallOption) (*GetTaskListResponse, error)
@@ -33,6 +34,15 @@ type taskerClient struct {
 
 func NewTaskerClient(cc grpc.ClientConnInterface) TaskerClient {
 	return &taskerClient{cc}
+}
+
+func (c *taskerClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, "/dinkurapi.v1.Tasker/Ping", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *taskerClient) GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*GetTaskResponse, error) {
@@ -102,6 +112,7 @@ func (c *taskerClient) StopActiveTask(ctx context.Context, in *StopActiveTaskReq
 // All implementations must embed UnimplementedTaskerServer
 // for forward compatibility
 type TaskerServer interface {
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error)
 	GetActiveTask(context.Context, *GetActiveTaskRequest) (*GetActiveTaskResponse, error)
 	GetTaskList(context.Context, *GetTaskListRequest) (*GetTaskListResponse, error)
@@ -116,6 +127,9 @@ type TaskerServer interface {
 type UnimplementedTaskerServer struct {
 }
 
+func (UnimplementedTaskerServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+}
 func (UnimplementedTaskerServer) GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTask not implemented")
 }
@@ -148,6 +162,24 @@ type UnsafeTaskerServer interface {
 
 func RegisterTaskerServer(s grpc.ServiceRegistrar, srv TaskerServer) {
 	s.RegisterService(&Tasker_ServiceDesc, srv)
+}
+
+func _Tasker_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskerServer).Ping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dinkurapi.v1.Tasker/Ping",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskerServer).Ping(ctx, req.(*PingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Tasker_GetTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -283,6 +315,10 @@ var Tasker_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "dinkurapi.v1.Tasker",
 	HandlerType: (*TaskerServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Ping",
+			Handler:    _Tasker_Ping_Handler,
+		},
 		{
 			MethodName: "GetTask",
 			Handler:    _Tasker_GetTask_Handler,

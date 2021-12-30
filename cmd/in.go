@@ -44,7 +44,7 @@ func init() {
 				Start: flagutil.ParseTime(cmd, "start"),
 				End:   flagutil.ParseTime(cmd, "end"),
 			}
-			startedTask, err := db.StartTask(newTask)
+			startedTask, err := c.StartTask(newTask)
 			if err != nil {
 				console.PrintFatal("Error starting task:", err)
 			}

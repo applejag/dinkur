@@ -20,10 +20,24 @@
 package dinkur
 
 import (
+	"errors"
 	"fmt"
+	"math"
+	"strconv"
 	"time"
 
 	"github.com/dinkur/dinkur/pkg/timeutil"
+	"gorm.io/gorm"
+)
+
+var (
+	ErrAlreadyConnected   = errors.New("client is already connected to database")
+	ErrNotConnected       = errors.New("client is not connected to database")
+	ErrTaskNameEmpty      = errors.New("task name cannot be empty")
+	ErrTaskEndBeforeStart = errors.New("task end date cannot be before start date")
+	ErrNotFound           = gorm.ErrRecordNotFound
+	ErrLimitTooLarge      = errors.New("search limit is too large, maximum: " + strconv.Itoa(math.MaxInt))
+	ErrClientIsNil        = errors.New("client is nil")
 )
 
 type Client interface {

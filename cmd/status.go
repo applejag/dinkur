@@ -35,7 +35,7 @@ var statusCmd = &cobra.Command{
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		connectClientOrExit()
-		activeTask, err := db.ActiveTask()
+		activeTask, err := c.ActiveTask()
 		if err != nil {
 			console.PrintFatal("Error getting active task:", err)
 		}

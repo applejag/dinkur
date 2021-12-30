@@ -36,7 +36,7 @@ var outCmd = &cobra.Command{
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		connectClientOrExit()
-		stoppedTask, err := db.StopActiveTask()
+		stoppedTask, err := c.StopActiveTask()
 		if err != nil {
 			console.PrintFatal("Error stopping task:", err)
 		}

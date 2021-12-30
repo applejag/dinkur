@@ -45,7 +45,7 @@ No bulk removal is supported.
 Warning: Removing a task cannot be undone!`,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
-			task, err := db.DeleteTask(flagID)
+			task, err := c.DeleteTask(flagID)
 			if err != nil {
 				console.PrintFatal("Error removing task:", err)
 			}

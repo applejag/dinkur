@@ -29,8 +29,8 @@ import (
 )
 
 func (c *client) MigrationStatus() (dinkur.MigrationStatus, error) {
-	if c.db == nil {
-		return dinkur.MigrationUnknown, ErrNotConnected
+	if err := c.assertConnected(); err != nil {
+		return dinkur.MigrationUnknown, err
 	}
 	if c.prevMigStatus != dinkur.MigrationUnknown {
 		return c.prevMigStatus, nil
@@ -59,8 +59,8 @@ func getMigrationStatus(db *gorm.DB) (dinkur.MigrationStatus, error) {
 }
 
 func (c *client) Migrate() error {
-	if c.db == nil {
-		return ErrNotConnected
+	if err := c.assertConnected(); err != nil {
+		return err
 	}
 	return c.transaction(func(tx *client) error {
 		status, err := tx.MigrationStatus()

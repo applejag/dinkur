@@ -21,7 +21,13 @@
 package cmd
 
 import (
+	"context"
+	"encoding/json"
+	"os"
+
 	"github.com/dinkur/dinkur/internal/console"
+	"github.com/dinkur/dinkur/pkg/dinkurd"
+	"github.com/dinkur/dinkur/pkg/dinkurdb"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +42,24 @@ This daemon is used by Dinkur clients, and allows more features such as the
 Information about the daemon, such as which port was selected and what
 authentication token can be used, is outputted to the console.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		console.PrintFatal("Error:", "this feature has not yet been implemented")
+		dbClient := dinkurdb.NewClient("dinkur.db", dinkurdb.Options{})
+		if err := dbClient.Connect(); err != nil {
+			console.PrintFatal("Error connecting to database for daemon:", err)
+		}
+		opt := dinkurd.DefaultOptions
+		d := dinkurd.NewDaemon(dbClient, opt)
+		defer d.Close()
+		enc := json.NewEncoder(os.Stdout)
+		enc.Encode(struct {
+			Port      uint16  `json:"port"`
+			AuthToken *string `json:"authToken"`
+		}{
+			Port:      opt.Port,
+			AuthToken: nil,
+		})
+		if err := d.Serve(context.TODO()); err != nil {
+			console.PrintFatal("Error starting daemon:", err)
+		}
 	},
 }
 

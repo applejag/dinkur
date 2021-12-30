@@ -20,7 +20,10 @@
 
 package timeutil
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type TimeSpan struct {
 	Start time.Time
@@ -34,6 +37,19 @@ const (
 	TimeSpanThisDay
 	TimeSpanThisWeek
 )
+
+func (s TimeSpanShorthand) String() string {
+	switch s {
+	case TimeSpanNone:
+		return "none"
+	case TimeSpanThisDay:
+		return "day"
+	case TimeSpanThisWeek:
+		return "week"
+	default:
+		return fmt.Sprintf("%[1]T(%[1]d)", s)
+	}
+}
 
 func (s TimeSpanShorthand) Span(now time.Time) TimeSpan {
 	switch s {

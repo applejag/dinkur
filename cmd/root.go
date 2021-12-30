@@ -29,15 +29,21 @@ import (
 	"github.com/dinkur/dinkur/internal/cfgpath"
 	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/pkg/dinkur"
+	"github.com/dinkur/dinkur/pkg/dinkurclient"
 	"github.com/dinkur/dinkur/pkg/dinkurdb"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var cfgFile = cfgpath.Path()
-var flagColor = "auto"
-var db dinkur.Client
+var (
+	cfgFile     = cfgpath.Path()
+	flagColor   = "auto"
+	flagClient  = "db"
+	flagVerbose = false
+
+	c dinkur.Client = dinkur.NilClient{}
+)
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -62,8 +68,7 @@ var RootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	db = dinkurdb.NewClient("dinkur.db", dinkurdb.Options{})
-	defer db.Close()
+	defer c.Close()
 	err := RootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -73,16 +78,10 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", cfgFile, "config file")
 	RootCmd.PersistentFlags().StringVar(&flagColor, "color", flagColor, `colored output: "auto", "always", or "never"`)
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	RootCmd.PersistentFlags().StringVar(&flagClient, "client", flagClient, `Dinkur client: "db" or "grpc"`)
+	RootCmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", flagVerbose, `enables debug logging`)
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -101,8 +100,58 @@ func initConfig() {
 }
 
 func connectClientOrExit() {
-	if err := db.Connect(); err != nil {
-		fmt.Fprintln(os.Stderr, "Error initializing database client:", err)
-		os.Exit(1)
+	client, err := connectClient()
+	if err != nil {
+		console.PrintFatal("Error connecting to client:", err)
+	}
+	c = client
+}
+
+func connectClient() (dinkur.Client, error) {
+	switch strings.ToLower(flagClient) {
+	case "db":
+		dbClient, err := connectToDBClient()
+		if err != nil {
+			return nil, fmt.Errorf("DB client: %w", err)
+		}
+		printDebug("Using DB client.")
+		return dbClient, nil
+	case "grpc":
+		grpcClient, err := connectToGRPCClient()
+		if err != nil {
+			return nil, fmt.Errorf("gRPC client: %w", err)
+		}
+		printDebug("Using gRPC client.")
+		return grpcClient, nil
+	default:
+		return nil, fmt.Errorf(`invalid value %q: only "db" or "grpc" may be used`, flagClient)
+	}
+}
+
+func connectToGRPCClient() (dinkur.Client, error) {
+	c := dinkurclient.NewClient("localhost:59122", dinkurclient.Options{})
+	if err := c.Connect(); err != nil {
+		return nil, err
+	}
+	if err := c.Ping(); err != nil {
+		return nil, fmt.Errorf("attempting ping: %w", err)
+	}
+	return c, nil
+}
+
+func connectToDBClient() (dinkur.Client, error) {
+	c := dinkurdb.NewClient("dinkur.db", dinkurdb.Options{})
+	return c, c.Connect()
+}
+
+func printDebug(v interface{}) {
+	if flagVerbose {
+		console.PrintDebug(v)
+	}
+}
+
+func printDebugf(format string, v ...interface{}) {
+	if flagVerbose {
+		console.PrintDebugf(format, v...)
 	}
 }

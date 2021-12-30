@@ -52,7 +52,7 @@ a specific task using the --id or -i flag.`,
 				name := strings.Join(args, " ")
 				edit.Name = &name
 			}
-			update, err := db.EditTask(edit)
+			update, err := c.EditTask(edit)
 			if err != nil {
 				console.PrintFatal("Error editing task:", err)
 			}
