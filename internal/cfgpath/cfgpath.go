@@ -20,22 +20,13 @@
 
 package cfgpath
 
-import "path/filepath"
-
 var (
-	ConfigDir      string
-	ConfigFilename string
-	ConfigPath     string
-
-	DataDir      string
-	DataFilename string
-	DataPath     string
+	ConfigPath string
+	DataPath   string
 )
 
 func init() {
 	ConfigPath = getConfigPath()
-	ConfigDir, ConfigFilename = filepath.Split(ConfigPath)
 
 	DataPath = getDataPath()
-	DataDir, DataFilename = filepath.Split(DataPath)
 }
