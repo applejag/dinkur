@@ -37,7 +37,6 @@ var (
 	stderr          = colorable.NewColorableStderr()
 	timeFormatLong  = "Jan 02 15:04"
 	timeFormatShort = "15:04"
-	durationTrunc   = time.Second
 
 	taskIDColor        = color.New(color.FgHiBlack)
 	taskLabelColor     = color.New(color.FgWhite, color.Italic)
