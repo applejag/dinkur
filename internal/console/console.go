@@ -98,9 +98,10 @@ func writeTaskName(w io.Writer, name string) {
 func writeTaskTimeSpan(w io.Writer, start time.Time, end *time.Time) {
 	today := newDate(time.Now().Date())
 	layout := timeFormatShort
-	if today != newDate(start.Date()) {
-		layout = timeFormatLong
-	} else if end != nil && newDate(end.Date()) != today {
+	if today != newDate(start.Date()) ||
+		(end != nil && newDate(end.Date()) != today) {
+		// also, if start date != end date, also use long format.
+		// This still applies, through transitivity
 		layout = timeFormatLong
 	}
 	taskStartColor.Fprintf(w, start.Format(layout))
