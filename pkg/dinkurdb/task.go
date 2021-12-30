@@ -117,7 +117,7 @@ func (c *client) listDBTasks(search dinkur.SearchTask) ([]Task, error) {
 	}
 	var dbTasks []Task
 	q := c.db.Model(&Task{}).
-		Order(task_Column_Start + " desc").
+		Order(task_Column_Start + " DESC").
 		Limit(int(search.Limit))
 	switch {
 	case search.Start != nil && search.End != nil:
