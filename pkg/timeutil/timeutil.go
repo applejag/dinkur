@@ -36,6 +36,10 @@ const (
 	TimeSpanNone TimeSpanShorthand = iota
 	TimeSpanThisDay
 	TimeSpanThisWeek
+	TimeSpanPrevDay
+	TimeSpanPrevWeek
+	TimeSpanNextDay
+	TimeSpanNextWeek
 )
 
 func (s TimeSpanShorthand) String() string {
@@ -46,6 +50,14 @@ func (s TimeSpanShorthand) String() string {
 		return "day"
 	case TimeSpanThisWeek:
 		return "week"
+	case TimeSpanPrevDay:
+		return "yesterday"
+	case TimeSpanPrevWeek:
+		return "last week"
+	case TimeSpanNextDay:
+		return "tomorrow"
+	case TimeSpanNextWeek:
+		return "next week"
 	default:
 		return fmt.Sprintf("%[1]T(%[1]d)", s)
 	}
@@ -54,15 +66,23 @@ func (s TimeSpanShorthand) String() string {
 func (s TimeSpanShorthand) Span(now time.Time) TimeSpan {
 	switch s {
 	case TimeSpanThisDay:
-		return Today(now)
+		return Day(now)
 	case TimeSpanThisWeek:
 		return Week(now)
+	case TimeSpanPrevDay:
+		return Day(now.Add(-24 * time.Hour))
+	case TimeSpanPrevWeek:
+		return Week(now.Add(-7 * 24 * time.Hour))
+	case TimeSpanNextDay:
+		return Day(now.Add(24 * time.Hour))
+	case TimeSpanNextWeek:
+		return Week(now.Add(7 * 24 * time.Hour))
 	default:
 		return TimeSpan{now, now}
 	}
 }
 
-func Today(now time.Time) TimeSpan {
+func Day(now time.Time) TimeSpan {
 	var (
 		y, m, d = now.Date()
 		loc     = now.Location()

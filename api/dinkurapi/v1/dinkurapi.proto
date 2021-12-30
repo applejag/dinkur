@@ -66,6 +66,10 @@ message GetTaskListRequest {
     NONE = 0;
     THIS_DAY = 1;
     THIS_MON_TO_SUN = 2;
+    PREV_DAY = 3;
+    PREV_MON_TO_SUN = 4;
+    NEXT_DAY = 5;
+    NEXT_MON_TO_SUN = 6;
   }
   Shorthand shorthand = 4;
 }

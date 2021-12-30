@@ -51,6 +51,15 @@ func init() {
 			"t\talias for 'today'",
 			"week\tonly list this week's tasks (monday to sunday)",
 			"w\talias for 'week'",
+			"yesterday\tonly list yesterday's tasks",
+			"y\talias for 'yesterday'",
+			"-d\talias for 'yesterday'",
+			"lastweek\tonly list last (previous) week's tasks (monday to sunday)",
+			"-w\talias for 'lastweek'",
+			"tomorrow\tonly list tomorrow's tasks",
+			"+d\talias for 'tomorrow'",
+			"nextweek\tonly list next week's tasks (monday to sunday)",
+			"+w\talias for 'nextweek'",
 		},
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -109,6 +118,14 @@ func parseShorthand(s string) timeutil.TimeSpanShorthand {
 		return timeutil.TimeSpanThisDay
 	case "week", "w":
 		return timeutil.TimeSpanThisWeek
+	case "yesterday", "y", "-d":
+		return timeutil.TimeSpanPrevDay
+	case "lastweek", "-w":
+		return timeutil.TimeSpanPrevWeek
+	case "tomorrow", "+d":
+		return timeutil.TimeSpanNextDay
+	case "nextweek", "+w":
+		return timeutil.TimeSpanNextWeek
 	default:
 		return timeutil.TimeSpanNone
 	}

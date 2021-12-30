@@ -165,6 +165,14 @@ func convShorthand(s dinkurapiv1.GetTaskListRequest_Shorthand) timeutil.TimeSpan
 		return timeutil.TimeSpanThisDay
 	case dinkurapiv1.GetTaskListRequest_THIS_MON_TO_SUN:
 		return timeutil.TimeSpanThisWeek
+	case dinkurapiv1.GetTaskListRequest_PREV_DAY:
+		return timeutil.TimeSpanPrevDay
+	case dinkurapiv1.GetTaskListRequest_PREV_MON_TO_SUN:
+		return timeutil.TimeSpanPrevWeek
+	case dinkurapiv1.GetTaskListRequest_NEXT_DAY:
+		return timeutil.TimeSpanNextDay
+	case dinkurapiv1.GetTaskListRequest_NEXT_MON_TO_SUN:
+		return timeutil.TimeSpanNextWeek
 	default:
 		return timeutil.TimeSpanNone
 	}
