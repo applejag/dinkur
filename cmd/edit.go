@@ -52,6 +52,9 @@ a specific task using the --id or -i flag.`,
 				name := strings.Join(args, " ")
 				edit.Name = &name
 			}
+			if cmd.Flags().Changed("id") {
+				edit.ID = &flagID
+			}
 			update, err := c.EditTask(edit)
 			if err != nil {
 				console.PrintFatal("Error editing task:", err)
