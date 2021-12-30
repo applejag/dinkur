@@ -59,6 +59,8 @@ var (
 	fatalLabelColor = color.New(color.FgHiRed, color.Bold)
 	fatalValueColor = color.New(color.FgRed)
 
+	tableEmptyColor   = color.New(color.FgHiBlack, color.Italic)
+	tableEmptyText    = "No results to display."
 	tableHeaderColor  = color.New(color.FgWhite, color.Underline, color.Bold)
 	tableSummaryColor = color.New(color.FgWhite, color.Italic)
 )
@@ -191,6 +193,10 @@ func PrintTaskEdit(update dinkur.UpdatedTask) {
 }
 
 func PrintTaskList(tasks []dinkur.Task) {
+	if len(tasks) == 0 {
+		tableEmptyColor.Fprintln(stdout, tableEmptyText)
+		return
+	}
 	var t table
 	t.SetSpacing("  ")
 	t.SetPrefix("  ")
