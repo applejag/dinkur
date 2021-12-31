@@ -9,7 +9,7 @@ SPDX-License-Identifier: CC-BY-4.0
 # Dinkur
 
 [![REUSE status](https://api.reuse.software/badge/github.com/dinkur/dinkur)](https://api.reuse.software/info/github.com/dinkur/dinkur)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/956b94a743244ce2a971ce572e05be3e)](https://www.codacy.com/gh/dinkur/dinkur/dashboard?utm_source=github.com\&utm_medium=referral\&utm_content=dinkur/dinkur\&utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/956b94a743244ce2a971ce572e05be3e)](https://www.codacy.com/gh/dinkur/dinkur/dashboard?utm_source=github.com&utm_medium=referral&utm_content=dinkur/dinkur&utm_campaign=Badge_Grade)
 
 Task and time tracking utility.
 
@@ -48,34 +48,12 @@ dinkur completion bash --help
 
 ## Usage
 
-Full documentation can be found at [docs/cmd/dinkur.md](docs/cmd/dinkur.md)
+Full documentation can be found at [docs/cmd/dinkur.md](docs/cmd/dinkur.md).
 
-## Development
+## Contributing
 
-Prerequisites:
-
-- To build and run the code:
-
-  - [Go](https://go.dev/) v1.17 (or higher)
-
-- To modify the Protocol Buffer definition and regenerate server & client:
-
-  - [Protocol Buffer compiler](https://grpc.io/docs/protoc-installation/)
-    (`protoc`) v3. Make sure to add it to your PATH
-
-  - [Protocol Buffer compiler Go plugins](https://grpc.io/docs/languages/go/quickstart/#prerequisites).
-    Can be installed by running `make deps`
-
-```sh
-# Run the Dinkur CLI:
-go run --tags fts5 .
-
-# Regenerates gRPC code (requires protoc + Go plugins):
-make grpc
-
-# Regenerates CLI markdown documentation:
-make docs
-```
+Read how to contribute over at [CONTRIBUTING.md](CONTRIBUTING.md), including
+how to set up your development environment, if you so feel inclined.
 
 ## License
 
