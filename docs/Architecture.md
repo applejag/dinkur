@@ -10,7 +10,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 When used via CLI:
 
-```
+```text
   DB (Sqlite3)
       ^
       |
@@ -24,7 +24,7 @@ Dinkur CLI (Go)
 
 When used via clients:
 
-```
+```text
   DB (Sqlite3)
       ^
       |

@@ -4,13 +4,5 @@
 # SPDX-FileCopyrightText: 2021 Kalle Fagerberg
 # SPDX-License-Identifier: CC0-1.0
 
-# Database files
-*.db
-
-# Built binaries
-*.exe
-/dinkur
-
-# NPM
-node_modules/
-package-lock.json
+# No linting plugins. This directory only contains generated files.
+plugins: []

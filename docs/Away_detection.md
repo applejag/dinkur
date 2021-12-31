@@ -11,7 +11,7 @@ SPDX-License-Identifier: CC-BY-4.0
 > This is a feature heavily inspired by
 > [Grindstone](https://epiforge.com/grindstone).
 
-The [Dinkur daemon](Glossary.md#dinkur-daemon) hooks into the operating system
+The [Dinkur daemon](glossary.md#dinkur-daemon) hooks into the operating system
 and desktop environments to try and detect when the end-user has been away from
 their computer.
 

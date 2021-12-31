@@ -19,7 +19,7 @@ A [daemon](<https://en.wikipedia.org/wiki/Daemon_(computing)>) with an
 [gRPC](https://grpc.io/) API to allow reading+writing to the task tracking from
 other applications, such as [Dinkur clients](#dinkur-client).
 
-The Dinkur daemon also performs ["away detection"](Away_detection.md).
+The Dinkur daemon also performs ["away detection"](away_detection.md).
 
 ## Dinkur client
 

@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "lint": "npm run lint-md && npm run lint-go",
+    "lint-fix": "npm run lint-md-fix",
+    "lint-md": "remark . .github",
+    "lint-md-fix": "remark . .github -o",
+    "lint-go": "revive -formatter stylish -config revive.toml ./..."
+  },
+  "devDependencies": {
+    "remark-cli": "^9.0.0",
+    "remark-lint": "^8.0.0",
+    "remark-preset-lint-markdown-style-guide": "^4.0.0"
+  }
+}
