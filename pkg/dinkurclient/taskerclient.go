@@ -24,6 +24,7 @@ import (
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 )
@@ -61,7 +62,8 @@ func (c *client) Connect(ctx context.Context) error {
 	if c.conn != nil || c.tasker != nil {
 		return dinkur.ErrAlreadyConnected
 	}
-	conn, err := grpc.Dial(c.serverAddr, grpc.WithInsecure()) // TODO: add credentials via opts args
+	// TODO: add credentials via opts args
+	conn, err := grpc.Dial(c.serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return err
 	}
