@@ -27,16 +27,51 @@ import (
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/timeutil"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 )
 
 var (
-	ErrNotImplemented = errors.New("this feature has not yet been implemented")
-	ErrUintTooLarge   = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
-	ErrResponseIsNil  = errors.New("grpc response was nil")
+	ErrUintTooLarge      = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
+	ErrResponseIsNil     = errors.New("grpc response was nil")
+	ErrUnexpectedNilTask = errors.New("unexpected nil task")
 )
+
+func convError(err error) error {
+	if err == nil {
+		return nil
+	}
+	s, ok := status.FromError(err)
+	if !ok || s == nil {
+		return err
+	}
+	switch s.Code() {
+	case codes.NotFound:
+		return remessagedErr{s.Message(), dinkur.ErrNotFound}
+	default:
+		return remessagedErr{fmt.Sprintf("grpc error code %[1]d %[1]q: %[2]s", s.Code(), s.Message()), err}
+	}
+}
+
+type remessagedErr struct {
+	message string
+	inner   error
+}
+
+func (w remessagedErr) Unwrap() error {
+	return w.inner
+}
+
+func (w remessagedErr) Is(err error) bool {
+	return errors.Is(err, w.inner)
+}
+
+func (w remessagedErr) Error() string {
+	return w.message
+}
 
 func uint64ToUint(v uint64) (uint, error) {
 	if v > math.MaxUint {
@@ -45,8 +80,18 @@ func uint64ToUint(v uint64) (uint, error) {
 	return uint(v), nil
 }
 
-func convTime(t time.Time) *timestamppb.Timestamp {
-	return timestamppb.New(t)
+func convUintPtr(i *uint) uint64 {
+	if i == nil {
+		return 0
+	}
+	return uint64(*i)
+}
+
+func convStringPtr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func convTimePtr(t *time.Time) *timestamppb.Timestamp {
@@ -95,6 +140,9 @@ func convShorthand(s timeutil.TimeSpanShorthand) dinkurapiv1.GetTaskListRequest_
 }
 
 func convTaskPtr(task *dinkurapiv1.Task) (*dinkur.Task, error) {
+	if task == nil {
+		return nil, nil
+	}
 	id, err := uint64ToUint(task.Id)
 	if err != nil {
 		return nil, fmt.Errorf("convert task ID: %w", err)
@@ -109,6 +157,17 @@ func convTaskPtr(task *dinkurapiv1.Task) (*dinkur.Task, error) {
 		Start: convTimestampOrZero(task.Start),
 		End:   convTimestampPtr(task.End),
 	}, nil
+}
+
+func convTaskPtrNoNil(task *dinkurapiv1.Task) (dinkur.Task, error) {
+	t, err := convTaskPtr(task)
+	if err != nil {
+		return dinkur.Task{}, err
+	}
+	if t == nil {
+		return dinkur.Task{}, ErrUnexpectedNilTask
+	}
+	return *t, nil
 }
 
 func convTaskSlice(slice []*dinkurapiv1.Task) ([]dinkur.Task, error) {

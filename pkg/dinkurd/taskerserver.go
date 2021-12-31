@@ -48,37 +48,41 @@ func (c *taskerServer) assertConnected() error {
 
 func (s *taskerServer) Ping(ctx context.Context, req *dinkurapiv1.PingRequest) (*dinkurapiv1.PingResponse, error) {
 	if err := s.assertConnected(); err != nil {
-		return nil, err
+		return nil, convError(err)
 	}
 	if err := s.client.Ping(ctx); err != nil {
-		return nil, err
+		return nil, convError(err)
 	}
 	return &dinkurapiv1.PingResponse{}, nil
 }
 
 func (s *taskerServer) GetTask(ctx context.Context, req *dinkurapiv1.GetTaskRequest) (*dinkurapiv1.GetTaskResponse, error) {
 	if err := s.assertConnected(); err != nil {
-		return nil, err
+		return nil, convError(err)
 	}
 	id, err := uint64ToUint(req.Id)
 	if err != nil {
-		return nil, err
+		return nil, convError(err)
 	}
 	task, err := s.client.GetTask(ctx, id)
 	if err != nil {
 		if errors.Is(err, dinkur.ErrNotFound) {
 			return &dinkurapiv1.GetTaskResponse{}, nil
 		}
-		return nil, err
+		return nil, convError(err)
 	}
 	return &dinkurapiv1.GetTaskResponse{
 		Task: convTaskPtr(&task),
 	}, nil
 }
 
+func (s *taskerServer) GetActiveTask(ctx context.Context, req *dinkurapiv1.GetActiveTaskRequest) (*dinkurapiv1.GetActiveTaskResponse, error) {
+	return nil, errors.New("some user error")
+}
+
 func (s *taskerServer) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTaskListRequest) (*dinkurapiv1.GetTaskListResponse, error) {
 	if err := s.assertConnected(); err != nil {
-		return nil, err
+		return nil, convError(err)
 	}
 	search := dinkur.SearchTask{
 		Start:     convTimestampPtr(req.Start),
@@ -88,11 +92,11 @@ func (s *taskerServer) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTask
 	var err error
 	search.Limit, err = uint64ToUint(req.Limit)
 	if err != nil {
-		return nil, err
+		return nil, convError(err)
 	}
 	tasks, err := s.client.ListTasks(ctx, search)
 	if err != nil {
-		return nil, err
+		return nil, convError(err)
 	}
 	return &dinkurapiv1.GetTaskListResponse{
 		Tasks: convTaskSlice(tasks),

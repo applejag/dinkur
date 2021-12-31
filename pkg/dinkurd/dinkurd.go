@@ -31,6 +31,8 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/timeutil"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -40,6 +42,26 @@ var (
 	ErrTaskerServerIsNil = errors.New("tasker server is nil")
 	ErrAlreadyServing    = errors.New("daemon instance is already running")
 )
+
+func convError(err error) error {
+	switch {
+	case errors.Is(err, dinkur.ErrNotFound):
+		return status.Error(codes.NotFound, err.Error())
+	case errors.Is(err, ErrUintTooLarge),
+		errors.Is(err, dinkur.ErrLimitTooLarge):
+		return status.Error(codes.OutOfRange, err.Error())
+	case errors.Is(err, dinkur.ErrTaskEndBeforeStart),
+		errors.Is(err, dinkur.ErrTaskNameEmpty):
+		return status.Error(codes.InvalidArgument, err.Error())
+	case errors.Is(err, ErrTaskerServerIsNil),
+		errors.Is(err, dinkur.ErrNotConnected),
+		errors.Is(err, dinkur.ErrAlreadyConnected),
+		errors.Is(err, dinkur.ErrClientIsNil):
+		return status.Error(codes.FailedPrecondition, err.Error())
+	default:
+		return err
+	}
+}
 
 func uint64ToUint(v uint64) (uint, error) {
 	if v > math.MaxUint {
