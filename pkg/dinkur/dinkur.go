@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Package dinkur contains abstractions and models used by multiple Dinkur
+// client implementations.
 package dinkur
 
 import (
@@ -31,6 +33,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Common errors used by multiple Dinkur client and daemon implementations.
 var (
 	ErrAlreadyConnected   = errors.New("client is already connected to database")
 	ErrNotConnected       = errors.New("client is not connected to database")
@@ -41,6 +44,10 @@ var (
 	ErrClientIsNil        = errors.New("client is nil")
 )
 
+// Client is a Dinkur client interface. This is the core interface to act upon
+// the Dinkur data store. Depending on the implementation, it may either talk
+// directly to an Sqlite3 database file, or talk to a Dinkur daemon via gRPC
+// over TCP/IP that in turn talks to a database.
 type Client interface {
 	Connect(ctx context.Context) error
 	Close() error
@@ -55,6 +62,7 @@ type Client interface {
 	StopActiveTask(ctx context.Context) (*Task, error)
 }
 
+// SearchTask holds parameters used when searching for list of tasks.
 type SearchTask struct {
 	Start *time.Time
 	End   *time.Time
@@ -63,36 +71,67 @@ type SearchTask struct {
 	Shorthand timeutil.TimeSpanShorthand
 }
 
+// EditTask holds parameters used when editing a task.
 type EditTask struct {
-	ID         *uint
-	Name       *string
-	Start      *time.Time
-	End        *time.Time
+	// ID of the task to edit. If set to nil, then Dinkur will attempt to make
+	// an educated guess on what task to edit by editing the active task or a
+	// recent task.
+	ID *uint
+	// Name is the new task name. If AppendName is enabled, then this value will
+	// append to the existing name, delimited with a space.
+	//
+	// No change to the task name is applied if this is set to nil.
+	Name *string
+	// Start is the new task start timestamp.
+	//
+	// No change to the task start timestamp is applied if this is set to nil.
+	Start *time.Time
+	// End is the new task end timestamp.
+	//
+	// No change to the task end timestamp is applied if this is set to nil.
+	End *time.Time
+	// AppendName changes the name field to append the name to the task's
+	// existing name (delimited with a space) instead of replacing it.
 	AppendName bool
 }
 
+// UpdatedTask is the response from an edited task, with values for before the
+// edits were applied and after they were applied.
 type UpdatedTask struct {
 	Old     Task
 	Updated Task
 }
 
+// NewTask holds parameters used when creating a new task.
 type NewTask struct {
 	Name  string
 	Start *time.Time
 	End   *time.Time
 }
 
+// StartedTask is the response from creating a new task, with the newly created
+// task object as well as the task that was stopped when creating the task,
+// if any task was previously active.
 type StartedTask struct {
 	New      Task
 	Previous *Task
 }
 
+// MigrationStatus is an enumeration stating how outdated the database schema is.
 type MigrationStatus byte
 
 const (
+	// MigrationUnknown means that Dinkur was unable to evaluate the database's
+	// migration status. Perhaps due to an error.
 	MigrationUnknown MigrationStatus = iota
+	// MigrationNeverApplied means the database has never been migrated before.
+	// In other words, it's a brand new database.
 	MigrationNeverApplied
+	// MigrationOutdated means the database has been migrated before, but by an
+	// outdated version, and needs to be migrated yet further.
 	MigrationOutdated
+	// MigrationUpToDate means the database does not need any further migrations
+	// applied.
 	MigrationUpToDate
 )
 

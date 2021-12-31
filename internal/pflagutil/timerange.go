@@ -28,12 +28,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewTimeRange(shorthand timeutil.TimeSpanShorthand) *TimeRange {
+// NewTimeRangePtr returns a pointer to a new TimeRange instance.
+func NewTimeRangePtr(shorthand timeutil.TimeSpanShorthand) *TimeRange {
 	return (*TimeRange)(&shorthand)
 }
 
+// TimeRange is a pflag.Value-compatible type for allowing time span shorthand
+// enumeration to be used in flags.
 type TimeRange timeutil.TimeSpanShorthand
 
+// String returns the string representation of the time range.
 func (r *TimeRange) String() string {
 	if r == nil {
 		return ""
@@ -62,6 +66,8 @@ func (r *TimeRange) String() string {
 	}
 }
 
+// Set attempts to parse the string as a timeutil.TimeSpanShorthand and updates
+// its internal state on success, or returns a parsing error if it fails.
 func (r *TimeRange) Set(s string) error {
 	parsed, ok := parseShorthand(s)
 	if !ok {
@@ -71,10 +77,12 @@ func (r *TimeRange) Set(s string) error {
 	return nil
 }
 
+// Type returns "range", the flag type name to be used in helper text.
 func (r *TimeRange) Type() string {
 	return "range"
 }
 
+// TimeSpanShorthand returns the underlying timeutil value.
 func (r *TimeRange) TimeSpanShorthand() timeutil.TimeSpanShorthand {
 	if r == nil {
 		return timeutil.TimeSpanNone
@@ -107,7 +115,9 @@ func parseShorthand(s string) (timeutil.TimeSpanShorthand, bool) {
 	}
 }
 
-func TimeRangeCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+// TimeRangeCompletion is a completion function for the TimeRange flag type, and
+// is meant to be registered into a Cobra command object.
+func TimeRangeCompletion(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return []string{
 		"all\tlist all tasks, i.e. no baseline",
 		"a\tlist all tasks, i.e. no baseline",

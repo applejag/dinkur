@@ -29,6 +29,9 @@ import (
 	"gorm.io/gorm"
 )
 
+// LatestMigrationVersion is an integer revision identifier for what migration
+// was last applied to the database. This is stored in the database to quickly
+// figure out if new migrations needs to be applied.
 const LatestMigrationVersion = 2
 
 func (c *client) MigrationStatus(ctx context.Context) (dinkur.MigrationStatus, error) {

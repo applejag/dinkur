@@ -44,7 +44,7 @@ func (c *client) activeDBTask() (*Task, error) {
 		return nil, err
 	}
 	var dbTask Task
-	err := c.db.Where(Task{End: nil}, task_Field_End).First(&dbTask).Error
+	err := c.db.Where(Task{End: nil}, taskFieldEnd).First(&dbTask).Error
 	if err != nil {
 		return nil, nilNotFoundError(err)
 	}
@@ -72,25 +72,25 @@ func (c *client) getDBTask(id uint) (Task, error) {
 }
 
 var (
-	task_SQL_Between_Start = fmt.Sprintf(
+	taskSQLBetweenStart = fmt.Sprintf(
 		"(%[1]s >= @start) OR "+
 			"(%[2]s IS NOT NULL AND %[1]s >= @start) OR "+
 			"(%[2]s IS NULL AND CURRENT_TIMESTAMP >= @start)",
-		task_Column_Start, task_Column_End,
+		taskColumnStart, taskColumnEnd,
 	)
 
-	task_SQL_Between_End = fmt.Sprintf(
+	taskSQLBetweenEnd = fmt.Sprintf(
 		"(%[2]s <= @end) OR "+
 			"(%[2]s IS NOT NULL AND %[2]s <= @end) OR "+
 			"(%[2]s IS NULL AND CURRENT_TIMESTAMP <= @end)",
-		task_Column_Start, task_Column_End,
+		taskColumnStart, taskColumnEnd,
 	)
 
-	task_SQL_Between = fmt.Sprintf(
+	taskSQLBetween = fmt.Sprintf(
 		"(%[1]s BETWEEN @start AND @end) OR "+
 			"(%[2]s IS NOT NULL AND %[2]s BETWEEN @start AND @end) OR "+
 			"(%[2]s IS NULL AND CURRENT_TIMESTAMP BETWEEN @start AND @end)",
-		task_Column_Start, task_Column_End,
+		taskColumnStart, taskColumnEnd,
 	)
 )
 
@@ -118,7 +118,7 @@ func (c *client) listDBTasks(search dinkur.SearchTask) ([]Task, error) {
 	}
 	var dbTasks []Task
 	q := c.db.Model(&Task{}).
-		Order(task_Column_Start + " DESC").
+		Order(taskColumnStart + " DESC").
 		Limit(int(search.Limit))
 	switch {
 	case search.Start != nil && search.End != nil:
@@ -126,13 +126,13 @@ func (c *client) listDBTasks(search dinkur.SearchTask) ([]Task, error) {
 		// smallest time unit is a second.
 		start := (*search.Start).UTC().Add(-time.Second)
 		end := (*search.End).UTC().Add(time.Second)
-		q = q.Or(c.db.Where(task_SQL_Between, sql.Named("start", start), sql.Named("end", end)))
+		q = q.Or(c.db.Where(taskSQLBetween, sql.Named("start", start), sql.Named("end", end)))
 	case search.Start != nil:
 		start := (*search.Start).UTC().Add(-time.Second)
-		q = q.Or(c.db.Where(task_SQL_Between_Start, sql.Named("start", start)))
+		q = q.Or(c.db.Where(taskSQLBetweenStart, sql.Named("start", start)))
 	case search.End != nil:
 		end := (*search.End).UTC().Add(time.Second)
-		q = q.Or(c.db.Where(task_SQL_Between_End, sql.Named("end", end)))
+		q = q.Or(c.db.Where(taskSQLBetweenEnd, sql.Named("end", end)))
 	}
 	if err := q.Find(&dbTasks).Error; err != nil {
 		return nil, err
@@ -379,8 +379,8 @@ func (c *client) stopActiveDBTaskNoTran() (*Task, error) {
 
 func (c *client) stopAllTasks() (bool, error) {
 	res := c.db.Model(&Task{}).
-		Where(&Task{End: nil}, task_Field_End).
-		Update(task_Column_End, time.Now())
+		Where(&Task{End: nil}, taskFieldEnd).
+		Update(taskColumnEnd, time.Now())
 	return res.RowsAffected > 0, res.Error
 }
 

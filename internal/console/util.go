@@ -26,6 +26,8 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
+// FormatDuration returns a formatted time.Duration in the format of
+// h:mm:ss.
 func FormatDuration(d time.Duration) string {
 	var (
 		totalSeconds = int(d.Seconds())

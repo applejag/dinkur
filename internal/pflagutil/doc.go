@@ -18,19 +18,6 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package cfgpath
-
-var (
-	// ConfigPath is the full path (including file name and extension) of the
-	// configuration file. E.g "~/.config/dinkur/config.yml"
-	ConfigPath string
-	// DataPath is the full path (including file name and extension) of the
-	// database file. E.g "~/.local/share/dinkur/dinkur.db"
-	DataPath string
-)
-
-func init() {
-	ConfigPath = getConfigPath()
-
-	DataPath = getDataPath()
-}
+// Package pflagutil contains helper types and functions for the spf13/pflag
+// and spf13/cobra packages regarding flags.
+package pflagutil

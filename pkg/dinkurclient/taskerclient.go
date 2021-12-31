@@ -30,8 +30,11 @@ import (
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 )
 
+// Options for the Dinkur client.
 type Options struct{}
 
+// NewClient returns a new dinkur.Client-compatible implementation that uses
+// gRPC towards a remote Dinkur daemon to perform all dinkur.Client tasks.
 func NewClient(serverAddr string, opt Options) dinkur.Client {
 	return &client{
 		Options:    opt,
@@ -64,7 +67,7 @@ func (c *client) Connect(ctx context.Context) error {
 		return dinkur.ErrAlreadyConnected
 	}
 	// TODO: add credentials via opts args
-	conn, err := grpc.Dial(c.serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.DialContext(ctx, c.serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return convError(err)
 	}

@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Package dinkurd contains a Dinkur gRPC API server daemon implementation.
 package dinkurd
 
 import (
@@ -36,6 +37,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// Errors that are specific to the Dinkur gRPC server daemon.
 var (
 	ErrUintTooLarge      = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
 	ErrDaemonIsNil       = errors.New("daemon is nil")
@@ -87,21 +89,40 @@ func convString(s string) *string {
 	return &s
 }
 
+// Options for the daemon server.
 type Options struct {
+	// Host is the hostname to bind the server to.
+	// Use 0.0.0.0 to allow any IP address.
 	Host string
+	// Port is the port the server will listen on.
 	Port uint16
 }
 
+// DefaultOptions values are used for any zero values used when creating a new
+// daemon instance.
 var DefaultOptions = Options{
 	Host: "localhost",
 	Port: 59122,
 }
 
+// Daemon is the Dinkur daemon service interface.
 type Daemon interface {
+	// Serve starts the gRPC server and waits. The function does not return
+	// unless the context is cancelled, or if there was an error.
 	Serve(ctx context.Context) error
+	// Close gracefully shuts down the daemon server.
 	Close() error
 }
 
+// NewDaemon creates a new Daemon instance that relays all gRPC traffic to the
+// given dinkur.Client. This daemon implementation does not perform any
+// database communication nor has any persistence in of itself. This daemon
+// must be paired with a dinkur.Client such as the dinkurdb client to talk to an
+// Sqlite3 database file, or the dinkurclient client to act as a proxy.
+//
+// Both the global DefaultOptions and the opt parameter is used. The
+// DefaultOptions values are only used for any zero valued fields in the
+// opt parameter.
 func NewDaemon(client dinkur.Client, opt Options) Daemon {
 	if opt.Host == "" {
 		opt.Host = DefaultOptions.Host
@@ -141,6 +162,14 @@ func (d *daemon) Serve(ctx context.Context) error {
 	d.listener = lis
 	d.grpcServer = grpcServer
 	defer d.Close()
+	cctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	go func(cctx context.Context, d *daemon) {
+		_, ok := <-cctx.Done()
+		if ok {
+			d.Close()
+		}
+	}(cctx, d)
 	dinkurapiv1.RegisterTaskerServer(grpcServer, d.tasker)
 	return grpcServer.Serve(lis)
 }

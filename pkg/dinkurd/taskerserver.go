@@ -27,6 +27,9 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
+// NewTaskerServer returns a new dinkurapi.v1.TaskerServer-compatible
+// implementation that relays all incoming gRPC traffic to the bound
+// dinkur.Client.
 func NewTaskerServer(client dinkur.Client) dinkurapiv1.TaskerServer {
 	return &taskerServer{client: client}
 }
@@ -36,17 +39,17 @@ type taskerServer struct {
 	client dinkur.Client
 }
 
-func (c *taskerServer) assertConnected() error {
-	if c == nil {
+func (s *taskerServer) assertConnected() error {
+	if s == nil {
 		return ErrTaskerServerIsNil
 	}
-	if c.client == nil {
+	if s.client == nil {
 		return dinkur.ErrClientIsNil
 	}
 	return nil
 }
 
-func (s *taskerServer) Ping(ctx context.Context, req *dinkurapiv1.PingRequest) (*dinkurapiv1.PingResponse, error) {
+func (s *taskerServer) Ping(ctx context.Context, _ *dinkurapiv1.PingRequest) (*dinkurapiv1.PingResponse, error) {
 	if err := s.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
@@ -76,7 +79,7 @@ func (s *taskerServer) GetTask(ctx context.Context, req *dinkurapiv1.GetTaskRequ
 	}, nil
 }
 
-func (s *taskerServer) GetActiveTask(ctx context.Context, req *dinkurapiv1.GetActiveTaskRequest) (*dinkurapiv1.GetActiveTaskResponse, error) {
+func (s *taskerServer) GetActiveTask(ctx context.Context, _ *dinkurapiv1.GetActiveTaskRequest) (*dinkurapiv1.GetActiveTaskResponse, error) {
 	if err := s.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
@@ -173,7 +176,7 @@ func (s *taskerServer) DeleteTask(ctx context.Context, req *dinkurapiv1.DeleteTa
 	}, nil
 }
 
-func (s *taskerServer) StopActiveTask(ctx context.Context, req *dinkurapiv1.StopActiveTaskRequest) (*dinkurapiv1.StopActiveTaskResponse, error) {
+func (s *taskerServer) StopActiveTask(ctx context.Context, _ *dinkurapiv1.StopActiveTaskRequest) (*dinkurapiv1.StopActiveTaskResponse, error) {
 	if err := s.assertConnected(); err != nil {
 		return nil, convError(err)
 	}

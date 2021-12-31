@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Package dinkurclient contains a Dinkur gRPC client implementation.
 package dinkurclient
 
 import (
@@ -34,6 +35,7 @@ import (
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 )
 
+// Errors that are specific to the Dinkur gRPC client.
 var (
 	ErrUintTooLarge      = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
 	ErrResponseIsNil     = errors.New("grpc response was nil")

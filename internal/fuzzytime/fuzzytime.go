@@ -18,6 +18,9 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Package fuzzytime contains helper functions to parse times in a more fuzzy
+// and natural manner, compared to the built-in time.Parse which only attempts
+// a single format.
 package fuzzytime
 
 import (
@@ -31,6 +34,7 @@ import (
 )
 
 var (
+	// ErrUnknownFormat is returned when no time layout format was matched.
 	ErrUnknownFormat = errors.New("unknown time format")
 )
 
@@ -42,6 +46,9 @@ func init() {
 	w.Add(common.All...)
 }
 
+// Parse attempts to parse the string literal "now", a delta time, a list of
+// known formats, and lastly via the `when` fuzzy parsing package, and returns
+// the time on the first match it finds.
 func Parse(s string) (time.Time, error) {
 	if strings.EqualFold(s, "now") {
 		return time.Now(), nil
@@ -49,7 +56,7 @@ func Parse(s string) (time.Time, error) {
 	if t, ok := ParseDelta(s); ok {
 		return t, nil
 	}
-	if t, ok := ParseKnownLayouts(s); ok {
+	if t, err := ParseKnownLayouts(s); err == nil {
 		return t, nil
 	}
 	return ParseWhen(s)
@@ -65,15 +72,18 @@ var knownLayouts = []string{
 	time.RFC1123Z,
 }
 
-func ParseKnownLayouts(s string) (time.Time, bool) {
+// ParseKnownLayouts attempts to parse the string according to the date formats
+// defined in the IETF RFC822, RFC580, RFC1123, or RFC3339.
+func ParseKnownLayouts(s string) (time.Time, error) {
 	for _, layout := range knownLayouts {
 		if t, err := time.Parse(layout, s); err == nil {
-			return t, true
+			return t, nil
 		}
 	}
-	return time.Time{}, false
+	return time.Time{}, ErrUnknownFormat
 }
 
+// ParseWhen performs a fuzzy time parsing via the `when` package.
 func ParseWhen(s string) (time.Time, error) {
 	r, err := w.Parse(s, time.Now())
 	if err != nil {
@@ -85,6 +95,8 @@ func ParseWhen(s string) (time.Time, error) {
 	return r.Time, nil
 }
 
+// ParseDelta attempts to parse the string as a time.Duration if it is prefixed
+// with a sign ("+" or "-"), and adds that to the current time.
 func ParseDelta(s string) (time.Time, bool) {
 	if len(s) < 3 {
 		return time.Time{}, false

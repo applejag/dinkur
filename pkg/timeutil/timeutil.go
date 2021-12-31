@@ -18,6 +18,8 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Package timeutil contains some types and functions to help work with times
+// and time spans.
 package timeutil
 
 import (
@@ -25,22 +27,34 @@ import (
 	"time"
 )
 
+// TimeSpan holds a start and end timestamp. Both the start and the end are
+// optional, as represented by being set to nil.
 type TimeSpan struct {
 	Start *time.Time
 	End   *time.Time
 }
 
+// TimeSpanShorthand is an enumeration of different TimeSpan templates.
 type TimeSpanShorthand byte
 
 const (
+	// TimeSpanNone represents a TimeSpan of nil - nil
 	TimeSpanNone TimeSpanShorthand = iota
+	// TimeSpanPast represents a TimeSpan of nil - now
 	TimeSpanPast
+	// TimeSpanFuture represents a TimeSpan of now - nil
 	TimeSpanFuture
+	// TimeSpanThisDay represents a TimeSpan of 00:00 today - 23:59 today
 	TimeSpanThisDay
+	// TimeSpanThisWeek represents a TimeSpan of 00:00 this monday - 23:59 this sunday
 	TimeSpanThisWeek
+	// TimeSpanPrevDay represents a TimeSpan of 00:00 yesterday - 23:59 yesterday
 	TimeSpanPrevDay
+	// TimeSpanPrevWeek represents a TimeSpan of 00:00 monday - 23:59 sunday last week
 	TimeSpanPrevWeek
+	// TimeSpanNextDay represents a TimeSpan of 00:00 tomorrow - 23:59 tomorrow
 	TimeSpanNextDay
+	// TimeSpanNextWeek represents a TimeSpan of 00:00 monday - 23:59 sunday next week
 	TimeSpanNextWeek
 )
 
@@ -69,6 +83,7 @@ func (s TimeSpanShorthand) String() string {
 	}
 }
 
+// Span returns a TimeSpan given a specific reference time of when "now" is.
 func (s TimeSpanShorthand) Span(now time.Time) TimeSpan {
 	switch s {
 	case TimeSpanPast:
@@ -92,6 +107,7 @@ func (s TimeSpanShorthand) Span(now time.Time) TimeSpan {
 	}
 }
 
+// Day returns a TimeSpan from 00:00 - 23:59 for the same day as "now".
 func Day(now time.Time) TimeSpan {
 	var (
 		y, m, d = now.Date()
@@ -102,6 +118,8 @@ func Day(now time.Time) TimeSpan {
 	return TimeSpan{&start, &end}
 }
 
+// Week returns a TimeSpan from 00:00 monday - 23:59 sunday for the same week
+// as "now".
 func Week(now time.Time) TimeSpan {
 	var (
 		y, m, d     = now.Date()
@@ -114,6 +132,12 @@ func Week(now time.Time) TimeSpan {
 	return TimeSpan{&start, &end}
 }
 
+// DaysSinceMonday returns the number of days has passed since last time it was
+// a monday.
+//
+// This function is a naïve implementation that assumes all weeks have the
+// 7 weekdays. In reality, there are some weird edge cases where some regions
+// have skipped some days, but those cases are left as "undefined behavior".
 func DaysSinceMonday(day time.Weekday) int {
 	switch day {
 	case time.Tuesday:

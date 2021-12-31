@@ -26,9 +26,19 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
+// CommonFields contains fields used by multiple other models.
 type CommonFields struct {
-	ID        uint `gorm:"primarykey"`
+	// ID is a unique identifier for this task. The same ID will never be used
+	// twice for a given database.
+	ID uint `gorm:"primarykey"`
+	// CreatedAt stores when the database object was added to the database.
+	//
+	// It is automatically set by GORM due to its naming convention.
 	CreatedAt time.Time
+	// UpdatedAt stores when the database object was added to the database or
+	// when it was last updated.
+	//
+	// It is automatically set by GORM due to its naming convention.
 	UpdatedAt time.Time
 }
 
@@ -41,19 +51,25 @@ func convCommonFields(f CommonFields) dinkur.CommonFields {
 }
 
 const (
-	task_Field_End = "End"
+	taskFieldEnd = "End"
 
-	task_Column_Start = "start"
-	task_Column_End   = "end"
+	taskColumnStart = "start"
+	taskColumnEnd   = "end"
 )
 
+// Task is a time tracked task stored in the database.
 type Task struct {
 	CommonFields
-	Name  string     `gorm:"not null;default:''"`
-	Start time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP;index"`
-	End   *time.Time `gorm:"index"`
+	// Name of the task.
+	Name string `gorm:"not null;default:''"`
+	// Start time of the task.
+	Start time.Time `gorm:"not null;default:CURRENT_TIMESTAMP;index"`
+	// End time of the task, or nil if the task is still active.
+	End *time.Time `gorm:"index"`
 }
 
+// Elapsed returns the duration of the task. If the task is currently active,
+// the duration is calculated from the start to now.
 func (t Task) Elapsed() time.Duration {
 	var end time.Time
 	if t.End != nil {
@@ -105,6 +121,8 @@ func convTaskSlice(slice []Task) []dinkur.Task {
 	return result
 }
 
+// Migration holds the latest migration revision identifier. At most one row of
+// this object is expected to be in the database at any given time.
 type Migration struct {
 	CommonFields
 	Version int

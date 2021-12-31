@@ -18,6 +18,8 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Package dinkurdb contains a dinkur.Client implementation that targets an
+// Sqlite3 database file.
 package dinkurdb
 
 import (
@@ -40,13 +42,23 @@ func nilNotFoundError(err error) error {
 	return err
 }
 
+// Options for the client's Sqlite3 database connection.
 type Options struct {
-	MkdirAll             bool
+	// MkdirAll lets the client create any containing directory for where the
+	// database file is to be stored upon connecting to it. If set to false and
+	// the containing directory does not exist, then the Connect method will
+	// return a "file not found" error.
+	MkdirAll bool
+	// SkipMigrateOnConnect disables the migration check done when the Connect
+	// method is invoked.
 	SkipMigrateOnConnect bool
-	DebugLogging         bool
-	DebugColorful        bool
+	// DebugLogging enables logging of SQL queries and warnings issued by
+	// GORM.
+	DebugLogging bool
 }
 
+// NewClient creates a new dinkur.Client-compatible client that uses an Sqlite3
+// database file for persistence.
 func NewClient(dsn string, opt Options) dinkur.Client {
 	return &client{Options: opt, sqliteDsn: dsn}
 }

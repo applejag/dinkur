@@ -21,19 +21,30 @@ package dinkur
 
 import "time"
 
+// CommonFields contains fields used by multiple other models.
 type CommonFields struct {
-	ID        uint      `json:"id"`
+	// ID is a unique identifier for this task. The same ID will never be used
+	// twice for a given database.
+	ID uint `json:"id"`
+	// CreatedAt is when the object was created.
 	CreatedAt time.Time `json:"createdAt"`
+	// UpdatedAt stores when the object was last updated/edited.
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+// Task is a time tracked task.
 type Task struct {
 	CommonFields
-	Name  string     `json:"name"`
-	Start time.Time  `json:"start"`
-	End   *time.Time `json:"end"`
+	// Name of the task.
+	Name string `json:"name"`
+	// Start time of the task.
+	Start time.Time `json:"start"`
+	// End time of the task, or nil if the task is still active.
+	End *time.Time `json:"end"`
 }
 
+// Elapsed returns the duration of the task. If the task is currently active,
+// the duration is calculated from the start to now.
 func (t Task) Elapsed() time.Duration {
 	var end time.Time
 	if t.End != nil {

@@ -47,7 +47,7 @@ var (
 	flagClient    = "db"
 	flagVerbose   = false
 
-	c dinkur.Client = dinkur.NilClient{}
+	c dinkur.Client = &dinkur.NilClient{}
 
 	log = logger.NewScoped("Dinkur")
 )
@@ -161,9 +161,8 @@ func connectToGRPCClient() (dinkur.Client, error) {
 
 func connectToDBClient() (dinkur.Client, error) {
 	c := dinkurdb.NewClient(dataFile, dinkurdb.Options{
-		MkdirAll:      flagDataMkdir,
-		DebugLogging:  flagVerbose,
-		DebugColorful: !color.NoColor,
+		MkdirAll:     flagDataMkdir,
+		DebugLogging: flagVerbose,
 	})
 	return c, c.Connect(context.Background())
 }

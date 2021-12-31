@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Package console contains code to pretty-print different types to the console.
 package console
 
 import (
@@ -61,6 +62,8 @@ var (
 	tableSummaryColor = color.New(color.FgHiBlack, color.Italic)
 )
 
+// PrintTaskWithDuration writes a label string followed by a formatted task,
+// including its elapsed duration, to STDOUT.
 func PrintTaskWithDuration(label string, task dinkur.Task) {
 	var sb strings.Builder
 	taskLabelColor.Fprint(&sb, label)
@@ -75,6 +78,7 @@ func PrintTaskWithDuration(label string, task dinkur.Task) {
 	fmt.Fprintln(stdout, sb.String())
 }
 
+// PrintTask writes a label string followed by a formatted task to STDOUT.
 func PrintTask(label string, task dinkur.Task) {
 	var sb strings.Builder
 	taskLabelColor.Fprint(&sb, label)
@@ -115,6 +119,8 @@ func writeTaskDuration(w io.Writer, dur time.Duration) {
 	taskTimeDelimColor.Fprint(w, ")")
 }
 
+// PrintFatal writes a label and some error value to STDERR and then exits the
+// application with status code 1.
 func PrintFatal(label string, v interface{}) {
 	var sb strings.Builder
 	fatalLabelColor.Fprint(&sb, label)
@@ -124,6 +130,8 @@ func PrintFatal(label string, v interface{}) {
 	os.Exit(1)
 }
 
+// PrintTaskEdit writes a formatted task and highlights any edits made to it,
+// by diffing the before and after tasks, to STDOUT.
 func PrintTaskEdit(update dinkur.UpdatedTask) {
 	const editPrefix = "  "
 	const editDelim = "   =>   "
@@ -175,6 +183,8 @@ func PrintTaskEdit(update dinkur.UpdatedTask) {
 	fmt.Fprint(stdout, sb.String())
 }
 
+// PrintTaskList writes a table for a list of tasks, grouped by the date
+// (year, month, day), to STDOUT.
 func PrintTaskList(tasks []dinkur.Task) {
 	if len(tasks) == 0 {
 		tableEmptyColor.Fprintln(stdout, tableEmptyText)

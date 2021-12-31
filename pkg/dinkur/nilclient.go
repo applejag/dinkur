@@ -21,45 +21,66 @@ package dinkur
 
 import "context"
 
+// NilClient returns "client is nil" error on all of its methods.
 type NilClient struct {
 }
 
-func (NilClient) Connect(context.Context) error {
+// Connect is a dummy implementation of the dinkur.Client that only returns
+// the "client is nil" error.
+func (*NilClient) Connect(context.Context) error {
 	return ErrClientIsNil
 }
 
-func (NilClient) Ping(context.Context) error {
+// Ping is a dummy implementation of the dinkur.Client that only returns
+// the "client is nil" error.
+func (*NilClient) Ping(context.Context) error {
 	return ErrClientIsNil
 }
 
-func (NilClient) Close() error {
+// Close is a dummy implementation of the dinkur.Client that only returns
+// the "client is nil" error.
+func (*NilClient) Close() error {
 	return ErrClientIsNil
 }
 
-func (NilClient) GetTask(context.Context, uint) (Task, error) {
+// GetTask is a dummy implementation of the dinkur.Client that only returns
+// the "client is nil" error.
+func (*NilClient) GetTask(context.Context, uint) (Task, error) {
 	return Task{}, ErrClientIsNil
 }
 
-func (NilClient) ListTasks(context.Context, SearchTask) ([]Task, error) {
+// ListTasks is a dummy implementation of the dinkur.Client that only returns
+// the "client is nil" error.
+func (*NilClient) ListTasks(context.Context, SearchTask) ([]Task, error) {
 	return nil, ErrClientIsNil
 }
 
-func (NilClient) EditTask(context.Context, EditTask) (UpdatedTask, error) {
+// EditTask is a dummy implementation of the dinkur.Client that only returns
+// the "client is nil" error.
+func (*NilClient) EditTask(context.Context, EditTask) (UpdatedTask, error) {
 	return UpdatedTask{}, ErrClientIsNil
 }
 
-func (NilClient) DeleteTask(context.Context, uint) (Task, error) {
+// DeleteTask is a dummy implementation of the dinkur.Client that only returns
+// the "client is nil" error.
+func (*NilClient) DeleteTask(context.Context, uint) (Task, error) {
 	return Task{}, ErrClientIsNil
 }
 
-func (NilClient) StartTask(context.Context, NewTask) (StartedTask, error) {
+// StartTask is a dummy implementation of the dinkur.Client that only returns
+// the "client is nil" error.
+func (*NilClient) StartTask(context.Context, NewTask) (StartedTask, error) {
 	return StartedTask{}, ErrClientIsNil
 }
 
-func (NilClient) ActiveTask(context.Context) (*Task, error) {
+// ActiveTask is a dummy implementation of the dinkur.Client that only returns
+// the "client is nil" error.
+func (*NilClient) ActiveTask(context.Context) (*Task, error) {
 	return nil, ErrClientIsNil
 }
 
-func (NilClient) StopActiveTask(context.Context) (*Task, error) {
+// StopActiveTask is a dummy implementation of the dinkur.Client that only
+// returns the "client is nil" error.
+func (*NilClient) StopActiveTask(context.Context) (*Task, error) {
 	return nil, ErrClientIsNil
 }
