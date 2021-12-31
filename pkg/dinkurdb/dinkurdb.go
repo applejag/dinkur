@@ -23,13 +23,11 @@ package dinkurdb
 import (
 	"context"
 	"errors"
-	"log"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"github.com/mattn/go-colorable"
+	"github.com/iver-wharf/wharf-core/pkg/gormutil"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -101,12 +99,7 @@ func (c *client) Connect(ctx context.Context) error {
 
 func getLogger(opt Options) logger.Interface {
 	if opt.DebugLogging {
-		return logger.New(log.New(colorable.NewColorableStderr(), "\r\n", log.LstdFlags), logger.Config{
-			SlowThreshold:             200 * time.Millisecond,
-			LogLevel:                  logger.Info,
-			IgnoreRecordNotFoundError: false,
-			Colorful:                  opt.DebugColorful,
-		})
+		return gormutil.DefaultLogger
 	}
 	return logger.Discard
 }

@@ -33,6 +33,8 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkurclient"
 	"github.com/dinkur/dinkur/pkg/dinkurdb"
 	"github.com/fatih/color"
+	"github.com/iver-wharf/wharf-core/pkg/logger"
+	"github.com/iver-wharf/wharf-core/pkg/logger/consolepretty"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -46,6 +48,8 @@ var (
 	flagVerbose   = false
 
 	c dinkur.Client = dinkur.NilClient{}
+
+	log = logger.NewScoped("Dinkur")
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -79,7 +83,7 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(initConfig, initLogger)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", cfgFile, "config file")
 	RootCmd.PersistentFlags().StringVar(&dataFile, "data", dataFile, "database file")
@@ -104,6 +108,17 @@ func initConfig() {
 	}
 }
 
+func initLogger() {
+	level := logger.LevelError
+	if flagVerbose {
+		level = logger.LevelDebug
+	}
+	prettyConf := consolepretty.DefaultConfig
+	prettyConf.DisableDate = true
+	prettyConf.DisableCaller = true
+	logger.AddOutput(level, consolepretty.New(prettyConf))
+}
+
 func connectClientOrExit() {
 	client, err := connectClient()
 	if err != nil {
@@ -115,14 +130,14 @@ func connectClientOrExit() {
 func connectClient() (dinkur.Client, error) {
 	switch strings.ToLower(flagClient) {
 	case "db":
-		printDebug("Using DB client.")
+		log.Debug().Message("Using DB client.")
 		dbClient, err := connectToDBClient()
 		if err != nil {
 			return nil, fmt.Errorf("DB client: %w", err)
 		}
 		return dbClient, nil
 	case "grpc":
-		printDebug("Using gRPC client.")
+		log.Debug().Message("Using gRPC client.")
 		grpcClient, err := connectToGRPCClient()
 		if err != nil {
 			return nil, fmt.Errorf("gRPC client: %w", err)
@@ -151,16 +166,4 @@ func connectToDBClient() (dinkur.Client, error) {
 		DebugColorful: !color.NoColor,
 	})
 	return c, c.Connect(context.Background())
-}
-
-func printDebug(v interface{}) {
-	if flagVerbose {
-		console.PrintDebug(v)
-	}
-}
-
-func printDebugf(format string, v ...interface{}) {
-	if flagVerbose {
-		console.PrintDebugf(format, v...)
-	}
 }

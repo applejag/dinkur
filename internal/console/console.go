@@ -52,10 +52,6 @@ var (
 	taskEditDelimColor = color.New(color.FgHiMagenta)
 	taskEditNoneColor  = color.New(color.FgHiBlack, color.Italic)
 
-	debugLabel      = "[DEBUG] "
-	debugLabelColor = color.New(color.FgHiBlack, color.Italic)
-	debugValueColor = color.New(color.FgHiBlack, color.Italic)
-
 	fatalLabelColor = color.New(color.FgHiRed, color.Bold)
 	fatalValueColor = color.New(color.FgRed)
 
@@ -117,20 +113,6 @@ func writeTaskDuration(w io.Writer, dur time.Duration) {
 	taskTimeDelimColor.Fprint(w, "(")
 	taskDurationColor.Fprint(w, FormatDuration(dur))
 	taskTimeDelimColor.Fprint(w, ")")
-}
-
-func PrintDebug(v interface{}) {
-	var sb strings.Builder
-	debugLabelColor.Fprint(&sb, debugLabel)
-	debugValueColor.Fprint(&sb, v)
-	fmt.Fprintln(stderr, sb.String())
-}
-
-func PrintDebugf(format string, v ...interface{}) {
-	var sb strings.Builder
-	debugLabelColor.Fprint(&sb, debugLabel)
-	debugValueColor.Fprintf(&sb, format, v...)
-	fmt.Fprintln(stderr, sb.String())
 }
 
 func PrintFatal(label string, v interface{}) {

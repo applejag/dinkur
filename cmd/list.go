@@ -102,9 +102,11 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 			}
 			search.Start = flagutil.ParseTime(cmd, "start")
 			search.End = flagutil.ParseTime(cmd, "end")
-			printDebugf("--start=%q", search.Start)
-			printDebugf("--end=%q", search.End)
-			printDebugf("--shorthand=%q", search.Shorthand)
+			log.Debug().
+				WithStringf("--start", "%v", search.Start).
+				WithStringf("--end", "%v", search.End).
+				WithStringf("--shorthand", "%v", search.Shorthand).
+				Message("Flags")
 			tasks, err := c.ListTasks(context.Background(), search)
 			if err != nil {
 				console.PrintFatal("Error getting list of tasks:", err)
