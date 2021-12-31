@@ -36,6 +36,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"github.com/iver-wharf/wharf-core/pkg/logger/consolepretty"
+	"github.com/mattn/go-colorable"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -99,6 +100,10 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig, initLogger)
+
+	RootCmd.SetOut(colorable.NewColorableStdout())
+	RootCmd.SetErr(colorable.NewColorableStderr())
+	RootCmd.SetUsageTemplate(console.UsageTemplate())
 
 	RootCmd.Flags().BoolVar(&flagLicenseConditions, "license-c", false, "show program's license conditions")
 	RootCmd.Flags().BoolVar(&flagLicenseWarranty, "license-w", false, "show program's license warranty")
