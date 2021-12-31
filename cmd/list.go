@@ -44,7 +44,7 @@ func init() {
 	)
 
 	var listCmd = &cobra.Command{
-		Use:     `list [baseline]`,
+		Use:     `list`,
 		Aliases: []string{"ls", "l"},
 		Short:   "List your tasks",
 		Long: fmt.Sprintf(`Lists all your tasks.
