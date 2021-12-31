@@ -6,19 +6,19 @@ List your tasks
 
 Lists all your tasks.
 
-By default, this will only list today's tasks. You can supply an argument
-to declare a different baseline. The --start and --end flags will always
-take precedence over the baseline.
+By default, this will only list today's tasks. You can supply the --range flag
+to declare a different baseline range. The --start and --end flags will always
+take precedence over the baseline range.
 
-	dinkur list all        # list all tasks, i.e. no baseline. Alias: "a"
-	dinkur list past       # list all tasks before now.        Alias: "p"
-	dinkur list future     # list all tasks since now.         Alias: "f"
-	dinkur list today      # (default) list today's tasks.     Alias: "t"
-	dinkur list week       # list this week's tasks.           Alias: "w"
-	dinkur list yesterday  # list yesterday's tasks.           Alias: "y" or "ld"
-	dinkur list lastweek   # list last week's tasks.           Alias: "lw"
-	dinkur list tomorrow   # list tomorrow's tasks.            Alias: "nd"
-	dinkur list nextweek   # list next week's tasks.           Alias: "nw"
+	dinkur list --range all        # list all tasks, i.e. no baseline.
+	dinkur list --range past       # list all tasks before now.
+	dinkur list --range future     # list all tasks since now.
+	dinkur list --range today      # (default) list today's tasks.
+	dinkur list --range week       # list this week's tasks.
+	dinkur list --range yesterday  # list yesterday's tasks.
+	dinkur list --range lastweek   # list last week's tasks.
+	dinkur list --range tomorrow   # list tomorrow's tasks.
+	dinkur list --range nextweek   # list next week's tasks.
 
 Day baselines sets the range 00:00:00 - 24:59:59.
 Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
@@ -31,11 +31,12 @@ dinkur list [baseline] [flags]
 ### Options
 
 ```
-  -e, --end string      list tasks ending before or at date time
+  -e, --end time        list tasks ending before or at date time
   -h, --help            help for list
   -l, --limit uint      limit the number of results, relative to the last result; 0 will disable limit (default 1000)
   -o, --output string   set output format: "pretty", "json", or "jsonl" (default "pretty")
-  -s, --start string    list tasks starting after or at date time
+  -r, --range range     baseline time range (default today)
+  -s, --start time      list tasks starting after or at date time
 ```
 
 ### Options inherited from parent commands

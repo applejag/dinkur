@@ -9,9 +9,9 @@ dinkur in <task name> [flags]
 ### Options
 
 ```
-  -e, --end string     end time of task; new task will not be active if set
-  -h, --help           help for in
-  -s, --start string   start time of task (default "now")
+  -e, --end time     end time of task; new task will not be active if set
+  -h, --help         help for in
+  -s, --start time   start time of task (default now)
 ```
 
 ### Options inherited from parent commands

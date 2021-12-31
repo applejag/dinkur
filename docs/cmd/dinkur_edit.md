@@ -14,11 +14,11 @@ dinkur edit [new name of task] [flags]
 ### Options
 
 ```
-  -a, --append         add name to the end of the existing name, instead of replacing it
-  -e, --end string     end time of task; task will be unmarked as active if set
-  -h, --help           help for edit
-  -i, --id uint        ID of task (default is active or latest task)
-  -s, --start string   start time of task
+  -a, --append       add name to the end of the existing name, instead of replacing it
+  -e, --end time     end time of task; task will be unmarked as active if set
+  -h, --help         help for edit
+  -i, --id uint      ID of task (default is active or latest task)
+  -s, --start time   start time of task
 ```
 
 ### Options inherited from parent commands
