@@ -5,4 +5,4 @@
 # SPDX-License-Identifier: CC0-1.0
 
 # No linting plugins. This directory only contains generated files.
-plugins: []
+*
