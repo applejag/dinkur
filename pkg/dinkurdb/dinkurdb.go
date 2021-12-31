@@ -30,10 +30,13 @@ import (
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/iver-wharf/wharf-core/pkg/gormutil"
+	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	gormlogger "gorm.io/gorm/logger"
 )
+
+var log = logger.NewScoped("DinkurDB")
 
 func nilNotFoundError(err error) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -109,11 +112,11 @@ func (c *client) Connect(ctx context.Context) error {
 	return nil
 }
 
-func getLogger(opt Options) logger.Interface {
+func getLogger(opt Options) gormlogger.Interface {
 	if opt.DebugLogging {
 		return gormutil.DefaultLogger
 	}
-	return logger.Discard
+	return gormlogger.Discard
 }
 
 func (c *client) Ping(ctx context.Context) error {

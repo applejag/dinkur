@@ -24,6 +24,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"gorm.io/gorm"
@@ -86,9 +87,12 @@ func (c *client) migrateNoTran() error {
 	if err != nil {
 		return fmt.Errorf("check migration status: %w", err)
 	}
+	log.Debug().WithStringer("status", status).Message("Migration status checked.")
 	if status == dinkur.MigrationUpToDate {
 		return nil
 	}
+	log.Info().Message("The database is outdated. Migrating...")
+	start := time.Now()
 	tables := []interface{}{
 		&Migration{},
 		&Task{},
@@ -104,5 +108,10 @@ func (c *client) migrateNoTran() error {
 		return err
 	}
 	migration.Version = LatestMigrationVersion
-	return c.db.Save(&migration).Error
+	if err := c.db.Save(&migration).Error; err != nil {
+		return err
+	}
+	dur := time.Since(start)
+	log.Info().WithDuration("duration", dur).Message("Database migration complete.")
+	return nil
 }

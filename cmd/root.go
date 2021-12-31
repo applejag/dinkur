@@ -109,7 +109,7 @@ func initConfig() {
 }
 
 func initLogger() {
-	level := logger.LevelError
+	level := logger.LevelInfo
 	if flagVerbose {
 		level = logger.LevelDebug
 	}
