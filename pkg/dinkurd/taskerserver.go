@@ -77,7 +77,16 @@ func (s *taskerServer) GetTask(ctx context.Context, req *dinkurapiv1.GetTaskRequ
 }
 
 func (s *taskerServer) GetActiveTask(ctx context.Context, req *dinkurapiv1.GetActiveTaskRequest) (*dinkurapiv1.GetActiveTaskResponse, error) {
-	return nil, errors.New("some user error")
+	if err := s.assertConnected(); err != nil {
+		return nil, convError(err)
+	}
+	task, err := s.client.ActiveTask(ctx)
+	if err != nil {
+		return nil, convError(err)
+	}
+	return &dinkurapiv1.GetActiveTaskResponse{
+		ActiveTask: convTaskPtr(task),
+	}, nil
 }
 
 func (s *taskerServer) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTaskListRequest) (*dinkurapiv1.GetTaskListResponse, error) {
@@ -100,5 +109,79 @@ func (s *taskerServer) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTask
 	}
 	return &dinkurapiv1.GetTaskListResponse{
 		Tasks: convTaskSlice(tasks),
+	}, nil
+}
+
+func (s *taskerServer) CreateTask(ctx context.Context, req *dinkurapiv1.CreateTaskRequest) (*dinkurapiv1.CreateTaskResponse, error) {
+	if err := s.assertConnected(); err != nil {
+		return nil, convError(err)
+	}
+	newTask := dinkur.NewTask{
+		Name:  req.Name,
+		Start: convTimestampPtr(req.Start),
+		End:   convTimestampPtr(req.End),
+	}
+	startedTask, err := s.client.StartTask(ctx, newTask)
+	if err != nil {
+		return nil, convError(err)
+	}
+	return &dinkurapiv1.CreateTaskResponse{
+		PreviouslyActiveTask: convTaskPtr(startedTask.Previous),
+		CreatedTask:          convTaskPtr(&startedTask.New),
+	}, nil
+}
+
+func (s *taskerServer) UpdateTask(ctx context.Context, req *dinkurapiv1.UpdateTaskRequest) (*dinkurapiv1.UpdateTaskResponse, error) {
+	if err := s.assertConnected(); err != nil {
+		return nil, convError(err)
+	}
+	id, err := convUint64(req.Id)
+	if err != nil {
+		return nil, convError(err)
+	}
+	edit := dinkur.EditTask{
+		Name:       convString(req.Name),
+		Start:      convTimestampPtr(req.Start),
+		End:        convTimestampPtr(req.End),
+		ID:         id,
+		AppendName: req.AppendName,
+	}
+	update, err := s.client.EditTask(ctx, edit)
+	if err != nil {
+		return nil, convError(err)
+	}
+	return &dinkurapiv1.UpdateTaskResponse{
+		Before: convTaskPtr(&update.Old),
+		After:  convTaskPtr(&update.Updated),
+	}, nil
+}
+
+func (s *taskerServer) DeleteTask(ctx context.Context, req *dinkurapiv1.DeleteTaskRequest) (*dinkurapiv1.DeleteTaskResponse, error) {
+	if err := s.assertConnected(); err != nil {
+		return nil, convError(err)
+	}
+	id, err := uint64ToUint(req.Id)
+	if err != nil {
+		return nil, convError(err)
+	}
+	deletedTask, err := s.client.DeleteTask(ctx, id)
+	if err != nil {
+		return nil, convError(err)
+	}
+	return &dinkurapiv1.DeleteTaskResponse{
+		DeletedTask: convTaskPtr(&deletedTask),
+	}, nil
+}
+
+func (s *taskerServer) StopActiveTask(ctx context.Context, req *dinkurapiv1.StopActiveTaskRequest) (*dinkurapiv1.StopActiveTaskResponse, error) {
+	if err := s.assertConnected(); err != nil {
+		return nil, convError(err)
+	}
+	stoppedTask, err := s.client.StopActiveTask(ctx)
+	if err != nil {
+		return nil, convError(err)
+	}
+	return &dinkurapiv1.StopActiveTaskResponse{
+		StoppedTask: convTaskPtr(stoppedTask),
 	}, nil
 }

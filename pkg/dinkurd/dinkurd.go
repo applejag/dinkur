@@ -48,9 +48,8 @@ func convError(err error) error {
 	case errors.Is(err, dinkur.ErrNotFound):
 		return status.Error(codes.NotFound, err.Error())
 	case errors.Is(err, ErrUintTooLarge),
-		errors.Is(err, dinkur.ErrLimitTooLarge):
-		return status.Error(codes.OutOfRange, err.Error())
-	case errors.Is(err, dinkur.ErrTaskEndBeforeStart),
+		errors.Is(err, dinkur.ErrLimitTooLarge),
+		errors.Is(err, dinkur.ErrTaskEndBeforeStart),
 		errors.Is(err, dinkur.ErrTaskNameEmpty):
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, ErrTaskerServerIsNil),
@@ -63,11 +62,29 @@ func convError(err error) error {
 	}
 }
 
-func uint64ToUint(v uint64) (uint, error) {
-	if v > math.MaxUint {
+func uint64ToUint(i uint64) (uint, error) {
+	if i > math.MaxUint {
 		return 0, ErrUintTooLarge
 	}
-	return uint(v), nil
+	return uint(i), nil
+}
+
+func convUint64(i uint64) (*uint, error) {
+	if i == 0 {
+		return nil, nil
+	}
+	if i > math.MaxUint {
+		return nil, ErrUintTooLarge
+	}
+	i2 := uint(i)
+	return &i2, nil
+}
+
+func convString(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 type Options struct {
