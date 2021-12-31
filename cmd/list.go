@@ -39,6 +39,7 @@ func init() {
 		flagLimit  uint = 1000
 		flagStart  *pflagutil.Time
 		flagEnd    *pflagutil.Time
+		flagRange  = pflagutil.NewTimeRange(timeutil.TimeSpanThisDay)
 		flagOutput = "pretty"
 	)
 
@@ -48,19 +49,19 @@ func init() {
 		Short:   "List your tasks",
 		Long: fmt.Sprintf(`Lists all your tasks.
 
-By default, this will only list today's tasks. You can supply an argument
-to declare a different baseline. The --start and --end flags will always
-take precedence over the baseline.
+By default, this will only list today's tasks. You can supply the --range flag
+to declare a different baseline range. The --start and --end flags will always
+take precedence over the baseline range.
 
-	%[1]s list all        # list all tasks, i.e. no baseline. Alias: "a"
-	%[1]s list past       # list all tasks before now.        Alias: "p"
-	%[1]s list future     # list all tasks since now.         Alias: "f"
-	%[1]s list today      # (default) list today's tasks.     Alias: "t"
-	%[1]s list week       # list this week's tasks.           Alias: "w"
-	%[1]s list yesterday  # list yesterday's tasks.           Alias: "y" or "ld"
-	%[1]s list lastweek   # list last week's tasks.           Alias: "lw"
-	%[1]s list tomorrow   # list tomorrow's tasks.            Alias: "nd"
-	%[1]s list nextweek   # list next week's tasks.           Alias: "nw"
+	%[1]s list --range all        # list all tasks, i.e. no baseline.
+	%[1]s list --range past       # list all tasks before now.
+	%[1]s list --range future     # list all tasks since now.
+	%[1]s list --range today      # (default) list today's tasks.
+	%[1]s list --range week       # list this week's tasks.
+	%[1]s list --range yesterday  # list yesterday's tasks.
+	%[1]s list --range lastweek   # list last week's tasks.
+	%[1]s list --range tomorrow   # list tomorrow's tasks.
+	%[1]s list --range nextweek   # list next week's tasks.
 
 Day baselines sets the range 00:00:00 - 24:59:59.
 Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
@@ -93,13 +94,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				Limit:     flagLimit,
 				Shorthand: timeutil.TimeSpanThisDay,
 			}
-			if len(args) > 0 {
-				if s, ok := parseShorthand(args[0]); !ok {
-					console.PrintFatal("Error parsing argument:", fmt.Sprintf("invalid time span shorthand: %q", args[0]))
-				} else {
-					search.Shorthand = s
-				}
-			}
+			search.Shorthand = flagRange.TimeSpanShorthand()
 			search.Start = flagStart.TimePtr()
 			search.End = flagEnd.TimePtr()
 			log.Debug().
@@ -134,30 +129,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 	listCmd.Flags().UintVarP(&flagLimit, "limit", "l", flagLimit, "limit the number of results, relative to the last result; 0 will disable limit")
 	listCmd.Flags().VarP(flagStart, "start", "s", "list tasks starting after or at date time")
 	listCmd.Flags().VarP(flagEnd, "end", "e", "list tasks ending before or at date time")
+	listCmd.Flags().VarP(flagRange, "range", "r", "baseline time range")
+	listCmd.RegisterFlagCompletionFunc("range", pflagutil.TimeRangeCompletion)
 	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", or "jsonl"`)
-}
-
-func parseShorthand(s string) (timeutil.TimeSpanShorthand, bool) {
-	switch strings.ToLower(s) {
-	case "all", "a":
-		return timeutil.TimeSpanNone, true
-	case "past", "p":
-		return timeutil.TimeSpanPast, true
-	case "future", "f":
-		return timeutil.TimeSpanFuture, true
-	case "today", "t":
-		return timeutil.TimeSpanThisDay, true
-	case "week", "w":
-		return timeutil.TimeSpanThisWeek, true
-	case "yesterday", "y", "ld":
-		return timeutil.TimeSpanPrevDay, true
-	case "lastweek", "lw":
-		return timeutil.TimeSpanPrevWeek, true
-	case "tomorrow", "nd":
-		return timeutil.TimeSpanNextDay, true
-	case "nextweek", "nw":
-		return timeutil.TimeSpanNextWeek, true
-	default:
-		return timeutil.TimeSpanNone, false
-	}
 }
