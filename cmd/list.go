@@ -39,7 +39,7 @@ func init() {
 		flagLimit  uint = 1000
 		flagStart  *pflagutil.Time
 		flagEnd    *pflagutil.Time
-		flagRange  = pflagutil.NewTimeRange(timeutil.TimeSpanThisDay)
+		flagRange  = pflagutil.NewTimeRangePtr(timeutil.TimeSpanThisDay)
 		flagOutput = "pretty"
 	)
 
