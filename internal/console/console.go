@@ -43,9 +43,9 @@ var (
 	taskNameColor      = color.New(color.FgHiYellow, color.Bold)
 	taskTimeDelimColor = color.New(color.FgHiBlack)
 	taskDateColor      = color.New(color.FgGreen)
-	taskStartColor     = color.New(color.FgHiGreen)
-	taskEndColor       = color.New(color.FgHiGreen)
-	taskEndNilColor    = color.New(color.FgGreen, color.Italic)
+	taskStartColor     = color.New(color.FgGreen)
+	taskEndColor       = color.New(color.FgGreen)
+	taskEndNilColor    = color.New(color.FgHiGreen, color.Italic)
 	taskEndNilText     = "now…"
 	taskEndNilTextLen  = utf8.RuneCountInString(taskEndNilText)
 	taskDurationColor  = color.New(color.FgCyan)
@@ -58,7 +58,7 @@ var (
 	tableEmptyColor   = color.New(color.FgHiBlack, color.Italic)
 	tableEmptyText    = "No results to display."
 	tableHeaderColor  = color.New(color.FgWhite, color.Underline, color.Bold)
-	tableSummaryColor = color.New(color.FgWhite, color.Italic)
+	tableSummaryColor = color.New(color.FgHiBlack, color.Italic)
 )
 
 func PrintTaskWithDuration(label string, task dinkur.Task) {
