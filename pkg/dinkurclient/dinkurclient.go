@@ -105,7 +105,7 @@ func convTimestampPtr(ts *timestamppb.Timestamp) *time.Time {
 	if ts == nil {
 		return nil
 	}
-	t := ts.AsTime()
+	t := ts.AsTime().Local()
 	return &t
 }
 
@@ -113,7 +113,7 @@ func convTimestampOrZero(ts *timestamppb.Timestamp) time.Time {
 	if ts == nil {
 		return time.Time{}
 	}
-	return ts.AsTime()
+	return ts.AsTime().Local()
 }
 
 func convShorthand(s timeutil.TimeSpanShorthand) dinkurapiv1.GetTaskListRequest_Shorthand {
