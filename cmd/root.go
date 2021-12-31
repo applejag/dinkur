@@ -29,6 +29,7 @@ import (
 
 	"github.com/dinkur/dinkur/internal/cfgpath"
 	"github.com/dinkur/dinkur/internal/console"
+	"github.com/dinkur/dinkur/internal/license"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/dinkurclient"
 	"github.com/dinkur/dinkur/pkg/dinkurdb"
@@ -47,6 +48,9 @@ var (
 	flagClient    = "db"
 	flagVerbose   = false
 
+	flagLicenseWarranty   bool
+	flagLicenseConditions bool
+
 	c dinkur.Client = &dinkur.NilClient{}
 
 	log = logger.NewScoped("Dinkur")
@@ -57,7 +61,9 @@ var RootCmd = &cobra.Command{
 	Use:     "dinkur",
 	Version: "0.1.0-preview",
 	Short:   "The Dinkur CLI",
-	Long:    `Through these subcommands you can access your time-tracked tasks.`,
+	Long: license.Header + `
+Track how you spend time on your tasks with Dinkur.
+`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		switch strings.ToLower(flagColor) {
 		case "auto":
@@ -68,6 +74,15 @@ var RootCmd = &cobra.Command{
 			color.NoColor = false
 		default:
 			console.PrintFatal("Error parsing --color:", fmt.Errorf(`invalid value %q: only "auto", "always", or "never" may be used`, flagColor))
+		}
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		if flagLicenseWarranty {
+			fmt.Println(license.Warranty)
+		} else if flagLicenseConditions {
+			fmt.Println(license.Conditions)
+		} else {
+			cmd.Help()
 		}
 	},
 }
@@ -85,6 +100,8 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig, initLogger)
 
+	RootCmd.Flags().BoolVar(&flagLicenseConditions, "license-c", false, "show program's license conditions")
+	RootCmd.Flags().BoolVar(&flagLicenseWarranty, "license-w", false, "show program's license warranty")
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", cfgFile, "config file")
 	RootCmd.PersistentFlags().StringVar(&dataFile, "data", dataFile, "database file")
 	RootCmd.PersistentFlags().BoolVar(&flagDataMkdir, "data-mkdir", flagDataMkdir, "create directory for data if it doesn't exist")
