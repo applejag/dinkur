@@ -28,7 +28,7 @@ import (
 	"strings"
 
 	"github.com/dinkur/dinkur/internal/console"
-	"github.com/dinkur/dinkur/internal/flagutil"
+	"github.com/dinkur/dinkur/internal/pflagutil"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/timeutil"
 	"github.com/spf13/cobra"
@@ -37,8 +37,8 @@ import (
 func init() {
 	var (
 		flagLimit  uint = 1000
-		flagStart  string
-		flagEnd    string
+		flagStart  *pflagutil.Time
+		flagEnd    *pflagutil.Time
 		flagOutput = "pretty"
 	)
 
@@ -100,8 +100,8 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 					search.Shorthand = s
 				}
 			}
-			search.Start = flagutil.ParseTime(cmd, "start")
-			search.End = flagutil.ParseTime(cmd, "end")
+			search.Start = flagStart.TimePtr()
+			search.End = flagEnd.TimePtr()
 			log.Debug().
 				WithStringf("--start", "%v", search.Start).
 				WithStringf("--end", "%v", search.End).
@@ -132,8 +132,8 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 	RootCmd.AddCommand(listCmd)
 
 	listCmd.Flags().UintVarP(&flagLimit, "limit", "l", flagLimit, "limit the number of results, relative to the last result; 0 will disable limit")
-	listCmd.Flags().StringP("start", "s", flagStart, "list tasks starting after or at date time")
-	listCmd.Flags().StringP("end", "e", flagEnd, "list tasks ending before or at date time")
+	listCmd.Flags().VarP(flagStart, "start", "s", "list tasks starting after or at date time")
+	listCmd.Flags().VarP(flagEnd, "end", "e", "list tasks ending before or at date time")
 	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", or "jsonl"`)
 }
 

@@ -26,12 +26,17 @@ import (
 	"strings"
 
 	"github.com/dinkur/dinkur/internal/console"
-	"github.com/dinkur/dinkur/internal/flagutil"
+	"github.com/dinkur/dinkur/internal/pflagutil"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/spf13/cobra"
 )
 
 func init() {
+	var (
+		flagStart = &pflagutil.Time{Now: true}
+		flagEnd   *pflagutil.Time
+	)
+
 	var inCmd = &cobra.Command{
 		Use:     "in <task name>",
 		Args:    cobra.ArbitraryArgs,
@@ -42,8 +47,8 @@ func init() {
 			connectClientOrExit()
 			newTask := dinkur.NewTask{
 				Name:  strings.Join(args, " "),
-				Start: flagutil.ParseTime(cmd, "start"),
-				End:   flagutil.ParseTime(cmd, "end"),
+				Start: flagStart.TimePtr(),
+				End:   flagEnd.TimePtr(),
 			}
 			startedTask, err := c.StartTask(context.Background(), newTask)
 			if err != nil {
@@ -62,6 +67,6 @@ func init() {
 	}
 	RootCmd.AddCommand(inCmd)
 
-	inCmd.Flags().StringP("start", "s", "now", `start time of task`)
-	inCmd.Flags().StringP("end", "e", "", `end time of task; new task will not be active if set`)
+	inCmd.Flags().VarP(flagStart, "start", "s", `start time of task`)
+	inCmd.Flags().VarP(flagEnd, "end", "e", `end time of task; new task will not be active if set`)
 }

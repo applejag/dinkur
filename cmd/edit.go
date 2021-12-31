@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"github.com/dinkur/dinkur/internal/console"
-	"github.com/dinkur/dinkur/internal/flagutil"
+	"github.com/dinkur/dinkur/internal/pflagutil"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/spf13/cobra"
 )
@@ -34,6 +34,8 @@ func init() {
 	var (
 		flagID     uint
 		flagAppend bool
+		flagStart  *pflagutil.Time
+		flagEnd    *pflagutil.Time
 	)
 
 	var editCmd = &cobra.Command{
@@ -45,8 +47,8 @@ a specific task using the --id or -i flag.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
 			edit := dinkur.EditTask{
-				Start:      flagutil.ParseTime(cmd, "start"),
-				End:        flagutil.ParseTime(cmd, "end"),
+				Start:      flagStart.TimePtr(),
+				End:        flagEnd.TimePtr(),
 				AppendName: flagAppend,
 			}
 			if len(args) > 0 {
@@ -66,8 +68,8 @@ a specific task using the --id or -i flag.`,
 
 	RootCmd.AddCommand(editCmd)
 
-	editCmd.Flags().StringP("start", "s", "", `start time of task`)
-	editCmd.Flags().StringP("end", "e", "", `end time of task; task will be unmarked as active if set`)
+	editCmd.Flags().VarP(flagStart, "start", "s", `start time of task`)
+	editCmd.Flags().VarP(flagEnd, "end", "e", `end time of task; task will be unmarked as active if set`)
 	editCmd.Flags().BoolVarP(&flagAppend, "append", "a", flagAppend, `add name to the end of the existing name, instead of replacing it`)
 	editCmd.Flags().UintVarP(&flagID, "id", "i", 0, `ID of task (default is active or latest task)`)
 }

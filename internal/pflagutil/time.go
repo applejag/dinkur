@@ -18,33 +18,59 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package flagutil
+package pflagutil
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/internal/fuzzytime"
-	"github.com/spf13/cobra"
 )
 
-func ParseTime(cmd *cobra.Command, name string) *time.Time {
-	f := cmd.Flags().Lookup(name)
-	if f == nil || !f.Changed {
-		return nil
-	}
-	val := f.Value.String()
-	if val == "" {
-		printFatal(name, "cannot be empty")
-	}
-	start, err := fuzzytime.Parse(val)
-	if err != nil {
-		printFatal(name, err)
-	}
-	return &start
+var TimeDefaultLayout = "Jan 02 15:04"
+
+type Time struct {
+	Now  bool
+	time time.Time
 }
 
-func printFatal(name string, v interface{}) {
-	console.PrintFatal(fmt.Sprintf("Error parsing --%s:", name), v)
+func (t *Time) String() string {
+	if t == nil {
+		return ""
+	}
+	if t.Now {
+		return "now"
+	}
+	return time.Time(t.time).Format(TimeDefaultLayout)
+}
+
+func (t *Time) Set(s string) error {
+	parsed, err := fuzzytime.Parse(s)
+	if err != nil {
+		return err
+	}
+	t.time = parsed
+	t.Now = false
+	return nil
+}
+
+func (t *Time) Type() string {
+	return "time"
+}
+
+func (t *Time) Time() time.Time {
+	if t.Now {
+		return time.Now()
+	}
+	return time.Time(t.time)
+}
+
+func (t *Time) TimePtr() *time.Time {
+	if t == nil {
+		return nil
+	}
+	if t.Now {
+		now := time.Now()
+		return &now
+	}
+	return (*time.Time)(&t.time)
 }
