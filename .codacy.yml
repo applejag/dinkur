@@ -1,0 +1,13 @@
+# Dinkur the task time tracking utility.
+# <https://github.com/dinkur/dinkur>
+#
+# SPDX-FileCopyrightText: 2021 Kalle Fagerberg
+# SPDX-License-Identifier: CC0-1.0
+
+---
+engines:
+  duplication:
+    # The duplication analysis is great, but it's just not a good fit for
+    # Go yet due to Go having so much error-handling boiler plate and lack
+    # of generics to abstract the code while not wasting performance.
+    enabled: false
