@@ -21,6 +21,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -36,7 +37,7 @@ var outCmd = &cobra.Command{
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		connectClientOrExit()
-		stoppedTask, err := c.StopActiveTask()
+		stoppedTask, err := c.StopActiveTask(context.Background())
 		if err != nil {
 			console.PrintFatal("Error stopping task:", err)
 		}

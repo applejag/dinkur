@@ -21,6 +21,7 @@
 package dinkurdb
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -30,8 +31,8 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
-func (c *client) ActiveTask() (*dinkur.Task, error) {
-	dbTask, err := c.activeDBTask()
+func (c *client) ActiveTask(ctx context.Context) (*dinkur.Task, error) {
+	dbTask, err := c.withContext(ctx).activeDBTask()
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +51,8 @@ func (c *client) activeDBTask() (*Task, error) {
 	return &dbTask, nil
 }
 
-func (c *client) GetTask(id uint) (dinkur.Task, error) {
-	dbTask, err := c.getDBTask(id)
+func (c *client) GetTask(ctx context.Context, id uint) (dinkur.Task, error) {
+	dbTask, err := c.withContext(ctx).getDBTask(id)
 	if err != nil {
 		return dinkur.Task{}, err
 	}
@@ -93,8 +94,8 @@ var (
 	)
 )
 
-func (c *client) ListTasks(search dinkur.SearchTask) ([]dinkur.Task, error) {
-	dbTasks, err := c.listDBTasks(search)
+func (c *client) ListTasks(ctx context.Context, search dinkur.SearchTask) ([]dinkur.Task, error) {
+	dbTasks, err := c.withContext(ctx).listDBTasks(search)
 	if err != nil {
 		return nil, err
 	}
@@ -142,110 +143,141 @@ func (c *client) listDBTasks(search dinkur.SearchTask) ([]Task, error) {
 	return dbTasks, nil
 }
 
-func (c *client) EditTask(edit dinkur.EditTask) (dinkur.UpdatedTask, error) {
+func (c *client) EditTask(ctx context.Context, edit dinkur.EditTask) (dinkur.UpdatedTask, error) {
 	if err := c.assertConnected(); err != nil {
 		return dinkur.UpdatedTask{}, err
 	}
+	update, err := c.withContext(ctx).editDBTask(edit)
+	if err != nil {
+		return dinkur.UpdatedTask{}, err
+	}
+	return dinkur.UpdatedTask{
+		Old:     convTask(update.old),
+		Updated: convTask(update.updated),
+	}, nil
+}
+
+type updatedDBTask struct {
+	old     Task
+	updated Task
+}
+
+func (c *client) editDBTask(edit dinkur.EditTask) (updatedDBTask, error) {
 	if edit.Name != nil && *edit.Name == "" {
-		return dinkur.UpdatedTask{}, dinkur.ErrTaskNameEmpty
+		return updatedDBTask{}, dinkur.ErrTaskNameEmpty
 	}
 	if edit.Start != nil && edit.End != nil && edit.Start.After(*edit.End) {
-		return dinkur.UpdatedTask{}, dinkur.ErrTaskEndBeforeStart
+		return updatedDBTask{}, dinkur.ErrTaskEndBeforeStart
 	}
-	var update dinkur.UpdatedTask
-	err := c.transaction(func(tx *client) error {
-		dbTask, err := tx.getDBTaskToEdit(edit.ID)
-		if err != nil {
-			if errors.Is(err, dinkur.ErrNotFound) {
-				return fmt.Errorf("no task to edit, failed finding latest task: %w", err)
-			}
-			return fmt.Errorf("get task to edit: %w", err)
-		}
-		var anyEdit bool
-		update.Old = convTask(dbTask)
-		if edit.Name != nil {
-			if edit.AppendName {
-				dbTask.Name = fmt.Sprint(dbTask.Name, " ", *edit.Name)
-			} else {
-				dbTask.Name = *edit.Name
-			}
-			anyEdit = true
-		}
-		if edit.Start != nil {
-			dbTask.Start = *edit.Start
-			anyEdit = true
-		}
-		if edit.End != nil {
-			dbTask.End = edit.End
-			anyEdit = true
-		}
-		if dbTask.Elapsed() < 0 {
-			return dinkur.ErrTaskEndBeforeStart
-		}
-		if anyEdit {
-			if err := tx.db.Save(&dbTask).Error; err != nil {
-				return fmt.Errorf("save updated task: %w", err)
-			}
-		}
-		update.Updated = convTask(dbTask)
-		return nil
+	var update updatedDBTask
+	err := c.transaction(func(tx *client) (tranErr error) {
+		update, tranErr = tx.editDBTaskNoTran(edit)
+		return
 	})
 	return update, err
 }
 
-func (c *client) getDBTaskToEdit(id *uint) (Task, error) {
+func (c *client) editDBTaskNoTran(edit dinkur.EditTask) (updatedDBTask, error) {
+	dbTask, err := c.getDBTaskToEditNoTran(edit.ID)
+	if err != nil {
+		if errors.Is(err, dinkur.ErrNotFound) {
+			return updatedDBTask{}, fmt.Errorf("no task to edit, failed finding latest task: %w", err)
+		}
+		return updatedDBTask{}, fmt.Errorf("get task to edit: %w", err)
+	}
+	var anyEdit bool
+	taskBeforeEdit := dbTask
+	if edit.Name != nil {
+		if edit.AppendName {
+			dbTask.Name = fmt.Sprint(dbTask.Name, " ", *edit.Name)
+		} else {
+			dbTask.Name = *edit.Name
+		}
+		anyEdit = true
+	}
+	if edit.Start != nil {
+		dbTask.Start = *edit.Start
+		anyEdit = true
+	}
+	if edit.End != nil {
+		dbTask.End = edit.End
+		anyEdit = true
+	}
+	if dbTask.Elapsed() < 0 {
+		return updatedDBTask{}, dinkur.ErrTaskEndBeforeStart
+	}
+	if anyEdit {
+		if err := c.db.Save(&dbTask).Error; err != nil {
+			return updatedDBTask{}, fmt.Errorf("save updated task: %w", err)
+		}
+	}
+	return updatedDBTask{
+		old:     taskBeforeEdit,
+		updated: dbTask,
+	}, nil
+}
+
+func (c *client) getDBTaskToEditNoTran(id *uint) (Task, error) {
+	if id != nil {
+		dbTaskByID, err := c.getDBTask(*id)
+		if err != nil {
+			return Task{}, fmt.Errorf("get task by ID: %d: %w", *id, err)
+		}
+		return dbTaskByID, nil
+	}
+	activeDBTask, err := c.activeDBTask()
+	if err != nil {
+		return Task{}, fmt.Errorf("get active task: %w", err)
+	}
+	if activeDBTask != nil {
+		return *activeDBTask, nil
+	}
+	now := time.Now()
+	dbTasks, err := c.listDBTasks(dinkur.SearchTask{
+		Limit: 1,
+		End:   &now,
+	})
+	if err != nil {
+		return Task{}, fmt.Errorf("list latest 1 task: %w", err)
+	}
+	if len(dbTasks) == 0 {
+		return Task{}, dinkur.ErrNotFound
+	}
+	return dbTasks[0], nil
+}
+
+func (c *client) DeleteTask(ctx context.Context, id uint) (dinkur.Task, error) {
+	if err := c.assertConnected(); err != nil {
+		return dinkur.Task{}, err
+	}
+	dbTask, err := c.withContext(ctx).deleteDBTask(id)
+	if err != nil {
+		return dinkur.Task{}, err
+	}
+	return convTask(dbTask), err
+}
+
+func (c *client) deleteDBTask(id uint) (Task, error) {
 	var dbTask Task
-	err := c.transaction(func(tx *client) error {
-		if id != nil {
-			dbTaskByID, err := tx.getDBTask(*id)
-			if err != nil {
-				return fmt.Errorf("get task by ID: %d: %w", *id, err)
-			}
-			dbTask = dbTaskByID
-			return nil
-		}
-		activeDBTask, err := tx.activeDBTask()
-		if err != nil {
-			return fmt.Errorf("get active task: %w", err)
-		}
-		if activeDBTask != nil {
-			dbTask = *activeDBTask
-			return nil
-		}
-		now := time.Now()
-		dbTasks, err := tx.listDBTasks(dinkur.SearchTask{
-			Limit: 1,
-			End:   &now,
-		})
-		if err != nil {
-			return fmt.Errorf("list latest 1 task: %w", err)
-		}
-		if len(dbTasks) == 0 {
-			return dinkur.ErrNotFound
-		}
-		dbTask = dbTasks[0]
-		return nil
+	err := c.transaction(func(tx *client) (tranErr error) {
+		dbTask, tranErr = tx.deleteDBTaskNoTran(id)
+		return
 	})
 	return dbTask, err
 }
 
-func (c *client) DeleteTask(id uint) (dinkur.Task, error) {
-	if err := c.assertConnected(); err != nil {
-		return dinkur.Task{}, err
+func (c *client) deleteDBTaskNoTran(id uint) (Task, error) {
+	dbTask, err := c.getDBTask(id)
+	if err != nil {
+		return Task{}, fmt.Errorf("get task to delete: %w", err)
 	}
-	var task dinkur.Task
-	err := c.transaction(func(tx *client) error {
-		var err error
-		task, err = tx.GetTask(id)
-		if err != nil {
-			return fmt.Errorf("get task to delete: %w", err)
-		}
-		return tx.db.Delete(&Task{}, id).Error
-	})
-	return task, err
+	if err := c.db.Delete(&Task{}, id).Error; err != nil {
+		return Task{}, fmt.Errorf("delete task: %w", err)
+	}
+	return dbTask, nil
 }
 
-func (c *client) StartTask(task dinkur.NewTask) (dinkur.StartedTask, error) {
+func (c *client) StartTask(ctx context.Context, task dinkur.NewTask) (dinkur.StartedTask, error) {
 	if err := c.assertConnected(); err != nil {
 		return dinkur.StartedTask{}, err
 	}
@@ -266,48 +298,83 @@ func (c *client) StartTask(task dinkur.NewTask) (dinkur.StartedTask, error) {
 		Start: start.UTC(),
 		End:   timePtrUTC(task.End),
 	}
-	var startedTask dinkur.StartedTask
-	c.transaction(func(tx *client) error {
-		var err error
-		startedTask.Previous, err = tx.StopActiveTask()
-		if err != nil {
-			return err
-		}
-		err = tx.db.Create(&dbTask).Error
-		if err != nil {
-			return fmt.Errorf("create new active task: %w", err)
-		}
-		startedTask.New = convTask(dbTask)
-		return nil
+	startedTask, err := c.withContext(ctx).startDBTask(dbTask)
+	if err != nil {
+		return dinkur.StartedTask{}, err
+	}
+	return dinkur.StartedTask{
+		New:      convTask(startedTask.new),
+		Previous: convTaskPtr(startedTask.previous),
+	}, nil
+}
+
+type startedDBTask struct {
+	previous *Task
+	new      Task
+}
+
+func (c *client) startDBTask(dbTask Task) (startedDBTask, error) {
+	var startedTask startedDBTask
+	c.transaction(func(tx *client) (tranErr error) {
+		startedTask, tranErr = tx.startDBTaskNoTran(dbTask)
+		return
 	})
 	return startedTask, nil
 }
 
-func (c *client) StopActiveTask() (*dinkur.Task, error) {
+func (c *client) startDBTaskNoTran(dbTask Task) (startedDBTask, error) {
+	previousDBTask, err := c.stopActiveDBTaskNoTran()
+	if err != nil {
+		return startedDBTask{}, err
+	}
+	err = c.db.Create(&dbTask).Error
+	if err != nil {
+		return startedDBTask{}, fmt.Errorf("create new active task: %w", err)
+	}
+	return startedDBTask{
+		previous: previousDBTask,
+		new:      dbTask,
+	}, nil
+}
+
+func (c *client) StopActiveTask(ctx context.Context) (*dinkur.Task, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
-	var activeTask *dinkur.Task
-	err := c.transaction(func(tx *client) error {
-		var err error
-		activeTask, err = tx.ActiveTask()
-		if err != nil {
-			return fmt.Errorf("get previously active task: %w", err)
-		}
-		_, err = tx.stopAllTasks()
-		if err != nil {
-			return fmt.Errorf("stop previously active task: %w", err)
-		}
-		if activeTask != nil {
-			updatedTask, err := tx.GetTask(activeTask.ID)
-			if err != nil {
-				return fmt.Errorf("get updated previously active task: %w", err)
-			}
-			activeTask = &updatedTask
-		}
-		return nil
+	dbTask, err := c.withContext(ctx).stopActiveDBTask()
+	if err != nil {
+		return nil, err
+	}
+	return convTaskPtr(dbTask), nil
+}
+
+func (c *client) stopActiveDBTask() (*Task, error) {
+	var activeDBTask *Task
+	err := c.transaction(func(tx *client) (tranErr error) {
+		activeDBTask, tranErr = tx.stopActiveDBTaskNoTran()
+		return
 	})
-	return activeTask, err
+	return activeDBTask, err
+}
+
+func (c *client) stopActiveDBTaskNoTran() (*Task, error) {
+	var err error
+	activeTask, err := c.activeDBTask()
+	if err != nil {
+		return nil, fmt.Errorf("get previously active task: %w", err)
+	}
+	_, err = c.stopAllTasks()
+	if err != nil {
+		return nil, fmt.Errorf("stop previously active task: %w", err)
+	}
+	if activeTask != nil {
+		updatedTask, err := c.getDBTask(activeTask.ID)
+		if err != nil {
+			return nil, fmt.Errorf("get updated previously active task: %w", err)
+		}
+		activeTask = &updatedTask
+	}
+	return activeTask, nil
 }
 
 func (c *client) stopAllTasks() (bool, error) {

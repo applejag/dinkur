@@ -21,6 +21,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/dinkur/dinkur/internal/console"
@@ -35,7 +36,7 @@ var statusCmd = &cobra.Command{
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		connectClientOrExit()
-		activeTask, err := c.ActiveTask()
+		activeTask, err := c.ActiveTask(context.Background())
 		if err != nil {
 			console.PrintFatal("Error getting active task:", err)
 		}

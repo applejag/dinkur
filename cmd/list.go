@@ -21,6 +21,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -104,7 +105,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 			printDebugf("--start=%q", search.Start)
 			printDebugf("--end=%q", search.End)
 			printDebugf("--shorthand=%q", search.Shorthand)
-			tasks, err := c.ListTasks(search)
+			tasks, err := c.ListTasks(context.Background(), search)
 			if err != nil {
 				console.PrintFatal("Error getting list of tasks:", err)
 			}

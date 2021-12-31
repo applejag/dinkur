@@ -46,11 +46,11 @@ func (c *taskerServer) assertConnected() error {
 	return nil
 }
 
-func (s *taskerServer) Ping(context.Context, *dinkurapiv1.PingRequest) (*dinkurapiv1.PingResponse, error) {
+func (s *taskerServer) Ping(ctx context.Context, req *dinkurapiv1.PingRequest) (*dinkurapiv1.PingResponse, error) {
 	if err := s.assertConnected(); err != nil {
 		return nil, err
 	}
-	if err := s.client.Ping(); err != nil {
+	if err := s.client.Ping(ctx); err != nil {
 		return nil, err
 	}
 	return &dinkurapiv1.PingResponse{}, nil
@@ -64,7 +64,7 @@ func (s *taskerServer) GetTask(ctx context.Context, req *dinkurapiv1.GetTaskRequ
 	if err != nil {
 		return nil, err
 	}
-	task, err := s.client.GetTask(id)
+	task, err := s.client.GetTask(ctx, id)
 	if err != nil {
 		if errors.Is(err, dinkur.ErrNotFound) {
 			return &dinkurapiv1.GetTaskResponse{}, nil
@@ -90,7 +90,7 @@ func (s *taskerServer) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTask
 	if err != nil {
 		return nil, err
 	}
-	tasks, err := s.client.ListTasks(search)
+	tasks, err := s.client.ListTasks(ctx, search)
 	if err != nil {
 		return nil, err
 	}

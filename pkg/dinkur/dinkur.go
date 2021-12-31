@@ -20,6 +20,7 @@
 package dinkur
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -41,17 +42,17 @@ var (
 )
 
 type Client interface {
-	Connect() error
-	Ping() error
+	Connect(ctx context.Context) error
 	Close() error
+	Ping(ctx context.Context) error
 
-	GetTask(id uint) (Task, error)
-	ListTasks(search SearchTask) ([]Task, error)
-	EditTask(edit EditTask) (UpdatedTask, error)
-	DeleteTask(id uint) (Task, error)
-	StartTask(task NewTask) (StartedTask, error)
-	ActiveTask() (*Task, error)
-	StopActiveTask() (*Task, error)
+	GetTask(ctx context.Context, id uint) (Task, error)
+	ListTasks(ctx context.Context, search SearchTask) ([]Task, error)
+	EditTask(ctx context.Context, edit EditTask) (UpdatedTask, error)
+	DeleteTask(ctx context.Context, id uint) (Task, error)
+	StartTask(ctx context.Context, task NewTask) (StartedTask, error)
+	ActiveTask(ctx context.Context) (*Task, error)
+	StopActiveTask(ctx context.Context) (*Task, error)
 }
 
 type SearchTask struct {

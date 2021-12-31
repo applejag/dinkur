@@ -21,6 +21,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -44,7 +45,7 @@ func init() {
 				Start: flagutil.ParseTime(cmd, "start"),
 				End:   flagutil.ParseTime(cmd, "end"),
 			}
-			startedTask, err := c.StartTask(newTask)
+			startedTask, err := c.StartTask(context.Background(), newTask)
 			if err != nil {
 				console.PrintFatal("Error starting task:", err)
 			}

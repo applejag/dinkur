@@ -21,6 +21,7 @@
 package cmd
 
 import (
+	"context"
 	"strings"
 
 	"github.com/dinkur/dinkur/internal/console"
@@ -55,7 +56,7 @@ a specific task using the --id or -i flag.`,
 			if cmd.Flags().Changed("id") {
 				edit.ID = &flagID
 			}
-			update, err := c.EditTask(edit)
+			update, err := c.EditTask(context.Background(), edit)
 			if err != nil {
 				console.PrintFatal("Error editing task:", err)
 			}

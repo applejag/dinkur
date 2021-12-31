@@ -54,7 +54,7 @@ func (c *client) assertConnected() error {
 	return nil
 }
 
-func (c *client) Connect() error {
+func (c *client) Connect(ctx context.Context) error {
 	if c == nil {
 		return dinkur.ErrClientIsNil
 	}
@@ -79,11 +79,11 @@ func (c *client) Close() (err error) {
 	return
 }
 
-func (c *client) Ping() error {
+func (c *client) Ping(ctx context.Context) error {
 	if err := c.assertConnected(); err != nil {
 		return err
 	}
-	res, err := c.tasker.Ping(context.TODO(), &dinkurapiv1.PingRequest{})
+	res, err := c.tasker.Ping(ctx, &dinkurapiv1.PingRequest{})
 	if err != nil {
 		return err
 	}
@@ -93,14 +93,14 @@ func (c *client) Ping() error {
 	return nil
 }
 
-func (c *client) GetTask(id uint) (dinkur.Task, error) {
+func (c *client) GetTask(ctx context.Context, id uint) (dinkur.Task, error) {
 	if err := c.assertConnected(); err != nil {
 		return dinkur.Task{}, err
 	}
 	return dinkur.Task{}, ErrNotImplemented
 }
 
-func (c *client) ListTasks(search dinkur.SearchTask) ([]dinkur.Task, error) {
+func (c *client) ListTasks(ctx context.Context, search dinkur.SearchTask) ([]dinkur.Task, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (c *client) ListTasks(search dinkur.SearchTask) ([]dinkur.Task, error) {
 		Limit:     uint64(search.Limit),
 		Shorthand: convShorthand(search.Shorthand),
 	}
-	res, err := c.tasker.GetTaskList(context.TODO(), &req)
+	res, err := c.tasker.GetTaskList(ctx, &req)
 	if err != nil {
 		return nil, err
 	}
@@ -124,35 +124,35 @@ func (c *client) ListTasks(search dinkur.SearchTask) ([]dinkur.Task, error) {
 	return tasks, nil
 }
 
-func (c *client) EditTask(edit dinkur.EditTask) (dinkur.UpdatedTask, error) {
+func (c *client) EditTask(ctx context.Context, edit dinkur.EditTask) (dinkur.UpdatedTask, error) {
 	if err := c.assertConnected(); err != nil {
 		return dinkur.UpdatedTask{}, err
 	}
 	return dinkur.UpdatedTask{}, ErrNotImplemented
 }
 
-func (c *client) DeleteTask(id uint) (dinkur.Task, error) {
+func (c *client) DeleteTask(ctx context.Context, id uint) (dinkur.Task, error) {
 	if err := c.assertConnected(); err != nil {
 		return dinkur.Task{}, err
 	}
 	return dinkur.Task{}, ErrNotImplemented
 }
 
-func (c *client) StartTask(task dinkur.NewTask) (dinkur.StartedTask, error) {
+func (c *client) StartTask(ctx context.Context, task dinkur.NewTask) (dinkur.StartedTask, error) {
 	if err := c.assertConnected(); err != nil {
 		return dinkur.StartedTask{}, err
 	}
 	return dinkur.StartedTask{}, ErrNotImplemented
 }
 
-func (c *client) ActiveTask() (*dinkur.Task, error) {
+func (c *client) ActiveTask(ctx context.Context) (*dinkur.Task, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
 	return nil, ErrNotImplemented
 }
 
-func (c *client) StopActiveTask() (*dinkur.Task, error) {
+func (c *client) StopActiveTask(ctx context.Context) (*dinkur.Task, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}

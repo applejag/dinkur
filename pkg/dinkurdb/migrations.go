@@ -21,6 +21,7 @@
 package dinkurdb
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -30,10 +31,14 @@ import (
 
 const LatestMigrationVersion = 2
 
-func (c *client) MigrationStatus() (dinkur.MigrationStatus, error) {
+func (c *client) MigrationStatus(ctx context.Context) (dinkur.MigrationStatus, error) {
 	if err := c.assertConnected(); err != nil {
 		return dinkur.MigrationUnknown, err
 	}
+	return c.withContext(ctx).migrationStatus()
+}
+
+func (c *client) migrationStatus() (dinkur.MigrationStatus, error) {
 	if c.prevMigStatus != dinkur.MigrationUnknown {
 		return c.prevMigStatus, nil
 	}
@@ -60,33 +65,41 @@ func getMigrationStatus(db *gorm.DB) (dinkur.MigrationStatus, error) {
 	return dinkur.MigrationUpToDate, nil
 }
 
-func (c *client) Migrate() error {
+func (c *client) Migrate(ctx context.Context) error {
 	if err := c.assertConnected(); err != nil {
 		return err
 	}
+	return c.withContext(ctx).migrate()
+}
+
+func (c *client) migrate() error {
 	return c.transaction(func(tx *client) error {
-		status, err := tx.MigrationStatus()
-		if err != nil {
-			return fmt.Errorf("check migration status: %w", err)
-		}
-		if status == dinkur.MigrationUpToDate {
-			return nil
-		}
-		tables := []interface{}{
-			&Migration{},
-			&Task{},
-		}
-		for _, tbl := range tables {
-			if err := tx.db.AutoMigrate(tbl); err != nil {
-				return err
-			}
-		}
-		var migration Migration
-		if err := tx.db.FirstOrCreate(&migration).Error; err != nil &&
-			!errors.Is(err, gorm.ErrRecordNotFound) {
+		return tx.migrateNoTran()
+	})
+}
+
+func (c *client) migrateNoTran() error {
+	status, err := c.migrationStatus()
+	if err != nil {
+		return fmt.Errorf("check migration status: %w", err)
+	}
+	if status == dinkur.MigrationUpToDate {
+		return nil
+	}
+	tables := []interface{}{
+		&Migration{},
+		&Task{},
+	}
+	for _, tbl := range tables {
+		if err := c.db.AutoMigrate(tbl); err != nil {
 			return err
 		}
-		migration.Version = LatestMigrationVersion
-		return tx.db.Save(&migration).Error
-	})
+	}
+	var migration Migration
+	if err := c.db.FirstOrCreate(&migration).Error; err != nil &&
+		!errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	migration.Version = LatestMigrationVersion
+	return c.db.Save(&migration).Error
 }

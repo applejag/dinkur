@@ -21,6 +21,7 @@
 package dinkurdb
 
 import (
+	"context"
 	"errors"
 	"log"
 	"os"
@@ -69,7 +70,7 @@ func (c *client) assertConnected() error {
 	return nil
 }
 
-func (c *client) Connect() error {
+func (c *client) Connect(ctx context.Context) error {
 	if c == nil {
 		return dinkur.ErrClientIsNil
 	}
@@ -93,7 +94,7 @@ func (c *client) Connect() error {
 	}
 	sqlDB.SetMaxOpenConns(1)
 	if !c.SkipMigrateOnConnect {
-		return c.Migrate()
+		return c.Migrate(ctx)
 	}
 	return nil
 }
@@ -110,7 +111,7 @@ func getLogger(opt Options) logger.Interface {
 	return logger.Discard
 }
 
-func (c *client) Ping() error {
+func (c *client) Ping(ctx context.Context) error {
 	if err := c.assertConnected(); err != nil {
 		return err
 	}
@@ -118,7 +119,7 @@ func (c *client) Ping() error {
 	if err != nil {
 		return err
 	}
-	return sql.Ping()
+	return sql.PingContext(ctx)
 }
 
 func (c *client) Close() error {
@@ -142,4 +143,10 @@ func (c *client) transaction(f func(tx *client) error) error {
 		newClient.db = tx
 		return f(&newClient)
 	})
+}
+
+func (c *client) withContext(ctx context.Context) *client {
+	newClient := *c
+	newClient.db = newClient.db.WithContext(ctx)
+	return &newClient
 }

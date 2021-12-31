@@ -21,6 +21,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -134,10 +135,10 @@ func connectClient() (dinkur.Client, error) {
 
 func connectToGRPCClient() (dinkur.Client, error) {
 	c := dinkurclient.NewClient("localhost:59122", dinkurclient.Options{})
-	if err := c.Connect(); err != nil {
+	if err := c.Connect(context.Background()); err != nil {
 		return nil, err
 	}
-	if err := c.Ping(); err != nil {
+	if err := c.Ping(context.Background()); err != nil {
 		return nil, fmt.Errorf("attempting ping: %w", err)
 	}
 	return c, nil
@@ -149,7 +150,7 @@ func connectToDBClient() (dinkur.Client, error) {
 		DebugLogging:  flagVerbose,
 		DebugColorful: !color.NoColor,
 	})
-	return c, c.Connect()
+	return c, c.Connect(context.Background())
 }
 
 func printDebug(v interface{}) {

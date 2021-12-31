@@ -21,6 +21,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -45,7 +46,7 @@ No bulk removal is supported.
 Warning: Removing a task cannot be undone!`,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
-			task, err := c.DeleteTask(flagID)
+			task, err := c.DeleteTask(context.Background(), flagID)
 			if err != nil {
 				console.PrintFatal("Error removing task:", err)
 			}

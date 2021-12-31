@@ -19,45 +19,47 @@
 
 package dinkur
 
+import "context"
+
 type NilClient struct {
 }
 
-func (c NilClient) Connect() error {
+func (NilClient) Connect(context.Context) error {
 	return ErrClientIsNil
 }
 
-func (c NilClient) Ping() error {
+func (NilClient) Ping(context.Context) error {
 	return ErrClientIsNil
 }
 
-func (c NilClient) Close() error {
+func (NilClient) Close() error {
 	return ErrClientIsNil
 }
 
-func (c NilClient) GetTask(id uint) (Task, error) {
+func (NilClient) GetTask(context.Context, uint) (Task, error) {
 	return Task{}, ErrClientIsNil
 }
 
-func (c NilClient) ListTasks(search SearchTask) ([]Task, error) {
+func (NilClient) ListTasks(context.Context, SearchTask) ([]Task, error) {
 	return nil, ErrClientIsNil
 }
 
-func (c NilClient) EditTask(edit EditTask) (UpdatedTask, error) {
+func (NilClient) EditTask(context.Context, EditTask) (UpdatedTask, error) {
 	return UpdatedTask{}, ErrClientIsNil
 }
 
-func (c NilClient) DeleteTask(id uint) (Task, error) {
+func (NilClient) DeleteTask(context.Context, uint) (Task, error) {
 	return Task{}, ErrClientIsNil
 }
 
-func (c NilClient) StartTask(task NewTask) (StartedTask, error) {
+func (NilClient) StartTask(context.Context, NewTask) (StartedTask, error) {
 	return StartedTask{}, ErrClientIsNil
 }
 
-func (c NilClient) ActiveTask() (*Task, error) {
+func (NilClient) ActiveTask(context.Context) (*Task, error) {
 	return nil, ErrClientIsNil
 }
 
-func (c NilClient) StopActiveTask() (*Task, error) {
+func (NilClient) StopActiveTask(context.Context) (*Task, error) {
 	return nil, ErrClientIsNil
 }
