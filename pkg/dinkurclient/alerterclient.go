@@ -21,19 +21,94 @@ package dinkurclient
 
 import (
 	"context"
-	"errors"
+	"io"
 
+	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
-func (*client) StreamAlert(context.Context) (<-chan dinkur.StreamedAlert, error) {
-	return nil, errors.New("not yet implemented")
+func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, error) {
+	if err := c.assertConnected(); err != nil {
+		return nil, err
+	}
+	stream, err := c.alerter.StreamAlert(ctx, &dinkurapiv1.StreamAlertRequest{})
+	if err != nil {
+		return nil, convError(err)
+	}
+	alertChan := make(chan dinkur.StreamedAlert)
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err != nil {
+				if err != io.EOF {
+					log.Error().
+						WithError(err).
+						Message("Error when streaming alerts. Closing stream.")
+				}
+				close(alertChan)
+				return
+			}
+			if res == nil {
+				continue
+			}
+			const logWarnMsg = "Error when streaming alerts. Ignoring message."
+			alert, err := convAlertPtr(res.Alert)
+			if err != nil {
+				log.Warn().WithError(err).
+					Message(logWarnMsg)
+				continue
+			}
+			if alert != nil {
+				log.Warn().WithError(ErrUnexpectedNilAlert).
+					Message(logWarnMsg)
+				continue
+			}
+			alertChan <- dinkur.StreamedAlert{
+				Alert: *alert,
+				Event: convEvent(res.Event),
+			}
+		}
+	}()
+	return alertChan, nil
 }
 
-func (*client) GetAlertList(context.Context) ([]dinkur.Alert, error) {
-	return nil, errors.New("not yet implemented")
+func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
+	if err := c.assertConnected(); err != nil {
+		return nil, err
+	}
+	res, err := c.alerter.GetAlertList(ctx, &dinkurapiv1.GetAlertListRequest{})
+	if err != nil {
+		return nil, convError(err)
+	}
+	if res == nil {
+		return nil, ErrResponseIsNil
+	}
+	alerts, err := convAlertSlice(res.Alerts)
+	if err != nil {
+		return nil, convError(err)
+	}
+	return alerts, nil
 }
 
-func (*client) DeleteAlert(context.Context, uint) (dinkur.Alert, error) {
-	return dinkur.Alert{}, errors.New("not yet implemented")
+func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error) {
+	if err := c.assertConnected(); err != nil {
+		return dinkur.Alert{}, err
+	}
+	res, err := c.alerter.DeleteAlert(ctx, &dinkurapiv1.DeleteAlertRequest{
+		Id: uint64(id),
+	})
+	if err != nil {
+		return dinkur.Alert{}, convError(err)
+	}
+	if res == nil {
+		return dinkur.Alert{}, ErrResponseIsNil
+	}
+	alert, err := convAlertPtr(res.DeletedAlert)
+	if err != nil {
+		return dinkur.Alert{}, convError(err)
+	}
+	if alert == nil {
+		return dinkur.Alert{}, ErrUnexpectedNilAlert
+	}
+	return *alert, nil
 }

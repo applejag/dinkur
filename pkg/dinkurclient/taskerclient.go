@@ -24,80 +24,9 @@ import (
 	"fmt"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 )
-
-// Options for the Dinkur client.
-type Options struct{}
-
-// NewClient returns a new dinkur.Client-compatible implementation that uses
-// gRPC towards a remote Dinkur daemon to perform all dinkur.Client tasks.
-func NewClient(serverAddr string, opt Options) dinkur.Client {
-	return &client{
-		Options:    opt,
-		serverAddr: serverAddr,
-	}
-}
-
-type client struct {
-	Options
-	serverAddr string
-	conn       *grpc.ClientConn
-	tasker     dinkurapiv1.TaskerClient
-}
-
-func (c *client) assertConnected() error {
-	if c == nil {
-		return dinkur.ErrClientIsNil
-	}
-	if c.conn == nil || c.tasker == nil {
-		return dinkur.ErrNotConnected
-	}
-	return nil
-}
-
-func (c *client) Connect(ctx context.Context) error {
-	if c == nil {
-		return dinkur.ErrClientIsNil
-	}
-	if c.conn != nil || c.tasker != nil {
-		return dinkur.ErrAlreadyConnected
-	}
-	// TODO: add credentials via opts args
-	conn, err := grpc.DialContext(ctx, c.serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return convError(err)
-	}
-	c.conn = conn
-	c.tasker = dinkurapiv1.NewTaskerClient(conn)
-	return nil
-}
-
-func (c *client) Close() (err error) {
-	if conn := c.conn; conn != nil {
-		err = conn.Close()
-		c.conn = nil
-	}
-	c.tasker = nil
-	return
-}
-
-func (c *client) Ping(ctx context.Context) error {
-	if err := c.assertConnected(); err != nil {
-		return err
-	}
-	res, err := c.tasker.Ping(ctx, &dinkurapiv1.PingRequest{})
-	if err != nil {
-		return convError(err)
-	}
-	if res == nil {
-		return ErrResponseIsNil
-	}
-	return nil
-}
 
 func (c *client) GetTask(ctx context.Context, id uint) (dinkur.Task, error) {
 	if err := c.assertConnected(); err != nil {

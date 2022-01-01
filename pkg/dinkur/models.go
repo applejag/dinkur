@@ -74,10 +74,10 @@ const (
 // has gone AFK.
 type Alert struct {
 	CommonFields
-	Type alertUnion
+	Type AlertType
 }
 
-type alertUnion interface {
+type AlertType interface {
 	isAlertUnion()
 }
 
@@ -110,7 +110,7 @@ func (a Alert) FormerlyAFK() (AlertFormerlyAFK, bool) {
 // AlertPlainMessage is a type of alert for generic messages that needs to be
 // presented to the user with no need for user action.
 type AlertPlainMessage struct {
-	alertUnion
+	AlertType
 	Message string
 }
 
@@ -119,7 +119,7 @@ func (AlertPlainMessage) isAlertUnion() {}
 // AlertAFK is a type of alert that's issued when the user has just become AFK
 // (away from keyboard).
 type AlertAFK struct {
-	alertUnion
+	AlertType
 	ActiveTask Task
 }
 
@@ -130,7 +130,7 @@ func (AlertAFK) isAlertUnion() {}
 //
 // The alert may contain the currently active task.
 type AlertFormerlyAFK struct {
-	alertUnion
+	AlertType
 	ActiveTask *Task
 	AFKSince   time.Time
 }
