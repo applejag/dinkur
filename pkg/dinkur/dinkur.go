@@ -53,6 +53,13 @@ type Client interface {
 	Close() error
 	Ping(ctx context.Context) error
 
+	Tasker
+	Alerter
+}
+
+// Tasker is the Dinkur client methods targeted to reading, creating, and
+// updating tasks.
+type Tasker interface {
 	GetTask(ctx context.Context, id uint) (Task, error)
 	ListTasks(ctx context.Context, search SearchTask) ([]Task, error)
 	EditTask(ctx context.Context, edit EditTask) (UpdatedTask, error)
@@ -60,6 +67,10 @@ type Client interface {
 	StartTask(ctx context.Context, task NewTask) (StartedTask, error)
 	ActiveTask(ctx context.Context) (*Task, error)
 	StopActiveTask(ctx context.Context) (*Task, error)
+}
+
+// Alerter is the Dinkur client methods targeted to reading alerts.
+type Alerter interface {
 }
 
 // SearchTask holds parameters used when searching for list of tasks.
