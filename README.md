@@ -25,7 +25,7 @@ $ go install -tags='fts5' -ldflags='-s -w' github.com/dinkur/dinkur@latest
 > support, which is used for better and more performant full-text search.
 >
 > The `-ldflag='-s -w'` removes debug symbols, reducing the binary size from
-> about 24M down to 8M.
+> about 34M down to 13M.
 
 For you CLI-power users, we recommend aliasing it to `ur`.
 
