@@ -131,7 +131,7 @@ func (x *StreamAlertResponse) GetEvent() Event {
 	if x != nil {
 		return x.Event
 	}
-	return Event_CREATED
+	return Event_UNKNOWN
 }
 
 type GetAlertListRequest struct {

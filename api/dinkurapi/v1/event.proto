@@ -25,7 +25,8 @@ option go_package = "github.com/dinkur/dinkur/api/dinkurapi/v1";
 package dinkurapi.v1;
 
 enum Event {
-  CREATED = 0;
-  UPDATED = 1;
-  DELETED = 2;
+  UNKNOWN = 0;
+  CREATED = 1;
+  UPDATED = 2;
+  DELETED = 3;
 }

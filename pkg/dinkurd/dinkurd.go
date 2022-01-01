@@ -41,6 +41,7 @@ import (
 var (
 	ErrUintTooLarge   = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
 	ErrDaemonIsNil    = errors.New("daemon is nil")
+	ErrRequestIsNil   = errors.New("grpc request was nil")
 	ErrAlreadyServing = errors.New("daemon instance is already running")
 )
 
@@ -50,7 +51,8 @@ func convError(err error) error {
 		return err
 	case errors.Is(err, dinkur.ErrNotFound):
 		return status.Error(codes.NotFound, err.Error())
-	case errors.Is(err, ErrUintTooLarge),
+	case errors.Is(err, ErrRequestIsNil),
+		errors.Is(err, ErrUintTooLarge),
 		errors.Is(err, dinkur.ErrLimitTooLarge),
 		errors.Is(err, dinkur.ErrTaskEndBeforeStart),
 		errors.Is(err, dinkur.ErrTaskNameEmpty):
@@ -257,5 +259,68 @@ func convShorthand(s dinkurapiv1.GetTaskListRequest_Shorthand) timeutil.TimeSpan
 		return timeutil.TimeSpanNextWeek
 	default:
 		return timeutil.TimeSpanNone
+	}
+}
+
+func convAlert(alert dinkur.Alert) *dinkurapiv1.Alert {
+	a := &dinkurapiv1.Alert{
+		Id:        uint64(alert.ID),
+		CreatedAt: convTimePtr(&alert.CreatedAt),
+		UpdatedAt: convTimePtr(&alert.UpdatedAt),
+	}
+	switch alertType := alert.Type.(type) {
+	case dinkur.AlertPlainMessage:
+		a.Type = &dinkurapiv1.Alert_PlainMessage{
+			PlainMessage: convAlertPlainMessage(alertType),
+		}
+	case dinkur.AlertAFK:
+		a.Type = &dinkurapiv1.Alert_Afk{
+			Afk: convAlertAFK(alertType),
+		}
+	case dinkur.AlertFormerlyAFK:
+		a.Type = &dinkurapiv1.Alert_FormerlyAfk{
+			FormerlyAfk: convAlertFormerlyAFK(alertType),
+		}
+	}
+	return a
+}
+
+func convAlertPlainMessage(alert dinkur.AlertPlainMessage) *dinkurapiv1.AlertPlainMessage {
+	return &dinkurapiv1.AlertPlainMessage{
+		Message: alert.Message,
+	}
+}
+
+func convAlertAFK(alert dinkur.AlertAFK) *dinkurapiv1.AlertAfk {
+	return &dinkurapiv1.AlertAfk{
+		ActiveTask: convTaskPtr(&alert.ActiveTask),
+	}
+}
+
+func convAlertFormerlyAFK(alert dinkur.AlertFormerlyAFK) *dinkurapiv1.AlertFormerlyAfk {
+	return &dinkurapiv1.AlertFormerlyAfk{
+		ActiveTask: convTaskPtr(alert.ActiveTask),
+		AfkSince:   convTime(alert.AFKSince),
+	}
+}
+
+func convAlertSlice(slice []dinkur.Alert) []*dinkurapiv1.Alert {
+	alerts := make([]*dinkurapiv1.Alert, len(slice))
+	for i, t := range slice {
+		alerts[i] = convAlert(t)
+	}
+	return alerts
+}
+
+func convEvent(ev dinkur.EventType) dinkurapiv1.Event {
+	switch ev {
+	case dinkur.EventCreated:
+		return dinkurapiv1.Event_CREATED
+	case dinkur.EventUpdated:
+		return dinkurapiv1.Event_UPDATED
+	case dinkur.EventDeleted:
+		return dinkurapiv1.Event_DELETED
+	default:
+		return dinkurapiv1.Event_UNKNOWN
 	}
 }

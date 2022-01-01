@@ -23,27 +23,71 @@ import (
 	"context"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
-func (d *daemon) StreamAlert(*dinkurapiv1.StreamAlertRequest, dinkurapiv1.Alerter_StreamAlertServer) error {
+func (d *daemon) StreamAlert(req *dinkurapiv1.StreamAlertRequest, stream dinkurapiv1.Alerter_StreamAlertServer) error {
 	if err := d.assertConnected(); err != nil {
 		return convError(err)
 	}
-	return status.Error(codes.Unimplemented, "not yet implemented")
+	if req == nil {
+		return convError(ErrRequestIsNil)
+	}
+	ctx := stream.Context()
+	done := ctx.Done()
+	alertChan, err := d.client.StreamAlert(ctx)
+	if err != nil {
+		return convError(err)
+	}
+	for {
+		select {
+		case alert, ok := <-alertChan:
+			if !ok {
+				return nil
+			}
+			if err := stream.Send(&dinkurapiv1.StreamAlertResponse{
+				Alert: convAlert(alert.Alert),
+				Event: convEvent(alert.Event),
+			}); err != nil {
+				return convError(err)
+			}
+		case <-done:
+			return nil
+		}
+	}
 }
 
-func (d *daemon) GetAlertList(context.Context, *dinkurapiv1.GetAlertListRequest) (*dinkurapiv1.GetAlertListResponse, error) {
+func (d *daemon) GetAlertList(ctx context.Context, req *dinkurapiv1.GetAlertListRequest) (*dinkurapiv1.GetAlertListResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
-	return nil, status.Error(codes.Unimplemented, "not yet implemented")
+	if req == nil {
+		return nil, convError(ErrRequestIsNil)
+	}
+	alerts, err := d.client.GetAlertList(ctx)
+	if err != nil {
+		return nil, convError(err)
+	}
+	return &dinkurapiv1.GetAlertListResponse{
+		Alerts: convAlertSlice(alerts),
+	}, nil
 }
 
-func (d *daemon) DeleteAlert(context.Context, *dinkurapiv1.DeleteAlertRequest) (*dinkurapiv1.DeleteAlertResponse, error) {
+func (d *daemon) DeleteAlert(ctx context.Context, req *dinkurapiv1.DeleteAlertRequest) (*dinkurapiv1.DeleteAlertResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
-	return nil, status.Error(codes.Unimplemented, "not yet implemented")
+	if req == nil {
+		return nil, convError(ErrRequestIsNil)
+	}
+	id, err := uint64ToUint(req.Id)
+	if err != nil {
+		return nil, convError(err)
+	}
+	deleted, err := d.client.DeleteAlert(ctx, id)
+	if err != nil {
+		return nil, convError(err)
+	}
+	return &dinkurapiv1.DeleteAlertResponse{
+		DeletedAlert: convAlert(deleted),
+	}, nil
 }

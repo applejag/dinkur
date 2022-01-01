@@ -59,8 +59,11 @@ func (t Task) Elapsed() time.Duration {
 type EventType byte
 
 const (
+	// EventUnknown means the remove Dinkur daemon or client sent an undefined
+	// event type.
+	EventUnknown EventType = iota
 	// EventCreated means the subject was just created.
-	EventCreated EventType = iota
+	EventCreated
 	// EventUpdated means the subject was just updated.
 	EventUpdated
 	// EventDeleted means the subject was just deleted.
