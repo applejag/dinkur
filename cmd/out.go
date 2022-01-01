@@ -42,7 +42,10 @@ var outCmd = &cobra.Command{
 			console.PrintFatal("Error stopping task:", err)
 		}
 		if stoppedTask != nil {
-			console.PrintTaskWithDuration("Stopped task:", *stoppedTask)
+			console.PrintTaskLabel(console.LabelledTask{
+				Label: "Stopped task:",
+				Task:  *stoppedTask,
+			})
 		} else {
 			fmt.Println("No active task to stop.")
 			os.Exit(1)

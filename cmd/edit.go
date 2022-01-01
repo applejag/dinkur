@@ -34,8 +34,8 @@ func init() {
 	var (
 		flagID     uint
 		flagAppend bool
-		flagStart  *pflagutil.Time
-		flagEnd    *pflagutil.Time
+		flagStart  = &pflagutil.Time{}
+		flagEnd    = &pflagutil.Time{}
 	)
 
 	var editCmd = &cobra.Command{
@@ -46,6 +46,11 @@ func init() {
 a specific task using the --id or -i flag.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
+			log.Debug().
+				WithStringer("start", flagStart).
+				WithStringer("end", flagEnd).
+				WithBool("append", flagAppend).
+				Message("Flags")
 			edit := dinkur.EditTask{
 				Start:      flagStart.TimePtr(),
 				End:        flagEnd.TimePtr(),

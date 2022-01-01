@@ -37,10 +37,10 @@ import (
 func init() {
 	var (
 		flagLimit  uint = 1000
-		flagStart  *pflagutil.Time
-		flagEnd    *pflagutil.Time
-		flagRange  = pflagutil.NewTimeRangePtr(timeutil.TimeSpanThisDay)
-		flagOutput = "pretty"
+		flagStart       = &pflagutil.Time{}
+		flagEnd         = &pflagutil.Time{}
+		flagRange       = pflagutil.NewTimeRangePtr(timeutil.TimeSpanThisDay)
+		flagOutput      = "pretty"
 	)
 
 	var listCmd = &cobra.Command{

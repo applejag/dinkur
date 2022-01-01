@@ -35,7 +35,7 @@ var TimeDefaultLayout = "Jan 02 15:04"
 // string value.
 type Time struct {
 	Now  bool
-	time time.Time
+	time *time.Time
 }
 
 // String returns a formatted string of the underlying time. If the Now field
@@ -47,7 +47,10 @@ func (t *Time) String() string {
 	if t.Now {
 		return "now"
 	}
-	return time.Time(t.time).Format(TimeDefaultLayout)
+	if t.time == nil {
+		return ""
+	}
+	return time.Time(*t.time).Format(TimeDefaultLayout)
 }
 
 // Set attempts to parse the string as a time.Time and updates its internal
@@ -57,7 +60,7 @@ func (t *Time) Set(s string) error {
 	if err != nil {
 		return err
 	}
-	t.time = parsed
+	t.time = &parsed
 	t.Now = false
 	return nil
 }
@@ -73,7 +76,7 @@ func (t *Time) Time() time.Time {
 	if t.Now {
 		return time.Now()
 	}
-	return time.Time(t.time)
+	return time.Time(*t.time)
 }
 
 // TimePtr returns the time.Time value, or nil if the object is nil. If the Now
@@ -86,5 +89,8 @@ func (t *Time) TimePtr() *time.Time {
 		now := time.Now()
 		return &now
 	}
-	return (*time.Time)(&t.time)
+	if t.time == nil {
+		return nil
+	}
+	return (*time.Time)(t.time)
 }

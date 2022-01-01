@@ -41,7 +41,10 @@ var statusCmd = &cobra.Command{
 			console.PrintFatal("Error getting active task:", err)
 		}
 		if activeTask != nil {
-			console.PrintTaskWithDuration("Current task:", *activeTask)
+			console.PrintTaskLabel(console.LabelledTask{
+				Label: "Current task:",
+				Task:  *activeTask,
+			})
 		} else {
 			fmt.Println("You have no active task.")
 		}

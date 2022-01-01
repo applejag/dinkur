@@ -34,7 +34,7 @@ import (
 func init() {
 	var (
 		flagStart = &pflagutil.Time{Now: true}
-		flagEnd   *pflagutil.Time
+		flagEnd   = &pflagutil.Time{}
 	)
 
 	var inCmd = &cobra.Command{
@@ -51,17 +51,33 @@ func init() {
 				End:   flagEnd.TimePtr(),
 			}
 			startedTask, err := c.StartTask(context.Background(), newTask)
+			var toPrint []console.LabelledTask
 			if err != nil {
 				console.PrintFatal("Error starting task:", err)
 			}
 			if startedTask.Previous != nil {
-				console.PrintTaskWithDuration("Stopped task:", *startedTask.Previous)
+				toPrint = append(toPrint, console.LabelledTask{
+					Label: "Stopped task:",
+					Task:  *startedTask.Previous,
+				})
 			}
+			noActive := false
 			if startedTask.New.End != nil {
-				console.PrintTaskWithDuration("Added task:", startedTask.New)
-				fmt.Println("You have no active task.")
+				toPrint = append(toPrint, console.LabelledTask{
+					Label: "Added task:",
+					Task:  startedTask.New,
+				})
+				noActive = true
 			} else {
-				console.PrintTask("Started task:", startedTask.New)
+				toPrint = append(toPrint, console.LabelledTask{
+					Label:      "Started task:",
+					Task:       startedTask.New,
+					NoDuration: true,
+				})
+			}
+			console.PrintTaskLabelSlice(toPrint)
+			if noActive {
+				fmt.Println("You have no active task.")
 			}
 		},
 	}

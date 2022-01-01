@@ -60,6 +60,10 @@ func (t *table) WriteCell(s string) {
 	t.pendingRow = append(t.pendingRow, tableCell{s, utf8.RuneCountInString(s)})
 }
 
+func (t *table) WriteCellColor(s string, c *color.Color) {
+	t.WriteCellWidth(c.Sprint(s), utf8.RuneCountInString(s))
+}
+
 func (t *table) WriteCellWidth(s string, width int) {
 	t.pendingRow = append(t.pendingRow, tableCell{s, width})
 }
@@ -68,6 +72,10 @@ func (t *table) CommitRow() {
 	t.rows = append(t.rows, t.pendingRow)
 	t.expandColWidths(t.pendingRow)
 	t.pendingRow = nil
+}
+
+func (t *table) Rows() int {
+	return len(t.rows)
 }
 
 func (t *table) Println() {

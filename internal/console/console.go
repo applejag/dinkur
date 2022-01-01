@@ -22,36 +22,43 @@ package console
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/fatih/color"
+	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"github.com/mattn/go-colorable"
 )
 
 var (
+	log = logger.NewScoped("console")
+
 	stdout          = colorable.NewColorableStdout()
 	stderr          = colorable.NewColorableStderr()
 	timeFormatLong  = "Jan 02 15:04"
 	timeFormatShort = "15:04"
 
-	taskIDColor        = color.New(color.FgHiBlack)
-	taskLabelColor     = color.New(color.FgWhite, color.Italic)
-	taskNameColor      = color.New(color.FgHiYellow, color.Bold)
-	taskTimeDelimColor = color.New(color.FgHiBlack)
-	taskDateColor      = color.New(color.FgGreen)
-	taskStartColor     = color.New(color.FgGreen)
-	taskEndColor       = color.New(color.FgGreen)
-	taskEndNilColor    = color.New(color.FgHiGreen, color.Italic)
-	taskEndNilText     = "now…"
-	taskEndNilTextLen  = utf8.RuneCountInString(taskEndNilText)
-	taskDurationColor  = color.New(color.FgCyan)
-	taskEditDelimColor = color.New(color.FgHiMagenta)
-	taskEditNoneColor  = color.New(color.FgHiBlack, color.Italic)
+	taskIDColor          = color.New(color.FgHiBlack)
+	taskLabelColor       = color.New(color.FgWhite, color.Italic)
+	taskNameColor        = color.New(color.FgHiYellow, color.Bold)
+	taskTimeDelimColor   = color.New(color.FgHiBlack)
+	taskDateColor        = color.New(color.FgGreen)
+	taskStartColor       = color.New(color.FgGreen)
+	taskEndColor         = color.New(color.FgGreen)
+	taskEndNilColor      = color.New(color.FgHiBlack, color.Italic)
+	taskEndNilText       = "active…"
+	taskEndNilTextLen    = utf8.RuneCountInString(taskEndNilText)
+	taskDurationColor    = color.New(color.FgCyan)
+	taskDurationNilColor = color.New(color.FgCyan)
+	taskDurationNilText  = "-"
+	taskEditDelimColor   = color.New(color.FgHiMagenta)
+	taskEditNoneColor    = color.New(color.FgHiBlack, color.Italic)
+
+	taskEditPrefix  = "  "
+	taskEditSpacing = "   "
+	taskEditDelim   = "=>"
 
 	fatalLabelColor = color.New(color.FgHiRed, color.Bold)
 	fatalValueColor = color.New(color.FgRed)
@@ -65,61 +72,35 @@ var (
 	usageHelpColor   = color.New(color.FgHiBlack, color.Italic)
 )
 
-// PrintTaskWithDuration writes a label string followed by a formatted task,
-// including its elapsed duration, to STDOUT.
-func PrintTaskWithDuration(label string, task dinkur.Task) {
-	var sb strings.Builder
-	taskLabelColor.Fprint(&sb, label)
-	sb.WriteByte(' ')
-	taskIDColor.Fprint(&sb, "#", task.ID)
-	sb.WriteByte(' ')
-	writeTaskName(&sb, task.Name)
-	sb.WriteByte(' ')
-	writeTaskTimeSpan(&sb, task.Start, task.End)
-	sb.WriteByte(' ')
-	writeTaskDuration(&sb, task.Elapsed())
-	fmt.Fprintln(stdout, sb.String())
+// LabelledTask holds a string label and a task. Used when printing multiple
+// labelled tasks together.
+type LabelledTask struct {
+	Label      string
+	Task       dinkur.Task
+	NoDuration bool
 }
 
-// PrintTask writes a label string followed by a formatted task to STDOUT.
-func PrintTask(label string, task dinkur.Task) {
-	var sb strings.Builder
-	taskLabelColor.Fprint(&sb, label)
-	sb.WriteByte(' ')
-	taskIDColor.Fprint(&sb, "#", task.ID)
-	sb.WriteByte(' ')
-	writeTaskName(&sb, task.Name)
-	sb.WriteByte(' ')
-	writeTaskTimeSpan(&sb, task.Start, task.End)
-	fmt.Fprintln(stdout, sb.String())
+// PrintTaskLabel writes a label string followed by a formatted task to STDOUT.
+func PrintTaskLabel(labelled LabelledTask) {
+	var t table
+	t.SetSpacing("  ")
+	t.WriteColoredRow(tableHeaderColor, "", "ID", "NAME", "START", "END", "DURATION")
+	writeCellsLabelledTask(&t, labelled)
+	t.CommitRow()
+	t.Fprintln(stdout)
 }
 
-func writeTaskName(w io.Writer, name string) {
-	taskNameColor.Fprint(w, `"`, name, `"`)
-}
-
-func writeTaskTimeSpan(w io.Writer, start time.Time, end *time.Time) {
-	today := newDate(time.Now().Date())
-	layout := timeFormatShort
-	if today != newDate(start.Date()) ||
-		(end != nil && newDate(end.Date()) != today) {
-		// also, if start date != end date, also use long format.
-		// This still applies, through transitivity
-		layout = timeFormatLong
+// PrintTaskLabelSlice writes a table of label strings followed by a formatted
+// task to STDOUT.
+func PrintTaskLabelSlice(slice []LabelledTask) {
+	var t table
+	t.SetSpacing("  ")
+	t.WriteColoredRow(tableHeaderColor, "", "ID", "NAME", "START", "END", "DURATION")
+	for _, lbl := range slice {
+		writeCellsLabelledTask(&t, lbl)
+		t.CommitRow()
 	}
-	taskStartColor.Fprintf(w, start.Format(layout))
-	taskTimeDelimColor.Fprint(w, " - ")
-	if end != nil {
-		taskEndColor.Fprintf(w, end.Format(layout))
-	} else {
-		taskEndNilColor.Fprintf(w, taskEndNilText)
-	}
-}
-
-func writeTaskDuration(w io.Writer, dur time.Duration) {
-	taskTimeDelimColor.Fprint(w, "(")
-	taskDurationColor.Fprint(w, FormatDuration(dur))
-	taskTimeDelimColor.Fprint(w, ")")
+	t.Fprintln(stdout)
 }
 
 // PrintFatal writes a label and some error value to STDERR and then exits the
@@ -136,23 +117,22 @@ func PrintFatal(label string, v interface{}) {
 // PrintTaskEdit writes a formatted task and highlights any edits made to it,
 // by diffing the before and after tasks, to STDOUT.
 func PrintTaskEdit(update dinkur.UpdatedTask) {
-	const editPrefix = "  "
-	const editDelim = "   =>   "
-	var anyEdit bool
 	var sb strings.Builder
 	taskLabelColor.Fprint(&sb, "Updated task ")
 	taskIDColor.Fprint(&sb, "#", update.Updated.ID)
 	sb.WriteByte(' ')
 	writeTaskName(&sb, update.Updated.Name)
 	taskLabelColor.Fprint(&sb, ":")
-	fmt.Fprintln(&sb)
+	fmt.Fprintln(stdout, sb.String())
+
+	var t table
+	t.SetPrefix(taskEditPrefix)
+	t.SetSpacing(taskEditSpacing)
 	if update.Old.Name != update.Updated.Name {
-		sb.WriteString(editPrefix)
-		writeTaskName(&sb, update.Old.Name)
-		taskEditDelimColor.Fprint(&sb, editDelim)
-		writeTaskName(&sb, update.Updated.Name)
-		fmt.Fprintln(&sb)
-		anyEdit = true
+		writeCellTaskName(&t, update.Old.Name)
+		t.WriteCellColor(taskEditDelim, taskEditDelimColor)
+		writeCellTaskName(&t, update.Updated.Name)
+		t.CommitRow()
 	}
 	var (
 		oldStartUnix = update.Old.Start.UnixMilli()
@@ -167,23 +147,17 @@ func PrintTaskEdit(update dinkur.UpdatedTask) {
 		newEndUnix = update.Updated.End.Unix()
 	}
 	if oldStartUnix != newStartUnix || oldEndUnix != newEndUnix {
-		sb.WriteString(editPrefix)
-		writeTaskTimeSpan(&sb, update.Old.Start, update.Old.End)
-		sb.WriteByte(' ')
-		writeTaskDuration(&sb, update.Old.Elapsed())
-		taskEditDelimColor.Fprint(&sb, editDelim)
-		writeTaskTimeSpan(&sb, update.Updated.Start, update.Updated.End)
-		sb.WriteByte(' ')
-		writeTaskDuration(&sb, update.Updated.Elapsed())
-		fmt.Fprintln(&sb)
-		anyEdit = true
+		writeCellTaskTimeSpanDuration(&t, update.Old.Start, update.Old.End, update.Old.Elapsed())
+		t.WriteCellColor(taskEditDelim, taskEditDelimColor)
+		writeCellTaskTimeSpanDuration(&t, update.Updated.Start, update.Updated.End, update.Updated.Elapsed())
+		t.CommitRow()
 	}
-	if !anyEdit {
-		sb.WriteString(editPrefix)
-		taskEditNoneColor.Fprint(&sb, "No changes were applied.")
+	if t.Rows() == 0 {
+		taskEditNoneColor.Fprint(stdout, taskEditPrefix, "No changes were applied.")
 		fmt.Fprintln(&sb)
+	} else {
+		t.Fprintln(stdout)
 	}
-	fmt.Fprint(stdout, sb.String())
 }
 
 // PrintTaskList writes a table for a list of tasks, grouped by the date
@@ -202,28 +176,15 @@ func PrintTaskList(tasks []dinkur.Task) {
 			t.CommitRow() // commit empty delimiting row
 		}
 		for i, task := range group.tasks {
-			t.WriteCellWidth(taskIDColor.Sprintf("#%d", task.ID), uintWidth(task.ID)+1)
-			t.WriteCellWidth(taskNameColor.Sprint(task.Name), utf8.RuneCountInString(task.Name))
+			writeCellTaskID(&t, task.ID)
+			writeCellTaskName(&t, task.Name)
 			if i == 0 {
-				dateStr := group.date.String()
-				t.WriteCellWidth(taskDateColor.Sprint(dateStr), len(dateStr))
+				writeCellDate(&t, group.date)
 			} else {
 				t.WriteCell("")
 			}
-			t.WriteCellWidth(taskStartColor.Sprint(task.Start.Format(timeFormatShort)), len(timeFormatShort))
-			if task.End != nil {
-				var endStr string
-				if newDate(task.End.Date()) != group.date {
-					endStr = task.End.Format(timeFormatLong)
-				} else {
-					endStr = task.End.Format(timeFormatShort)
-				}
-				t.WriteCellWidth(taskEndColor.Sprint(endStr), len(endStr))
-			} else {
-				t.WriteCellWidth(taskEndNilColor.Sprint(taskEndNilText), taskEndNilTextLen)
-			}
-			dur := FormatDuration(task.Elapsed())
-			t.WriteCellWidth(taskDurationColor.Sprint(dur), len(dur))
+			writeCellTaskStartEnd(&t, task.Start, task.End)
+			writeCellDuration(&t, task.Elapsed())
 			t.CommitRow()
 		}
 	}
@@ -239,7 +200,7 @@ func PrintTaskList(tasks []dinkur.Task) {
 		"",                                // DAY
 		sum.start.Format(timeFormatShort), // START
 		endStr,                            // END
-		FormatDuration(sum.duration),      // DURATION
+		fmt.Sprintf("(%s)", FormatDuration(sum.duration)), // DURATION
 	)
 	t.Fprintln(stdout)
 }

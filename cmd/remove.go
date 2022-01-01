@@ -50,7 +50,10 @@ Warning: Removing a task cannot be undone!`,
 			if err != nil {
 				console.PrintFatal("Error removing task:", err)
 			}
-			console.PrintTaskWithDuration("Deleted task:", task)
+			console.PrintTaskLabel(console.LabelledTask{
+				Label: "Deleted task:",
+				Task:  task,
+			})
 			fmt.Println()
 			fmt.Println("If this was a mistake, you can add it back in with:")
 			if task.End != nil {
