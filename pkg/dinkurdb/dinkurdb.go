@@ -36,7 +36,7 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 )
 
-var log = logger.NewScoped("DinkurDB")
+var log = logger.NewScoped("DB")
 
 func nilNotFoundError(err error) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {

@@ -47,7 +47,7 @@ var (
 	ErrUnexpectedNilAlert = errors.New("unexpected nil alert")
 )
 
-var log = logger.NewScoped("DinkurC")
+var log = logger.NewScoped("client")
 
 // Options for the Dinkur client.
 type Options struct{}
