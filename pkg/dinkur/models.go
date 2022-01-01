@@ -70,6 +70,19 @@ const (
 	EventDeleted
 )
 
+func (ev EventType) String() string {
+	switch ev {
+	case EventCreated:
+		return "created"
+	case EventUpdated:
+		return "updated"
+	case EventDeleted:
+		return "deleted"
+	default:
+		return "unknown"
+	}
+}
+
 // Alert is a notfication provided by Dinkur, such as an alert when the user
 // has gone AFK.
 type Alert struct {

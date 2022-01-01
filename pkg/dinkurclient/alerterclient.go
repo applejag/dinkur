@@ -42,7 +42,7 @@ func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, 
 			if err != nil {
 				if err != io.EOF {
 					log.Error().
-						WithError(err).
+						WithError(convError(err)).
 						Message("Error when streaming alerts. Closing stream.")
 				}
 				close(alertChan)
@@ -54,11 +54,11 @@ func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, 
 			const logWarnMsg = "Error when streaming alerts. Ignoring message."
 			alert, err := convAlertPtr(res.Alert)
 			if err != nil {
-				log.Warn().WithError(err).
+				log.Warn().WithError(convError(err)).
 					Message(logWarnMsg)
 				continue
 			}
-			if alert != nil {
+			if alert == nil {
 				log.Warn().WithError(ErrUnexpectedNilAlert).
 					Message(logWarnMsg)
 				continue
