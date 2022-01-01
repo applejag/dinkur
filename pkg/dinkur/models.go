@@ -55,6 +55,18 @@ func (t Task) Elapsed() time.Duration {
 	return end.Sub(t.Start)
 }
 
+// EventType is the type of a streamed event.
+type EventType byte
+
+const (
+	// EventCreated means the subject was just created.
+	EventCreated EventType = iota
+	// EventUpdated means the subject was just updated.
+	EventUpdated
+	// EventDeleted means the subject was just deleted.
+	EventDeleted
+)
+
 // Alert is a notfication provided by Dinkur, such as an alert when the user
 // has gone AFK.
 type Alert struct {

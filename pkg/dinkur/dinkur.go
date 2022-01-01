@@ -71,6 +71,15 @@ type Tasker interface {
 
 // Alerter is the Dinkur client methods targeted to reading alerts.
 type Alerter interface {
+	StreamAlert(ctx context.Context) (<-chan StreamedAlert, error)
+	GetAlertList(ctx context.Context) ([]Alert, error)
+	DeleteAlert(ctx context.Context, id uint) (Alert, error)
+}
+
+// StreamedAlert holds an alert and its event type.
+type StreamedAlert struct {
+	Alert Alert
+	Event EventType
 }
 
 // SearchTask holds parameters used when searching for list of tasks.
