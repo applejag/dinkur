@@ -349,5 +349,5 @@ var Tasker_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/dinkurapi/v1/dinkurapi.proto",
+	Metadata: "api/dinkurapi/v1/tasker.proto",
 }
