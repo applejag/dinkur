@@ -38,6 +38,12 @@ message StreamAlertRequest {
 
 message StreamAlertResponse {
   Alert alert = 1;
+  enum Event {
+    CREATED = 0;
+    UPDATED = 1;
+    DELETED = 2;
+  }
+  Event event = 2;
 }
 
 message GetAlertListRequest {
@@ -62,6 +68,7 @@ message Alert {
   oneof type {
     AlertPlainMessage plain_message = 4;
     AlertAfk afk = 5;
+    AlertFormerlyAfk formerly_afk = 6;
   }
 }
 
@@ -70,6 +77,10 @@ message AlertPlainMessage {
 }
 
 message AlertAfk {
+  Task active_task = 1;
+}
+
+message AlertFormerlyAfk {
   Task active_task = 1;
   google.protobuf.Timestamp afk_since = 2;
 }
