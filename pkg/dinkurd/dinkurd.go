@@ -39,14 +39,15 @@ import (
 
 // Errors that are specific to the Dinkur gRPC server daemon.
 var (
-	ErrUintTooLarge      = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
-	ErrDaemonIsNil       = errors.New("daemon is nil")
-	ErrTaskerServerIsNil = errors.New("tasker server is nil")
-	ErrAlreadyServing    = errors.New("daemon instance is already running")
+	ErrUintTooLarge   = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
+	ErrDaemonIsNil    = errors.New("daemon is nil")
+	ErrAlreadyServing = errors.New("daemon instance is already running")
 )
 
 func convError(err error) error {
 	switch {
+	case status.Code(err) != codes.Unknown:
+		return err
 	case errors.Is(err, dinkur.ErrNotFound):
 		return status.Error(codes.NotFound, err.Error())
 	case errors.Is(err, ErrUintTooLarge),
@@ -54,8 +55,7 @@ func convError(err error) error {
 		errors.Is(err, dinkur.ErrTaskEndBeforeStart),
 		errors.Is(err, dinkur.ErrTaskNameEmpty):
 		return status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, ErrTaskerServerIsNil),
-		errors.Is(err, dinkur.ErrNotConnected),
+	case errors.Is(err, dinkur.ErrNotConnected),
 		errors.Is(err, dinkur.ErrAlreadyConnected),
 		errors.Is(err, dinkur.ErrClientIsNil):
 		return status.Error(codes.FailedPrecondition, err.Error())
@@ -132,24 +132,33 @@ func NewDaemon(client dinkur.Client, opt Options) Daemon {
 	}
 	return &daemon{
 		Options: opt,
-		tasker:  NewTaskerServer(client),
+		client:  client,
 	}
 }
 
 type daemon struct {
 	Options
-	tasker dinkurapiv1.TaskerServer
+	dinkurapiv1.UnimplementedTaskerServer
+	dinkurapiv1.UnimplementedAlerterServer
 
+	client     dinkur.Client
 	grpcServer *grpc.Server
 	listener   net.Listener
 }
 
-func (d *daemon) Serve(ctx context.Context) error {
+func (d *daemon) assertConnected() error {
 	if d == nil {
 		return ErrDaemonIsNil
 	}
-	if d.tasker == nil {
-		return ErrTaskerServerIsNil
+	if d.client == nil {
+		return dinkur.ErrClientIsNil
+	}
+	return nil
+}
+
+func (d *daemon) Serve(ctx context.Context) error {
+	if err := d.assertConnected(); err != nil {
+		return err
 	}
 	if d.grpcServer != nil || d.listener != nil {
 		return ErrAlreadyServing
@@ -170,7 +179,8 @@ func (d *daemon) Serve(ctx context.Context) error {
 			d.Close()
 		}
 	}(cctx, d)
-	dinkurapiv1.RegisterTaskerServer(grpcServer, d.tasker)
+	dinkurapiv1.RegisterTaskerServer(grpcServer, d)
+	dinkurapiv1.RegisterAlerterServer(grpcServer, d)
 	return grpcServer.Serve(lis)
 }
 

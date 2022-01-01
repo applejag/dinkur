@@ -27,47 +27,25 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
-// NewTaskerServer returns a new dinkurapi.v1.TaskerServer-compatible
-// implementation that relays all incoming gRPC traffic to the bound
-// dinkur.Client.
-func NewTaskerServer(client dinkur.Client) dinkurapiv1.TaskerServer {
-	return &taskerServer{client: client}
-}
-
-type taskerServer struct {
-	dinkurapiv1.UnimplementedTaskerServer
-	client dinkur.Client
-}
-
-func (s *taskerServer) assertConnected() error {
-	if s == nil {
-		return ErrTaskerServerIsNil
-	}
-	if s.client == nil {
-		return dinkur.ErrClientIsNil
-	}
-	return nil
-}
-
-func (s *taskerServer) Ping(ctx context.Context, _ *dinkurapiv1.PingRequest) (*dinkurapiv1.PingResponse, error) {
-	if err := s.assertConnected(); err != nil {
+func (d *daemon) Ping(ctx context.Context, _ *dinkurapiv1.PingRequest) (*dinkurapiv1.PingResponse, error) {
+	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
-	if err := s.client.Ping(ctx); err != nil {
+	if err := d.client.Ping(ctx); err != nil {
 		return nil, convError(err)
 	}
 	return &dinkurapiv1.PingResponse{}, nil
 }
 
-func (s *taskerServer) GetTask(ctx context.Context, req *dinkurapiv1.GetTaskRequest) (*dinkurapiv1.GetTaskResponse, error) {
-	if err := s.assertConnected(); err != nil {
+func (d *daemon) GetTask(ctx context.Context, req *dinkurapiv1.GetTaskRequest) (*dinkurapiv1.GetTaskResponse, error) {
+	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
 	id, err := uint64ToUint(req.Id)
 	if err != nil {
 		return nil, convError(err)
 	}
-	task, err := s.client.GetTask(ctx, id)
+	task, err := d.client.GetTask(ctx, id)
 	if err != nil {
 		if errors.Is(err, dinkur.ErrNotFound) {
 			return &dinkurapiv1.GetTaskResponse{}, nil
@@ -79,11 +57,11 @@ func (s *taskerServer) GetTask(ctx context.Context, req *dinkurapiv1.GetTaskRequ
 	}, nil
 }
 
-func (s *taskerServer) GetActiveTask(ctx context.Context, _ *dinkurapiv1.GetActiveTaskRequest) (*dinkurapiv1.GetActiveTaskResponse, error) {
-	if err := s.assertConnected(); err != nil {
+func (d *daemon) GetActiveTask(ctx context.Context, _ *dinkurapiv1.GetActiveTaskRequest) (*dinkurapiv1.GetActiveTaskResponse, error) {
+	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
-	task, err := s.client.ActiveTask(ctx)
+	task, err := d.client.ActiveTask(ctx)
 	if err != nil {
 		return nil, convError(err)
 	}
@@ -92,8 +70,8 @@ func (s *taskerServer) GetActiveTask(ctx context.Context, _ *dinkurapiv1.GetActi
 	}, nil
 }
 
-func (s *taskerServer) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTaskListRequest) (*dinkurapiv1.GetTaskListResponse, error) {
-	if err := s.assertConnected(); err != nil {
+func (d *daemon) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTaskListRequest) (*dinkurapiv1.GetTaskListResponse, error) {
+	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
 	search := dinkur.SearchTask{
@@ -106,7 +84,7 @@ func (s *taskerServer) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTask
 	if err != nil {
 		return nil, convError(err)
 	}
-	tasks, err := s.client.ListTasks(ctx, search)
+	tasks, err := d.client.ListTasks(ctx, search)
 	if err != nil {
 		return nil, convError(err)
 	}
@@ -115,8 +93,8 @@ func (s *taskerServer) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTask
 	}, nil
 }
 
-func (s *taskerServer) CreateTask(ctx context.Context, req *dinkurapiv1.CreateTaskRequest) (*dinkurapiv1.CreateTaskResponse, error) {
-	if err := s.assertConnected(); err != nil {
+func (d *daemon) CreateTask(ctx context.Context, req *dinkurapiv1.CreateTaskRequest) (*dinkurapiv1.CreateTaskResponse, error) {
+	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
 	newTask := dinkur.NewTask{
@@ -124,7 +102,7 @@ func (s *taskerServer) CreateTask(ctx context.Context, req *dinkurapiv1.CreateTa
 		Start: convTimestampPtr(req.Start),
 		End:   convTimestampPtr(req.End),
 	}
-	startedTask, err := s.client.StartTask(ctx, newTask)
+	startedTask, err := d.client.StartTask(ctx, newTask)
 	if err != nil {
 		return nil, convError(err)
 	}
@@ -134,8 +112,8 @@ func (s *taskerServer) CreateTask(ctx context.Context, req *dinkurapiv1.CreateTa
 	}, nil
 }
 
-func (s *taskerServer) UpdateTask(ctx context.Context, req *dinkurapiv1.UpdateTaskRequest) (*dinkurapiv1.UpdateTaskResponse, error) {
-	if err := s.assertConnected(); err != nil {
+func (d *daemon) UpdateTask(ctx context.Context, req *dinkurapiv1.UpdateTaskRequest) (*dinkurapiv1.UpdateTaskResponse, error) {
+	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
 	id, err := convUint64(req.Id)
@@ -149,7 +127,7 @@ func (s *taskerServer) UpdateTask(ctx context.Context, req *dinkurapiv1.UpdateTa
 		ID:         id,
 		AppendName: req.AppendName,
 	}
-	update, err := s.client.EditTask(ctx, edit)
+	update, err := d.client.EditTask(ctx, edit)
 	if err != nil {
 		return nil, convError(err)
 	}
@@ -159,15 +137,15 @@ func (s *taskerServer) UpdateTask(ctx context.Context, req *dinkurapiv1.UpdateTa
 	}, nil
 }
 
-func (s *taskerServer) DeleteTask(ctx context.Context, req *dinkurapiv1.DeleteTaskRequest) (*dinkurapiv1.DeleteTaskResponse, error) {
-	if err := s.assertConnected(); err != nil {
+func (d *daemon) DeleteTask(ctx context.Context, req *dinkurapiv1.DeleteTaskRequest) (*dinkurapiv1.DeleteTaskResponse, error) {
+	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
 	id, err := uint64ToUint(req.Id)
 	if err != nil {
 		return nil, convError(err)
 	}
-	deletedTask, err := s.client.DeleteTask(ctx, id)
+	deletedTask, err := d.client.DeleteTask(ctx, id)
 	if err != nil {
 		return nil, convError(err)
 	}
@@ -176,11 +154,11 @@ func (s *taskerServer) DeleteTask(ctx context.Context, req *dinkurapiv1.DeleteTa
 	}, nil
 }
 
-func (s *taskerServer) StopActiveTask(ctx context.Context, _ *dinkurapiv1.StopActiveTaskRequest) (*dinkurapiv1.StopActiveTaskResponse, error) {
-	if err := s.assertConnected(); err != nil {
+func (d *daemon) StopActiveTask(ctx context.Context, _ *dinkurapiv1.StopActiveTaskRequest) (*dinkurapiv1.StopActiveTaskResponse, error) {
+	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
-	stoppedTask, err := s.client.StopActiveTask(ctx)
+	stoppedTask, err := d.client.StopActiveTask(ctx)
 	if err != nil {
 		return nil, convError(err)
 	}
