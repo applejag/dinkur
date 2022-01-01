@@ -71,104 +71,65 @@ const (
 // has gone AFK.
 type Alert struct {
 	CommonFields
-	Type AlertType
-
-	plainMessage *AlertPlainMessage
-	afk          *AlertAFK
-	formerlyAFK  *AlertFormerlyAFK
+	Type alertUnion
 }
 
-// WithNone returns a new alert of no type.
-func (a Alert) WithNone() Alert {
-	newAlert := a
-	newAlert.Type = AlertTypeNone
-	newAlert.plainMessage = nil
-	newAlert.afk = nil
-	newAlert.formerlyAFK = nil
-	return newAlert
+type alertUnion interface {
+	isAlertUnion()
 }
 
 // PlainMessage returns the inner plain message alert, or false if the alert
 // is of a different type.
 func (a Alert) PlainMessage() (AlertPlainMessage, bool) {
-	if a.plainMessage != nil {
-		return *a.plainMessage, true
+	if inner, ok := a.Type.(AlertPlainMessage); ok {
+		return inner, true
 	}
 	return AlertPlainMessage{}, false
 }
 
-// WithPlainMessage returns a new plain message typed alert.
-func (a Alert) WithPlainMessage(alert AlertPlainMessage) Alert {
-	newAlert := a.WithNone()
-	newAlert.Type = AlertTypePlainMessage
-	newAlert.plainMessage = &alert
-	return a
-}
-
 // AFK returns the inner AFK alert, or false if the alert is of a different type.
 func (a Alert) AFK() (AlertAFK, bool) {
-	if a.afk != nil {
-		return *a.afk, true
+	if inner, ok := a.Type.(AlertAFK); ok {
+		return inner, true
 	}
 	return AlertAFK{}, false
-}
-
-// WithAFK returns a new AFK typed alert.
-func (a Alert) WithAFK(alert AlertAFK) Alert {
-	newAlert := a.WithNone()
-	newAlert.Type = AlertTypePlainMessage
-	newAlert.afk = &alert
-	return a
 }
 
 // FormerlyAFK returns the inner formerly AFK alert, or false if the alert
 // is of a different type.
 func (a Alert) FormerlyAFK() (AlertFormerlyAFK, bool) {
-	if a.formerlyAFK != nil {
-		return *a.formerlyAFK, true
+	if inner, ok := a.Type.(AlertFormerlyAFK); ok {
+		return inner, true
 	}
 	return AlertFormerlyAFK{}, false
 }
 
-// WithFormerlyAFK returns a new formerly AFK typed alert.
-func (a Alert) WithFormerlyAFK(alert AlertFormerlyAFK) Alert {
-	newAlert := a.WithNone()
-	newAlert.Type = AlertTypePlainMessage
-	newAlert.formerlyAFK = &alert
-	return a
-}
-
-// AlertType is an enumeration of different alert types.
-type AlertType byte
-
-const (
-	// AlertTypeNone means the alert does not contain a specific alert type.
-	AlertTypeNone AlertType = iota
-	// AlertTypePlainMessage means a plain non-interactive message.
-	AlertTypePlainMessage
-	// AlertTypeAFK means the user has just gone AFK (away from keyboard).
-	AlertTypeAFK
-	// AlertTypeFormerlyAFK means the user is no longer AFK (away from keyboard).
-	AlertTypeFormerlyAFK
-)
-
 // AlertPlainMessage is a type of alert for generic messages that needs to be
 // presented to the user with no need for user action.
 type AlertPlainMessage struct {
+	alertUnion
 	Message string
 }
+
+func (AlertPlainMessage) isAlertUnion() {}
 
 // AlertAFK is a type of alert that's issued when the user has just become AFK
 // (away from keyboard).
 type AlertAFK struct {
+	alertUnion
 	ActiveTask Task
 }
+
+func (AlertAFK) isAlertUnion() {}
 
 // AlertFormerlyAFK is a type of alert that's issued when the user is no longer
 // AFK (away from keyboard).
 //
 // The alert may contain the currently active task.
 type AlertFormerlyAFK struct {
+	alertUnion
 	ActiveTask *Task
 	AFKSince   time.Time
 }
+
+func (AlertFormerlyAFK) isAlertUnion() {}
