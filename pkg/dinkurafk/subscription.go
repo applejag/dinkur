@@ -55,7 +55,7 @@ type subStarted struct {
 	c  chan Started
 }
 
-func (sub *subStarted) pub(s Started, wg *sync.WaitGroup) {
+func (sub *subStarted) pubWaitGroup(s Started, wg *sync.WaitGroup) {
 	sub.c <- s
 	wg.Done()
 }
@@ -69,7 +69,7 @@ type subStopped struct {
 	c  chan Stopped
 }
 
-func (sub *subStopped) pub(s Stopped, wg *sync.WaitGroup) {
+func (sub *subStopped) pubWaitGroup(s Stopped, wg *sync.WaitGroup) {
 	sub.c <- s
 	wg.Done()
 }
@@ -97,14 +97,18 @@ type Observer interface {
 
 // ObserverStarted lets you publish and subscribe to AFK-started events.
 type ObserverStarted interface {
-	PubStarted(Started)
+	// PubStartedWait publishes an AFK-started event and waits until all
+	// subscriptions has received their events.
+	PubStartedWait(Started)
 	SubStarted() SubStarted
 	UnsubStarted(SubStarted) error
 }
 
 // ObserverStopped lets you publish and subscribe to AFK-stopped events.
 type ObserverStopped interface {
-	PubStopped(Stopped)
+	// PubStoppedWait publishes an AFK-stopped event and waits until all
+	// subscriptions has received their events.
+	PubStoppedWait(Stopped)
 	SubStopped() SubStopped
 	UnsubStopped(SubStopped) error
 }
@@ -112,12 +116,6 @@ type ObserverStopped interface {
 type obsStarted struct {
 	nextID uint
 	subs   []subStarted
-	mutex  sync.RWMutex
-}
-
-type obsStopped struct {
-	nextID uint
-	subs   []subStopped
 	mutex  sync.RWMutex
 }
 
@@ -133,12 +131,12 @@ func (o *obsStarted) SubStarted() SubStarted {
 	return sub
 }
 
-func (o *obsStarted) PubStarted(s Started) {
+func (o *obsStarted) PubStartedWait(s Started) {
 	var wg sync.WaitGroup
 	wg.Add(len(o.subs))
 	o.mutex.RLock()
 	for _, sub := range o.subs {
-		go sub.pub(s, &wg)
+		go sub.pubWaitGroup(s, &wg)
 	}
 	o.mutex.RUnlock()
 	wg.Wait()
@@ -173,6 +171,12 @@ func (o *obsStarted) subStartedIndex(id uint) int {
 	return -1
 }
 
+type obsStopped struct {
+	nextID uint
+	subs   []subStopped
+	mutex  sync.RWMutex
+}
+
 func (o *obsStopped) SubStopped() SubStopped {
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
@@ -185,12 +189,12 @@ func (o *obsStopped) SubStopped() SubStopped {
 	return sub
 }
 
-func (o *obsStopped) PubStopped(s Stopped) {
+func (o *obsStopped) PubStoppedWait(s Stopped) {
 	var wg sync.WaitGroup
 	wg.Add(len(o.subs))
 	o.mutex.RLock()
 	for _, sub := range o.subs {
-		go sub.pub(s, &wg)
+		go sub.pubWaitGroup(s, &wg)
 	}
 	o.mutex.RUnlock()
 	wg.Wait()
