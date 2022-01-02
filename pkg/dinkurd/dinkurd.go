@@ -30,7 +30,9 @@ import (
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 	"github.com/dinkur/dinkur/pkg/dinkur"
+	"github.com/dinkur/dinkur/pkg/dinkurafk"
 	"github.com/dinkur/dinkur/pkg/timeutil"
+	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -44,6 +46,8 @@ var (
 	ErrRequestIsNil   = errors.New("grpc request was nil")
 	ErrAlreadyServing = errors.New("daemon instance is already running")
 )
+
+var log = logger.NewScoped("daemon")
 
 func convError(err error) error {
 	switch {
@@ -133,8 +137,9 @@ func NewDaemon(client dinkur.Client, opt Options) Daemon {
 		opt.Port = DefaultOptions.Port
 	}
 	return &daemon{
-		Options: opt,
-		client:  client,
+		Options:     opt,
+		client:      client,
+		afkDetector: dinkurafk.New(),
 	}
 }
 
@@ -143,9 +148,10 @@ type daemon struct {
 	dinkurapiv1.UnimplementedTaskerServer
 	dinkurapiv1.UnimplementedAlerterServer
 
-	client     dinkur.Client
-	grpcServer *grpc.Server
-	listener   net.Listener
+	client      dinkur.Client
+	grpcServer  *grpc.Server
+	listener    net.Listener
+	afkDetector dinkurafk.Detector
 }
 
 func (d *daemon) assertConnected() error {
@@ -173,28 +179,34 @@ func (d *daemon) Serve(ctx context.Context) error {
 	d.listener = lis
 	d.grpcServer = grpcServer
 	defer d.Close()
-	cctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	go func(cctx context.Context, d *daemon) {
-		_, ok := <-cctx.Done()
-		if ok {
-			d.Close()
-		}
-	}(cctx, d)
+	go func(ctx context.Context, d *daemon) {
+		<-ctx.Done()
+		d.Close()
+	}(ctx, d)
 	dinkurapiv1.RegisterTaskerServer(grpcServer, d)
 	dinkurapiv1.RegisterAlerterServer(grpcServer, d)
+	if err := d.afkDetector.StartDetecting(); err != nil {
+		return fmt.Errorf("start afk detector: %w", err)
+	}
 	return grpcServer.Serve(lis)
 }
 
-func (d *daemon) Close() (err error) {
+func (d *daemon) Close() (finalErr error) {
 	if srv := d.grpcServer; srv != nil {
 		srv.GracefulStop()
 	}
 	if lis := d.listener; lis != nil {
-		err = lis.Close()
+		if err := lis.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			log.Error().WithError(err).Message("Closing grpc listener in Dinkur daemon.")
+			finalErr = err
+		}
 	}
 	d.grpcServer = nil
 	d.listener = nil
+	if err := d.afkDetector.StopDetecting(); err != nil {
+		log.Error().WithError(err).Message("Stopping AFK detector in Dinkur daemon.")
+		finalErr = err
+	}
 	return
 }
 

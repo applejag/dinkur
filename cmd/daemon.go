@@ -24,6 +24,8 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/pkg/dinkurd"
@@ -56,7 +58,7 @@ authentication token can be used, is outputted to the console.`,
 			Port:      opt.Port,
 			AuthToken: nil,
 		})
-		if err := d.Serve(context.Background()); err != nil {
+		if err := d.Serve(contextWithOSInterrupt(context.Background())); err != nil {
 			console.PrintFatal("Error starting daemon:", err)
 		}
 	},
@@ -74,4 +76,21 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// daemonCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func contextWithOSInterrupt(ctx context.Context) context.Context {
+	c := make(chan os.Signal)
+	newCtx, done := context.WithCancel(ctx)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		select {
+		case <-c:
+			log.Debug().Message("Detected Ctrl+C, attempting graceful hault.")
+			done()
+			close(c)
+		case <-ctx.Done():
+			close(c)
+		}
+	}()
+	return newCtx
 }

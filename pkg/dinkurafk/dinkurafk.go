@@ -26,12 +26,16 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/iver-wharf/wharf-core/pkg/logger"
 )
 
 // Errors specific to AFK-detectors.
 var (
 	ErrObserverIsNil = errors.New("observer is nil")
 )
+
+var log = logger.NewScoped("AFK")
 
 // Detector is an AFK-detector.
 type Detector interface {
@@ -48,6 +52,13 @@ type Detector interface {
 	ObserverStopped
 }
 
+type detectorHook interface {
+	Register(*detector) error
+	Unregister(*detector) error
+}
+
+var detectorHooks []detectorHook
+
 // New creates a new AFK-detector.
 func New() Detector {
 	return &detector{
@@ -60,6 +71,7 @@ type detector struct {
 	ObserverStarted
 	ObserverStopped
 
+	hooks      []detectorHook
 	isAFKMutex sync.RWMutex
 	afkSince   *time.Time
 }
@@ -106,10 +118,27 @@ func (d *detector) markAsNoLongerAFK() {
 }
 
 func (d *detector) StartDetecting() error {
-	return errors.New("not implemented")
+	d.hooks = nil
+	for _, hook := range detectorHooks {
+		if err := hook.Register(d); err != nil {
+			d.StopDetecting()
+			return err
+		}
+		d.hooks = append(d.hooks, hook)
+	}
+	if len(d.hooks) == 0 {
+		log.Warn().Message("No AFK-detectors available for this OS.")
+	}
+	return nil
 }
 
 func (d *detector) StopDetecting() error {
+	for _, hook := range d.hooks {
+		if err := hook.Unregister(d); err != nil {
+			log.Error().WithError(err).Messagef("Failed to unregister %T.", hook)
+		}
+	}
+	d.hooks = nil
 	unsubStartErr := d.UnsubAllStarted()
 	unsubStopErr := d.UnsubAllStopped()
 	if unsubStartErr != nil && unsubStopErr != nil {

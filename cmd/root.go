@@ -123,10 +123,9 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+		log.Debug().WithString("config", viper.ConfigFileUsed()).Message("Using config file.")
 	} else if !errors.As(err, &viper.ConfigFileNotFoundError{}) && !errors.Is(err, os.ErrNotExist) {
-		fmt.Fprintln(os.Stderr, "Error reading config:", err)
-		os.Exit(1)
+		console.PrintFatal("Error reading config:", err)
 	}
 }
 
@@ -138,6 +137,7 @@ func initLogger() {
 	prettyConf := consolepretty.DefaultConfig
 	prettyConf.DisableDate = true
 	prettyConf.DisableCaller = true
+	prettyConf.Writer = colorable.NewColorableStderr()
 	logger.AddOutput(level, consolepretty.New(prettyConf))
 }
 
