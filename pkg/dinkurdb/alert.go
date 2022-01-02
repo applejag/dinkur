@@ -26,7 +26,7 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
-func (*client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, error) {
+func (*client) StreamAlert(context.Context) (<-chan dinkur.StreamedAlert, error) {
 	return nil, ErrAlerterNotSupported
 }
 

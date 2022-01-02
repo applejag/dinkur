@@ -50,10 +50,7 @@ func (h *windowsHooks) Register(d *detector) error {
 	}
 	log.Debug().Message("Registering Windows hooks WH_KEYBOARD_LL & WH_MOUSE_LL.")
 	h.detector = d
-	if err := convRegisterCodeToErr(int32(C.RegisterHooks())); err != nil {
-		return err
-	}
-	return nil
+	return convRegisterCodeToErr(int32(C.RegisterHooks()))
 }
 
 func (h *windowsHooks) Unregister(d *detector) error {

@@ -38,12 +38,14 @@ type Store struct {
 	formerlyAFKAlert *dinkur.Alert
 }
 
+// Alerts returns a slice of all alerts.
 func (s *Store) Alerts() []dinkur.Alert {
 	var alerts []dinkur.Alert
 	// TODO
 	return alerts
 }
 
+// Delete removes an alert by ID.
 func (s *Store) Delete(id uint) error {
 	if s.afkAlert != nil && s.afkAlert.ID == id {
 		s.PubAlertWait(AlertEvent{
@@ -61,6 +63,8 @@ func (s *Store) Delete(id uint) error {
 	return nil
 }
 
+// SetAFK marks the user as AFK and creates the AFK alert if it doesn't exist,
+// as well as deleting the formerly-AFK alert if it exists.
 func (s *Store) SetAFK(activeTask dinkur.Task) {
 	if s.formerlyAFKAlert != nil {
 		s.Delete(s.formerlyAFKAlert.ID)
@@ -87,6 +91,8 @@ func (s *Store) SetAFK(activeTask dinkur.Task) {
 	})
 }
 
+// SetFormerlyAFK marks the user as formerly-AFK and creates the formerly-AFK
+// alert if it doesn't exist, as well as deleting the AFK alert if it exists.
 func (s *Store) SetFormerlyAFK(afkSince time.Time) {
 	if s.afkAlert != nil {
 		s.Delete(s.afkAlert.ID)
