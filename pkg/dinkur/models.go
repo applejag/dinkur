@@ -90,6 +90,7 @@ type Alert struct {
 	Type AlertType
 }
 
+// AlertType defines unexported interface used to restrict the alert union types.
 type AlertType interface {
 	isAlertUnion()
 }
