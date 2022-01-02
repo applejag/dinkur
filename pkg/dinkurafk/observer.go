@@ -22,6 +22,7 @@ package dinkurafk
 import (
 	"errors"
 	"sync"
+	"time"
 )
 
 // Errors specific for the listener and subscriptions.
@@ -37,6 +38,7 @@ type Started struct {
 
 // Stopped contains event data for when user is no longer AFK (after being AFK).
 type Stopped struct {
+	AFKSince time.Time
 }
 
 // SubStarted is a subscription of events for when user has gone AFK.

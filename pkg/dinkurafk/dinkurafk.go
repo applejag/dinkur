@@ -24,6 +24,8 @@ package dinkurafk
 import (
 	"errors"
 	"fmt"
+	"sync"
+	"time"
 )
 
 // Errors specific to AFK-detectors.
@@ -58,7 +60,49 @@ type detector struct {
 	ObserverStarted
 	ObserverStopped
 
-	isAFK bool
+	isAFKMutex sync.RWMutex
+	afkSince   *time.Time
+}
+
+func (d *detector) isAFK() bool {
+	d.isAFKMutex.RLock()
+	isAFK := d.afkSince != nil
+	d.isAFKMutex.RUnlock()
+	return isAFK
+}
+
+func (d *detector) setIsAFK(isAFK bool) (time.Time, bool) {
+	if d.isAFK() == isAFK {
+		// no update needed
+		return time.Time{}, false
+	}
+	d.isAFKMutex.Lock()
+	defer d.isAFKMutex.Unlock()
+	if isAFK {
+		now := time.Now()
+		d.afkSince = &now
+		return now, true
+	}
+	prevTimeSince := *d.afkSince
+	d.afkSince = nil
+	return prevTimeSince, true
+}
+
+func (d *detector) markAsAFK() {
+	if _, changed := d.setIsAFK(true); !changed {
+		return
+	}
+	d.ObserverStarted.PubStartedWait(Started{})
+}
+
+func (d *detector) markAsNoLongerAFK() {
+	t, changed := d.setIsAFK(false)
+	if !changed {
+		return
+	}
+	d.ObserverStopped.PubStoppedWait(Stopped{
+		AFKSince: t,
+	})
 }
 
 func (d *detector) StartDetecting() error {
