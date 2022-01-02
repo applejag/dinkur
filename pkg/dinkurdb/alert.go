@@ -22,51 +22,18 @@ package dinkurdb
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
 func (*client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, error) {
-	alertChan := make(chan dinkur.StreamedAlert)
-	done := ctx.Done()
-	ticker := time.NewTicker(3 * time.Second)
-	go func() {
-		var i int
-		start := time.Now()
-		for {
-			select {
-			case <-ticker.C:
-				i++
-				alertChan <- dinkur.StreamedAlert{
-					Alert: dinkur.Alert{
-						CommonFields: dinkur.CommonFields{
-							ID:        1,
-							CreatedAt: start,
-							UpdatedAt: time.Now(),
-						},
-						Type: dinkur.AlertPlainMessage{
-							Message: fmt.Sprintf("HELLO: %d", i),
-						},
-					},
-					Event: dinkur.EventUpdated,
-				}
-			case <-done:
-				ticker.Stop()
-				close(alertChan)
-				return
-			}
-		}
-	}()
-	return alertChan, nil
+	return nil, ErrAlerterNotSupported
 }
 
 func (*client) GetAlertList(context.Context) ([]dinkur.Alert, error) {
-	return nil, nil
+	return nil, ErrAlerterNotSupported
 }
 
 func (*client) DeleteAlert(context.Context, uint) (dinkur.Alert, error) {
-	return dinkur.Alert{}, errors.New("not yet implemented")
+	return dinkur.Alert{}, ErrAlerterNotSupported
 }

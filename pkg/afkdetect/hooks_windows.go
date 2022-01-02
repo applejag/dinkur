@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package dinkurafk
+package afkdetect
 
 // #include "hooks_windows.h"
 import "C"
@@ -35,10 +35,8 @@ func init() {
 }
 
 type windowsHooks struct {
-	detector     *detector
-	detMutex     sync.RWMutex
-	ticker       *time.Ticker
-	tickChanStop chan struct{}
+	detector *detector
+	detMutex sync.RWMutex
 }
 
 func (h *windowsHooks) Register(d *detector) error {
@@ -55,8 +53,6 @@ func (h *windowsHooks) Register(d *detector) error {
 	if err := convRegisterCodeToErr(int32(C.RegisterHooks())); err != nil {
 		return err
 	}
-	h.ticker = time.NewTicker(time.Second * 3)
-	go h.timerTickListener(h.ticker)
 	return nil
 }
 
@@ -74,14 +70,6 @@ func (h *windowsHooks) Unregister(d *detector) error {
 	}
 	log.Debug().Message("Unregistering Windows hooks WH_KEYBOARD_LL & WH_MOUSE_LL.")
 	h.detector = nil
-	if h.ticker != nil {
-		h.ticker.Stop()
-		h.ticker = nil
-	}
-	if h.tickChanStop != nil {
-		h.tickChanStop <- struct{}{}
-		h.tickChanStop = nil
-	}
 	return nil
 }
 
@@ -101,6 +89,24 @@ func convUnregisterCodeToErr(code int32) error {
 	default:
 		return convSysErrCode(code)
 	}
+}
+
+func (h *windowsHooks) Tick() error {
+	if bool(C.GetWorkstationLocked()) {
+		h.detector.markAsAFK()
+		return nil
+	}
+	if err := convSysErrCode(int32(C.GetThreadStatus())); err != nil {
+		return err
+	}
+	sinceAFKMs := C.GetTickMs() - C.GetLastEventTickMs()
+	sinceAFK := (time.Duration(sinceAFKMs) * time.Millisecond).Truncate(time.Second)
+	if sinceAFK > afkThresholdDur {
+		h.detector.markAsAFK()
+	} else {
+		h.detector.markAsNoLongerAFK()
+	}
+	return nil
 }
 
 func convSysErrCode(code int32) error {
@@ -125,26 +131,5 @@ func convSysErrCode(code int32) error {
 		return errors.New("1458 (0x5B2): hook type not allowed")
 	default:
 		return fmt.Errorf("unknown Windows system error: %d (0x%[1]X)", code)
-	}
-}
-
-func (h *windowsHooks) timerTickListener(ticker *time.Ticker) {
-	for {
-		select {
-		case <-h.tickChanStop:
-			ticker.Stop()
-			return
-		case <-ticker.C:
-			errCode := int32(C.GetThreadStatus())
-			lastTickMs := uint32(C.GetLastEventTickMs())
-			nowTickMs := uint32(C.GetTickMs())
-			lockedStatus := bool(C.GetWorkstationLocked())
-			sinceAFK := (time.Duration(nowTickMs-lastTickMs) * time.Millisecond).Truncate(time.Second)
-			log.Debug().
-				WithError(convSysErrCode(errCode)).
-				WithDuration("sinceAFK", sinceAFK).
-				WithBool("lockedStatus", lockedStatus).
-				Message("Tick check")
-		}
 	}
 }

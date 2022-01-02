@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Package dinkurafk contains code to detect if the user has gone AFK or
+// Package afkdetect contains code to detect if the user has gone AFK or
 // returned from AFK.
-package dinkurafk
+package afkdetect
 
 import (
 	"errors"
@@ -35,6 +35,8 @@ var (
 	ErrObserverIsNil = errors.New("observer is nil")
 )
 
+var afkPollIntervalDur = 1 * time.Second
+var afkThresholdDur = 5 * time.Second
 var log = logger.NewScoped("AFK")
 
 // Detector is an AFK-detector.
@@ -55,6 +57,7 @@ type Detector interface {
 type detectorHook interface {
 	Register(*detector) error
 	Unregister(*detector) error
+	Tick() error
 }
 
 var detectorHooks []detectorHook
@@ -71,9 +74,13 @@ type detector struct {
 	ObserverStarted
 	ObserverStopped
 
-	hooks      []detectorHook
 	isAFKMutex sync.RWMutex
 	afkSince   *time.Time
+
+	hooks          []detectorHook
+	startStopMutex sync.Mutex
+	ticker         *time.Ticker
+	tickChanStop   chan struct{}
 }
 
 func (d *detector) isAFK() bool {
@@ -118,6 +125,12 @@ func (d *detector) markAsNoLongerAFK() {
 }
 
 func (d *detector) StartDetecting() error {
+	if len(detectorHooks) == 0 {
+		log.Warn().Message("No AFK-detectors available for this OS.")
+		return nil
+	}
+	d.startStopMutex.Lock()
+	defer d.startStopMutex.Unlock()
 	d.hooks = nil
 	for _, hook := range detectorHooks {
 		if err := hook.Register(d); err != nil {
@@ -126,19 +139,28 @@ func (d *detector) StartDetecting() error {
 		}
 		d.hooks = append(d.hooks, hook)
 	}
-	if len(d.hooks) == 0 {
-		log.Warn().Message("No AFK-detectors available for this OS.")
-	}
+	d.ticker = time.NewTicker(afkPollIntervalDur)
+	go d.timerTickListener(d.ticker)
 	return nil
 }
 
 func (d *detector) StopDetecting() error {
+	d.startStopMutex.Lock()
+	defer d.startStopMutex.Unlock()
 	for _, hook := range d.hooks {
 		if err := hook.Unregister(d); err != nil {
 			log.Error().WithError(err).Messagef("Failed to unregister %T.", hook)
 		}
 	}
 	d.hooks = nil
+	if d.ticker != nil {
+		d.ticker.Stop()
+		d.ticker = nil
+	}
+	if d.tickChanStop != nil {
+		d.tickChanStop <- struct{}{}
+		d.tickChanStop = nil
+	}
 	unsubStartErr := d.UnsubAllStarted()
 	unsubStopErr := d.UnsubAllStopped()
 	if unsubStartErr != nil && unsubStopErr != nil {
@@ -149,4 +171,21 @@ func (d *detector) StopDetecting() error {
 		return fmt.Errorf("unsub all afk-stop subs: %w", unsubStopErr)
 	}
 	return nil
+}
+
+func (d *detector) timerTickListener(ticker *time.Ticker) {
+	for {
+		select {
+		case <-d.tickChanStop:
+			ticker.Stop()
+			return
+		case <-ticker.C:
+			for _, hook := range d.hooks {
+				if err := hook.Tick(); err != nil {
+					log.Warn().WithError(err).
+						Messagef("Failed to tick AFK hook %T.", hook)
+				}
+			}
+		}
+	}
 }

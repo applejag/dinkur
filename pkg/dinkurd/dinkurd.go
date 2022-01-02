@@ -26,11 +26,13 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"sync"
 	"time"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
+	"github.com/dinkur/dinkur/pkg/afkdetect"
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"github.com/dinkur/dinkur/pkg/dinkurafk"
+	"github.com/dinkur/dinkur/pkg/dinkuralert"
 	"github.com/dinkur/dinkur/pkg/timeutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"google.golang.org/grpc"
@@ -139,7 +141,7 @@ func NewDaemon(client dinkur.Client, opt Options) Daemon {
 	return &daemon{
 		Options:     opt,
 		client:      client,
-		afkDetector: dinkurafk.New(),
+		afkDetector: afkdetect.New(),
 	}
 }
 
@@ -148,10 +150,14 @@ type daemon struct {
 	dinkurapiv1.UnimplementedTaskerServer
 	dinkurapiv1.UnimplementedAlerterServer
 
-	client      dinkur.Client
-	grpcServer  *grpc.Server
-	listener    net.Listener
-	afkDetector dinkurafk.Detector
+	client     dinkur.Client
+	grpcServer *grpc.Server
+	listener   net.Listener
+
+	afkDetector afkdetect.Detector
+	closeMutex  sync.Mutex
+
+	alertStore dinkuralert.Store
 }
 
 func (d *daemon) assertConnected() error {
@@ -185,6 +191,7 @@ func (d *daemon) Serve(ctx context.Context) error {
 	}(ctx, d)
 	dinkurapiv1.RegisterTaskerServer(grpcServer, d)
 	dinkurapiv1.RegisterAlerterServer(grpcServer, d)
+	go d.listenForAFK(ctx)
 	if err := d.afkDetector.StartDetecting(); err != nil {
 		return fmt.Errorf("start afk detector: %w", err)
 	}
@@ -192,6 +199,8 @@ func (d *daemon) Serve(ctx context.Context) error {
 }
 
 func (d *daemon) Close() (finalErr error) {
+	d.closeMutex.Lock()
+	defer d.closeMutex.Unlock()
 	if srv := d.grpcServer; srv != nil {
 		srv.GracefulStop()
 	}
@@ -208,6 +217,33 @@ func (d *daemon) Close() (finalErr error) {
 		finalErr = err
 	}
 	return
+}
+
+func (d *daemon) listenForAFK(ctx context.Context) {
+	startedChan := d.afkDetector.SubStarted()
+	stoppedChan := d.afkDetector.SubStopped()
+	defer d.afkDetector.UnsubStarted(startedChan)
+	defer d.afkDetector.UnsubStopped(stoppedChan)
+	done := ctx.Done()
+	for {
+		select {
+		case <-startedChan:
+			task, err := d.client.ActiveTask(ctx)
+			if err != nil {
+				log.Warn().WithError(err).
+					Message("Failed to get active task when issuing AFK alert.")
+				continue
+			}
+			if task == nil {
+				continue
+			}
+			d.alertStore.SetAFK(*task)
+		case stopped := <-stoppedChan:
+			d.alertStore.SetFormerlyAFK(stopped.AFKSince)
+		case <-done:
+			return
+		}
+	}
 }
 
 func convTaskPtr(task *dinkur.Task) *dinkurapiv1.Task {
