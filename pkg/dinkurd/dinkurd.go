@@ -299,7 +299,7 @@ func convAlertAFK(alert dinkur.AlertAFK) *dinkurapiv1.AlertAfk {
 
 func convAlertFormerlyAFK(alert dinkur.AlertFormerlyAFK) *dinkurapiv1.AlertFormerlyAfk {
 	return &dinkurapiv1.AlertFormerlyAfk{
-		ActiveTask: convTaskPtr(alert.ActiveTask),
+		ActiveTask: convTaskPtr(&alert.ActiveTask),
 		AfkSince:   convTime(alert.AFKSince),
 	}
 }

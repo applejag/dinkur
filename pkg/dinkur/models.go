@@ -130,7 +130,8 @@ type AlertPlainMessage struct {
 func (AlertPlainMessage) isAlertUnion() {}
 
 // AlertAFK is a type of alert that's issued when the user has just become AFK
-// (away from keyboard).
+// (away from keyboard) when also having an active task. I.e. no AFK alert is
+// issued when not tracking any task.
 type AlertAFK struct {
 	AlertType
 	ActiveTask Task
@@ -139,12 +140,11 @@ type AlertAFK struct {
 func (AlertAFK) isAlertUnion() {}
 
 // AlertFormerlyAFK is a type of alert that's issued when the user is no longer
-// AFK (away from keyboard).
-//
-// The alert may contain the currently active task.
+// AFK (away from keyboard). This formerly AFK alert is only issued if
+// (and only if) the AFK alert is active.
 type AlertFormerlyAFK struct {
 	AlertType
-	ActiveTask *Task
+	ActiveTask Task
 	AFKSince   time.Time
 }
 

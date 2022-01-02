@@ -325,7 +325,7 @@ func convAlertFormerlyAFK(alert *dinkurapiv1.AlertFormerlyAfk) (dinkur.AlertType
 	if alert == nil {
 		return nil, nil
 	}
-	task, err := convTaskPtr(alert.ActiveTask)
+	task, err := convTaskPtrNoNil(alert.ActiveTask)
 	if err != nil {
 		return nil, err
 	}

@@ -70,14 +70,10 @@ var alertsCmd = &cobra.Command{
 			case dinkur.AlertFormerlyAFK:
 				fmt.Println("  Formerly AFK:")
 				fmt.Println("    AFK since:", alertType.AFKSince)
-				if alertType.ActiveTask != nil {
-					console.PrintTaskLabel(console.LabelledTask{
-						Label: "    Active task:",
-						Task:  *alertType.ActiveTask,
-					})
-				} else {
-					fmt.Println("    Active task: -none-")
-				}
+				console.PrintTaskLabel(console.LabelledTask{
+					Label: "    Active task:",
+					Task:  alertType.ActiveTask,
+				})
 			}
 			fmt.Println()
 		}
