@@ -19,7 +19,7 @@
 
 package dinkurafk
 
-// #include "windows_hooks.h"
+// #include "hooks_windows.h"
 import "C"
 import (
 	"errors"
