@@ -1,7 +1,6 @@
 // Dinkur the task time tracking utility.
 // <https://github.com/dinkur/dinkur>
 //
-// Copyright (C) 2021 Kalle Fagerberg
 // SPDX-FileCopyrightText: 2021 Kalle Fagerberg
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -18,22 +17,14 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package dinkurdb
+#include <windows.h>
+#include <stdbool.h>
 
-import (
-	"context"
+#pragma comment(lib, "user32.lib")
 
-	"github.com/dinkur/dinkur/pkg/dinkur"
-)
-
-func (*client) StreamAlert(context.Context) (<-chan dinkur.StreamedAlert, error) {
-	return nil, ErrAlerterNotSupported
-}
-
-func (*client) GetAlertList(context.Context) ([]dinkur.Alert, error) {
-	return nil, ErrAlerterNotSupported
-}
-
-func (*client) DeleteAlert(context.Context, uint) (dinkur.Alert, error) {
-	return dinkur.Alert{}, ErrAlerterNotSupported
-}
+DWORD RegisterHooks();
+DWORD UnregisterHooks();
+DWORD GetTickMs();
+DWORD GetLastEventTickMs();
+DWORD GetThreadStatus();
+bool GetWorkstationLocked();

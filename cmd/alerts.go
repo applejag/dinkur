@@ -39,7 +39,7 @@ var alertsCmd = &cobra.Command{
 			console.PrintFatal("Error running test:", `--client must be set to "grpc"`)
 		}
 		connectClientOrExit()
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		alertChan, err := c.StreamAlert(ctx)
 		if err != nil {
 			cancel()
@@ -53,10 +53,13 @@ var alertsCmd = &cobra.Command{
 				fmt.Println("Channel was closed.")
 				os.Exit(0)
 			}
-			fmt.Printf("Received event: #%d %s\n", alert.Alert.ID, alert.Event)
-			fmt.Println("  Created at:", alert.Alert.CreatedAt)
-			fmt.Println("  Updated at:", alert.Alert.UpdatedAt)
-			fmt.Printf("  Type: %T\n", alert.Alert.Type)
+			log.Info().
+				WithUint("id", alert.Alert.ID).
+				WithStringer("event", alert.Event).
+				WithStringf("type", "%T", alert.Alert.Type).
+				WithTime("createdAt", alert.Alert.CreatedAt).
+				WithTime("updatedAt", alert.Alert.UpdatedAt).
+				Message("Received alert.")
 			switch alertType := alert.Alert.Type.(type) {
 			case dinkur.AlertPlainMessage:
 				fmt.Println("  Plain message:")
@@ -64,7 +67,7 @@ var alertsCmd = &cobra.Command{
 			case dinkur.AlertAFK:
 				fmt.Println("  AFK:")
 				console.PrintTaskLabel(console.LabelledTask{
-					Label: "Active task:",
+					Label: "    Active task:",
 					Task:  alertType.ActiveTask,
 				})
 			case dinkur.AlertFormerlyAFK:

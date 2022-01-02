@@ -38,6 +38,11 @@ import (
 
 var log = logger.NewScoped("DB")
 
+// Errors specific to the Dinkur database client
+var (
+	ErrAlerterNotSupported = errors.New("database client does not support alerts")
+)
+
 func nilNotFoundError(err error) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil

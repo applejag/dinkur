@@ -34,21 +34,19 @@ func (d *daemon) StreamAlert(req *dinkurapiv1.StreamAlertRequest, stream dinkura
 	}
 	ctx := stream.Context()
 	done := ctx.Done()
-	alertChan, err := d.client.StreamAlert(ctx)
-	if err != nil {
-		return convError(err)
-	}
+	alertChan := d.alertStore.SubAlerts()
+	defer d.alertStore.UnsubAlerts(alertChan)
 	for {
 		select {
-		case alert, ok := <-alertChan:
+		case ev, ok := <-alertChan:
 			if !ok {
 				return nil
 			}
 			if err := stream.Send(&dinkurapiv1.StreamAlertResponse{
-				Alert: convAlert(alert.Alert),
-				Event: convEvent(alert.Event),
+				Alert: convAlert(ev.Alert),
+				Event: convEvent(ev.Event),
 			}); err != nil {
-				return convError(err)
+				return err
 			}
 		case <-done:
 			return nil

@@ -17,65 +17,26 @@
 // You should have received a copy of the GNU General Public License along with
 // this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package dinkurafk
+package afkdetect
 
 import (
 	"errors"
 	"sync"
+	"time"
 )
 
 // Errors specific for the listener and subscriptions.
 var (
-	ErrUnsupportedSubType        = errors.New("unsupported subscription type")
 	ErrAlreadyUnsubscribed       = errors.New("already unsubscribed")
 	ErrSubscriptionNotInitalized = errors.New("subscription is not initialized")
 )
 
 // Started contains event data for when user has gone AFK.
-type Started struct {
-}
+type Started struct{}
 
 // Stopped contains event data for when user is no longer AFK (after being AFK).
 type Stopped struct {
-}
-
-// SubStarted is a subscription of events for when user has gone AFK.
-type SubStarted interface {
-	Started() <-chan Started
-}
-
-// SubStopped is a subscription of events for when user is no longer AFK
-// (after being AFK).
-type SubStopped interface {
-	Stopped() <-chan Stopped
-}
-
-type subStarted struct {
-	id uint
-	c  chan Started
-}
-
-func (sub *subStarted) pubWaitGroup(s Started, wg *sync.WaitGroup) {
-	sub.c <- s
-	wg.Done()
-}
-
-func (sub subStarted) Started() <-chan Started {
-	return sub.c
-}
-
-type subStopped struct {
-	id uint
-	c  chan Stopped
-}
-
-func (sub *subStopped) pubWaitGroup(s Stopped, wg *sync.WaitGroup) {
-	sub.c <- s
-	wg.Done()
-}
-
-func (sub subStopped) Stopped() <-chan Stopped {
-	return sub.c
+	AFKSince time.Time
 }
 
 // NewObserverStarted returns a new AFK-started events observer.
@@ -93,8 +54,8 @@ type ObserverStarted interface {
 	// PubStartedWait publishes an AFK-started event and waits until all
 	// subscriptions has received their events.
 	PubStartedWait(Started)
-	SubStarted() SubStarted
-	UnsubStarted(SubStarted) error
+	SubStarted() <-chan Started
+	UnsubStarted(<-chan Started) error
 	UnsubAllStarted() error
 }
 
@@ -103,56 +64,52 @@ type ObserverStopped interface {
 	// PubStoppedWait publishes an AFK-stopped event and waits until all
 	// subscriptions has received their events.
 	PubStoppedWait(Stopped)
-	SubStopped() SubStopped
-	UnsubStopped(SubStopped) error
+	SubStopped() <-chan Stopped
+	UnsubStopped(<-chan Stopped) error
 	UnsubAllStopped() error
 }
 
 type obsStarted struct {
 	nextID uint
-	subs   []subStarted
+	subs   []chan Started
 	mutex  sync.RWMutex
 }
 
-func (o *obsStarted) SubStarted() SubStarted {
+func (o *obsStarted) SubStarted() <-chan Started {
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
 	o.nextID++
-	sub := subStarted{
-		id: o.nextID,
-		c:  make(chan Started),
-	}
+	sub := make(chan Started)
 	o.subs = append(o.subs, sub)
 	return sub
 }
 
 func (o *obsStarted) PubStartedWait(s Started) {
 	var wg sync.WaitGroup
-	wg.Add(len(o.subs))
 	o.mutex.RLock()
+	wg.Add(len(o.subs))
 	for _, sub := range o.subs {
-		go sub.pubWaitGroup(s, &wg)
+		go func(s Started, sub chan Started, wg *sync.WaitGroup) {
+			sub <- s
+			wg.Done()
+		}(s, sub, &wg)
 	}
 	o.mutex.RUnlock()
 	wg.Wait()
 }
 
-func (o *obsStarted) UnsubStarted(sub SubStarted) error {
-	s, ok := sub.(subStarted)
-	if !ok {
-		return ErrUnsupportedSubType
-	}
-	if s.id == 0 {
+func (o *obsStarted) UnsubStarted(sub <-chan Started) error {
+	if sub == nil {
 		return ErrSubscriptionNotInitalized
 	}
-	idx := o.subStartedIndex(s.id)
+	idx := o.subStartedIndex(sub)
 	if idx == -1 {
 		return ErrAlreadyUnsubscribed
 	}
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
+	close(o.subs[idx])
 	o.subs = append(o.subs[idx:], o.subs[idx+1:]...)
-	close(s.c)
 	return nil
 }
 
@@ -160,17 +117,17 @@ func (o *obsStarted) UnsubAllStarted() error {
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
 	for _, sub := range o.subs {
-		close(sub.c)
+		close(sub)
 	}
 	o.subs = nil
 	return nil
 }
 
-func (o *obsStarted) subStartedIndex(id uint) int {
+func (o *obsStarted) subStartedIndex(sub <-chan Started) int {
 	o.mutex.RLock()
 	defer o.mutex.RUnlock()
-	for i, sub := range o.subs {
-		if sub.id == id {
+	for i, ch := range o.subs {
+		if ch == sub {
 			return i
 		}
 	}
@@ -179,66 +136,63 @@ func (o *obsStarted) subStartedIndex(id uint) int {
 
 type obsStopped struct {
 	nextID uint
-	subs   []subStopped
+	chans  []chan Stopped
 	mutex  sync.RWMutex
 }
 
-func (o *obsStopped) SubStopped() SubStopped {
+func (o *obsStopped) SubStopped() <-chan Stopped {
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
 	o.nextID++
-	sub := subStopped{
-		id: o.nextID,
-		c:  make(chan Stopped),
-	}
-	o.subs = append(o.subs, sub)
-	return sub
+	ch := make(chan Stopped)
+	o.chans = append(o.chans, ch)
+	return ch
 }
 
 func (o *obsStopped) PubStoppedWait(s Stopped) {
 	var wg sync.WaitGroup
-	wg.Add(len(o.subs))
 	o.mutex.RLock()
-	for _, sub := range o.subs {
-		go sub.pubWaitGroup(s, &wg)
+	wg.Add(len(o.chans))
+	for _, ch := range o.chans {
+		go func(s Stopped, ch chan Stopped, wg *sync.WaitGroup) {
+			ch <- s
+			wg.Done()
+		}(s, ch, &wg)
 	}
 	o.mutex.RUnlock()
 	wg.Wait()
 }
 
-func (o *obsStopped) UnsubStopped(sub SubStopped) error {
-	s, ok := sub.(subStopped)
-	if !ok {
-		return ErrUnsupportedSubType
-	}
-	if s.id == 0 {
+func (o *obsStopped) UnsubStopped(sub <-chan Stopped) error {
+	if sub == nil {
 		return ErrSubscriptionNotInitalized
 	}
-	idx := o.subStoppedIndex(s.id)
+	idx := o.subStoppedIndex(sub)
 	if idx == -1 {
 		return ErrAlreadyUnsubscribed
 	}
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
-	o.subs = append(o.subs[idx:], o.subs[idx+1:]...)
+	close(o.chans[idx])
+	o.chans = append(o.chans[idx:], o.chans[idx+1:]...)
 	return nil
 }
 
 func (o *obsStopped) UnsubAllStopped() error {
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
-	for _, sub := range o.subs {
-		close(sub.c)
+	for _, c := range o.chans {
+		close(c)
 	}
-	o.subs = nil
+	o.chans = nil
 	return nil
 }
 
-func (o *obsStopped) subStoppedIndex(id uint) int {
+func (o *obsStopped) subStoppedIndex(sub <-chan Stopped) int {
 	o.mutex.RLock()
 	defer o.mutex.RUnlock()
-	for i, sub := range o.subs {
-		if sub.id == id {
+	for i, ch := range o.chans {
+		if ch == sub {
 			return i
 		}
 	}
