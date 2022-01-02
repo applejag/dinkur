@@ -35,8 +35,8 @@ var (
 	ErrObserverIsNil = errors.New("observer is nil")
 )
 
-var afkPollIntervalDur = 1 * time.Second
-var afkThresholdDur = 5 * time.Second
+var afkPollIntervalDur = 5 * time.Second
+var afkThresholdDur = 5 * time.Minute
 var log = logger.NewScoped("AFK")
 
 // Detector is an AFK-detector.

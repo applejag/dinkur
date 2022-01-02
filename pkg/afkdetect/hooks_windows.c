@@ -26,6 +26,8 @@ bool hookedIn = false;
 HHOOK hhookKeyboard;
 HHOOK hhookMouse;
 DWORD lastEventTick;
+DWORD lastManualTick;
+const DWORD throttleMs = 5000;
 
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam);
@@ -83,6 +85,7 @@ DWORD RegisterHooks()
 
 	hookedIn = true;
 	lastEventTick = GetTickCount();
+	lastManualTick = lastEventTick;
 	return 0;
 }
 
@@ -129,6 +132,10 @@ DWORD WINAPI ThreadProc(LPVOID lpParameter)
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	lastEventTick = GetTickCount();
+	if (lastEventTick - lastManualTick >= throttleMs) {
+		lastManualTick = lastEventTick;
+		goTriggerTick();
+	}
     return CallNextHookEx(hhookKeyboard, nCode, wParam, lParam);
 }
 
@@ -136,5 +143,9 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	// TODO: this value wraps after 49.7 days of computer uptime
 	lastEventTick = GetTickCount();
+	if (lastEventTick - lastManualTick >= throttleMs) {
+		lastManualTick = lastEventTick;
+		goTriggerTick();
+	}
     return CallNextHookEx(hhookMouse, nCode, wParam, lParam);
 }

@@ -109,6 +109,11 @@ func (h *windowsHooks) Tick() error {
 	return nil
 }
 
+//export goTriggerTick
+func goTriggerTick() {
+	singletonWindowsHooks.Tick()
+}
+
 func convSysErrCode(code int32) error {
 	switch code {
 	case 0, 259: // 259 = STILL_ACTIVE (thread status)
