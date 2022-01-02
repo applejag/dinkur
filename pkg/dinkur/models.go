@@ -54,3 +54,99 @@ func (t Task) Elapsed() time.Duration {
 	}
 	return end.Sub(t.Start)
 }
+
+// EventType is the type of a streamed event.
+type EventType byte
+
+const (
+	// EventUnknown means the remove Dinkur daemon or client sent an undefined
+	// event type.
+	EventUnknown EventType = iota
+	// EventCreated means the subject was just created.
+	EventCreated
+	// EventUpdated means the subject was just updated.
+	EventUpdated
+	// EventDeleted means the subject was just deleted.
+	EventDeleted
+)
+
+func (ev EventType) String() string {
+	switch ev {
+	case EventCreated:
+		return "created"
+	case EventUpdated:
+		return "updated"
+	case EventDeleted:
+		return "deleted"
+	default:
+		return "unknown"
+	}
+}
+
+// Alert is a notfication provided by Dinkur, such as an alert when the user
+// has gone AFK.
+type Alert struct {
+	CommonFields
+	Type AlertType
+}
+
+// AlertType defines unexported interface used to restrict the alert union types.
+type AlertType interface {
+	isAlertUnion()
+}
+
+// PlainMessage returns the inner plain message alert, or false if the alert
+// is of a different type.
+func (a Alert) PlainMessage() (AlertPlainMessage, bool) {
+	if inner, ok := a.Type.(AlertPlainMessage); ok {
+		return inner, true
+	}
+	return AlertPlainMessage{}, false
+}
+
+// AFK returns the inner AFK alert, or false if the alert is of a different type.
+func (a Alert) AFK() (AlertAFK, bool) {
+	if inner, ok := a.Type.(AlertAFK); ok {
+		return inner, true
+	}
+	return AlertAFK{}, false
+}
+
+// FormerlyAFK returns the inner formerly AFK alert, or false if the alert
+// is of a different type.
+func (a Alert) FormerlyAFK() (AlertFormerlyAFK, bool) {
+	if inner, ok := a.Type.(AlertFormerlyAFK); ok {
+		return inner, true
+	}
+	return AlertFormerlyAFK{}, false
+}
+
+// AlertPlainMessage is a type of alert for generic messages that needs to be
+// presented to the user with no need for user action.
+type AlertPlainMessage struct {
+	AlertType
+	Message string
+}
+
+func (AlertPlainMessage) isAlertUnion() {}
+
+// AlertAFK is a type of alert that's issued when the user has just become AFK
+// (away from keyboard) when also having an active task. I.e. no AFK alert is
+// issued when not tracking any task.
+type AlertAFK struct {
+	AlertType
+	ActiveTask Task
+}
+
+func (AlertAFK) isAlertUnion() {}
+
+// AlertFormerlyAFK is a type of alert that's issued when the user is no longer
+// AFK (away from keyboard). This formerly AFK alert is only issued if
+// (and only if) the AFK alert is active.
+type AlertFormerlyAFK struct {
+	AlertType
+	ActiveTask Task
+	AFKSince   time.Time
+}
+
+func (AlertFormerlyAFK) isAlertUnion() {}

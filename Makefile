@@ -34,4 +34,6 @@ docs:
 grpc:
 	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. \
 		--go-grpc_opt=paths=source_relative \
-		api/dinkurapi/v1/dinkurapi.proto
+		api/dinkurapi/v1/event.proto \
+		api/dinkurapi/v1/tasker.proto \
+		api/dinkurapi/v1/alerter.proto

@@ -21,6 +21,7 @@
 package dinkurclient
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -28,7 +29,10 @@ import (
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/timeutil"
+	"github.com/iver-wharf/wharf-core/pkg/logger"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -37,10 +41,84 @@ import (
 
 // Errors that are specific to the Dinkur gRPC client.
 var (
-	ErrUintTooLarge      = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
-	ErrResponseIsNil     = errors.New("grpc response was nil")
-	ErrUnexpectedNilTask = errors.New("unexpected nil task")
+	ErrUintTooLarge       = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
+	ErrResponseIsNil      = errors.New("grpc response was nil")
+	ErrUnexpectedNilTask  = errors.New("unexpected nil task")
+	ErrUnexpectedNilAlert = errors.New("unexpected nil alert")
 )
+
+var log = logger.NewScoped("client")
+
+// Options for the Dinkur client.
+type Options struct{}
+
+// NewClient returns a new dinkur.Client-compatible implementation that uses
+// gRPC towards a remote Dinkur daemon to perform all dinkur.Client tasks.
+func NewClient(serverAddr string, opt Options) dinkur.Client {
+	return &client{
+		Options:    opt,
+		serverAddr: serverAddr,
+	}
+}
+
+type client struct {
+	Options
+	serverAddr string
+	conn       *grpc.ClientConn
+	tasker     dinkurapiv1.TaskerClient
+	alerter    dinkurapiv1.AlerterClient
+}
+
+func (c *client) assertConnected() error {
+	if c == nil {
+		return dinkur.ErrClientIsNil
+	}
+	if c.conn == nil || c.tasker == nil || c.alerter == nil {
+		return dinkur.ErrNotConnected
+	}
+	return nil
+}
+
+func (c *client) Connect(ctx context.Context) error {
+	if c == nil {
+		return dinkur.ErrClientIsNil
+	}
+	if c.conn != nil || c.tasker != nil || c.alerter != nil {
+		return dinkur.ErrAlreadyConnected
+	}
+	// TODO: add credentials via opts args
+	conn, err := grpc.DialContext(ctx, c.serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return convError(err)
+	}
+	c.conn = conn
+	c.tasker = dinkurapiv1.NewTaskerClient(conn)
+	c.alerter = dinkurapiv1.NewAlerterClient(conn)
+	return nil
+}
+
+func (c *client) Close() (err error) {
+	if conn := c.conn; conn != nil {
+		err = conn.Close()
+		c.conn = nil
+	}
+	c.tasker = nil
+	return
+}
+
+func (c *client) Ping(ctx context.Context) error {
+	if err := c.assertConnected(); err != nil {
+		return err
+	}
+	res, err := c.tasker.Ping(ctx, &dinkurapiv1.PingRequest{})
+	if err != nil {
+		return convError(err)
+	}
+	if res == nil {
+		return ErrResponseIsNil
+	}
+	return nil
+}
 
 func convError(err error) error {
 	if err == nil {
@@ -185,4 +263,102 @@ func convTaskSlice(slice []*dinkurapiv1.Task) ([]dinkur.Task, error) {
 		tasks = append(tasks, *t2)
 	}
 	return tasks, nil
+}
+
+func convAlertPtr(alert *dinkurapiv1.Alert) (*dinkur.Alert, error) {
+	if alert == nil {
+		return nil, nil
+	}
+	id, err := uint64ToUint(alert.Id)
+	if err != nil {
+		return nil, err
+	}
+	a := dinkur.Alert{
+		CommonFields: dinkur.CommonFields{
+			ID:        id,
+			CreatedAt: convTimestampOrZero(alert.CreatedAt),
+			UpdatedAt: convTimestampOrZero(alert.UpdatedAt),
+		},
+	}
+	switch alertType := alert.Type.(type) {
+	case *dinkurapiv1.Alert_PlainMessage:
+		a.Type = convAlertPlainMessage(alertType.PlainMessage)
+	case *dinkurapiv1.Alert_Afk:
+		at, err := convAlertAFK(alertType.Afk)
+		if err != nil {
+			return nil, err
+		}
+		a.Type = at
+	case *dinkurapiv1.Alert_FormerlyAfk:
+		at, err := convAlertFormerlyAFK(alertType.FormerlyAfk)
+		if err != nil {
+			return nil, err
+		}
+		a.Type = at
+	}
+	return &a, nil
+}
+
+func convAlertPlainMessage(alert *dinkurapiv1.AlertPlainMessage) dinkur.AlertType {
+	if alert == nil {
+		return nil
+	}
+	return dinkur.AlertPlainMessage{
+		Message: alert.Message,
+	}
+}
+
+func convAlertAFK(alert *dinkurapiv1.AlertAfk) (dinkur.AlertType, error) {
+	if alert == nil {
+		return nil, nil
+	}
+	task, err := convTaskPtrNoNil(alert.ActiveTask)
+	if err != nil {
+		return nil, err
+	}
+	return dinkur.AlertAFK{
+		ActiveTask: task,
+	}, nil
+}
+
+func convAlertFormerlyAFK(alert *dinkurapiv1.AlertFormerlyAfk) (dinkur.AlertType, error) {
+	if alert == nil {
+		return nil, nil
+	}
+	task, err := convTaskPtrNoNil(alert.ActiveTask)
+	if err != nil {
+		return nil, err
+	}
+	return dinkur.AlertFormerlyAFK{
+		ActiveTask: task,
+		AFKSince:   convTimestampOrZero(alert.AfkSince),
+	}, nil
+}
+
+func convAlertSlice(slice []*dinkurapiv1.Alert) ([]dinkur.Alert, error) {
+	tasks := make([]dinkur.Alert, 0, len(slice))
+	for _, a := range slice {
+		a2, err := convAlertPtr(a)
+		if a2 == nil {
+			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("alert #%d: %w", a.Id, err)
+		}
+		tasks = append(tasks, *a2)
+	}
+	return tasks, nil
+}
+
+func convEvent(ev dinkurapiv1.Event) dinkur.EventType {
+	switch ev {
+	case dinkurapiv1.Event_CREATED:
+		return dinkur.EventCreated
+	case dinkurapiv1.Event_UPDATED:
+		return dinkur.EventUpdated
+	case dinkurapiv1.Event_DELETED:
+		return dinkur.EventDeleted
+	default:
+		return dinkur.EventUnknown
+	}
 }

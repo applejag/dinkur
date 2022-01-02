@@ -28,13 +28,10 @@ import (
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/fatih/color"
-	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"github.com/mattn/go-colorable"
 )
 
 var (
-	log = logger.NewScoped("console")
-
 	stdout          = colorable.NewColorableStdout()
 	stderr          = colorable.NewColorableStderr()
 	timeFormatLong  = "Jan 02 15:04"

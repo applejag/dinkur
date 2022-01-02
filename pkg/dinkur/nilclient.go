@@ -84,3 +84,21 @@ func (*NilClient) ActiveTask(context.Context) (*Task, error) {
 func (*NilClient) StopActiveTask(context.Context) (*Task, error) {
 	return nil, ErrClientIsNil
 }
+
+// StreamAlert is a dummy implementation of the dinkur.Client that only
+// returns the "client is nil" error.
+func (*NilClient) StreamAlert(context.Context) (<-chan StreamedAlert, error) {
+	return nil, ErrClientIsNil
+}
+
+// GetAlertList is a dummy implementation of the dinkur.Client that only
+// returns the "client is nil" error.
+func (*NilClient) GetAlertList(context.Context) ([]Alert, error) {
+	return nil, ErrClientIsNil
+}
+
+// DeleteAlert is a dummy implementation of the dinkur.Client that only
+// returns the "client is nil" error.
+func (*NilClient) DeleteAlert(context.Context, uint) (Alert, error) {
+	return Alert{}, ErrClientIsNil
+}

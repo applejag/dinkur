@@ -39,23 +39,25 @@ import (
 
 // Errors that are specific to the Dinkur gRPC server daemon.
 var (
-	ErrUintTooLarge      = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
-	ErrDaemonIsNil       = errors.New("daemon is nil")
-	ErrTaskerServerIsNil = errors.New("tasker server is nil")
-	ErrAlreadyServing    = errors.New("daemon instance is already running")
+	ErrUintTooLarge   = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
+	ErrDaemonIsNil    = errors.New("daemon is nil")
+	ErrRequestIsNil   = errors.New("grpc request was nil")
+	ErrAlreadyServing = errors.New("daemon instance is already running")
 )
 
 func convError(err error) error {
 	switch {
+	case status.Code(err) != codes.Unknown:
+		return err
 	case errors.Is(err, dinkur.ErrNotFound):
 		return status.Error(codes.NotFound, err.Error())
-	case errors.Is(err, ErrUintTooLarge),
+	case errors.Is(err, ErrRequestIsNil),
+		errors.Is(err, ErrUintTooLarge),
 		errors.Is(err, dinkur.ErrLimitTooLarge),
 		errors.Is(err, dinkur.ErrTaskEndBeforeStart),
 		errors.Is(err, dinkur.ErrTaskNameEmpty):
 		return status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, ErrTaskerServerIsNil),
-		errors.Is(err, dinkur.ErrNotConnected),
+	case errors.Is(err, dinkur.ErrNotConnected),
 		errors.Is(err, dinkur.ErrAlreadyConnected),
 		errors.Is(err, dinkur.ErrClientIsNil):
 		return status.Error(codes.FailedPrecondition, err.Error())
@@ -132,24 +134,33 @@ func NewDaemon(client dinkur.Client, opt Options) Daemon {
 	}
 	return &daemon{
 		Options: opt,
-		tasker:  NewTaskerServer(client),
+		client:  client,
 	}
 }
 
 type daemon struct {
 	Options
-	tasker dinkurapiv1.TaskerServer
+	dinkurapiv1.UnimplementedTaskerServer
+	dinkurapiv1.UnimplementedAlerterServer
 
+	client     dinkur.Client
 	grpcServer *grpc.Server
 	listener   net.Listener
 }
 
-func (d *daemon) Serve(ctx context.Context) error {
+func (d *daemon) assertConnected() error {
 	if d == nil {
 		return ErrDaemonIsNil
 	}
-	if d.tasker == nil {
-		return ErrTaskerServerIsNil
+	if d.client == nil {
+		return dinkur.ErrClientIsNil
+	}
+	return nil
+}
+
+func (d *daemon) Serve(ctx context.Context) error {
+	if err := d.assertConnected(); err != nil {
+		return err
 	}
 	if d.grpcServer != nil || d.listener != nil {
 		return ErrAlreadyServing
@@ -170,7 +181,8 @@ func (d *daemon) Serve(ctx context.Context) error {
 			d.Close()
 		}
 	}(cctx, d)
-	dinkurapiv1.RegisterTaskerServer(grpcServer, d.tasker)
+	dinkurapiv1.RegisterTaskerServer(grpcServer, d)
+	dinkurapiv1.RegisterAlerterServer(grpcServer, d)
 	return grpcServer.Serve(lis)
 }
 
@@ -247,5 +259,68 @@ func convShorthand(s dinkurapiv1.GetTaskListRequest_Shorthand) timeutil.TimeSpan
 		return timeutil.TimeSpanNextWeek
 	default:
 		return timeutil.TimeSpanNone
+	}
+}
+
+func convAlert(alert dinkur.Alert) *dinkurapiv1.Alert {
+	a := &dinkurapiv1.Alert{
+		Id:        uint64(alert.ID),
+		CreatedAt: convTimePtr(&alert.CreatedAt),
+		UpdatedAt: convTimePtr(&alert.UpdatedAt),
+	}
+	switch alertType := alert.Type.(type) {
+	case dinkur.AlertPlainMessage:
+		a.Type = &dinkurapiv1.Alert_PlainMessage{
+			PlainMessage: convAlertPlainMessage(alertType),
+		}
+	case dinkur.AlertAFK:
+		a.Type = &dinkurapiv1.Alert_Afk{
+			Afk: convAlertAFK(alertType),
+		}
+	case dinkur.AlertFormerlyAFK:
+		a.Type = &dinkurapiv1.Alert_FormerlyAfk{
+			FormerlyAfk: convAlertFormerlyAFK(alertType),
+		}
+	}
+	return a
+}
+
+func convAlertPlainMessage(alert dinkur.AlertPlainMessage) *dinkurapiv1.AlertPlainMessage {
+	return &dinkurapiv1.AlertPlainMessage{
+		Message: alert.Message,
+	}
+}
+
+func convAlertAFK(alert dinkur.AlertAFK) *dinkurapiv1.AlertAfk {
+	return &dinkurapiv1.AlertAfk{
+		ActiveTask: convTaskPtr(&alert.ActiveTask),
+	}
+}
+
+func convAlertFormerlyAFK(alert dinkur.AlertFormerlyAFK) *dinkurapiv1.AlertFormerlyAfk {
+	return &dinkurapiv1.AlertFormerlyAfk{
+		ActiveTask: convTaskPtr(&alert.ActiveTask),
+		AfkSince:   convTime(alert.AFKSince),
+	}
+}
+
+func convAlertSlice(slice []dinkur.Alert) []*dinkurapiv1.Alert {
+	alerts := make([]*dinkurapiv1.Alert, len(slice))
+	for i, t := range slice {
+		alerts[i] = convAlert(t)
+	}
+	return alerts
+}
+
+func convEvent(ev dinkur.EventType) dinkurapiv1.Event {
+	switch ev {
+	case dinkur.EventCreated:
+		return dinkurapiv1.Event_CREATED
+	case dinkur.EventUpdated:
+		return dinkurapiv1.Event_UPDATED
+	case dinkur.EventDeleted:
+		return dinkurapiv1.Event_DELETED
+	default:
+		return dinkurapiv1.Event_UNKNOWN
 	}
 }
