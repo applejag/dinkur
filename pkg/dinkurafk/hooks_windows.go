@@ -50,7 +50,7 @@ func (h *windowsHooks) Register(d *detector) error {
 	if h.detector != nil {
 		return errors.New("only 1 windows hooks can be registered at a time")
 	}
-	log.Debug().Message("Registering Windows hooks.")
+	log.Debug().Message("Registering Windows hooks WH_KEYBOARD_LL & WH_MOUSE_LL.")
 	h.detector = d
 	if err := convRegisterCodeToErr(int32(C.RegisterHooks())); err != nil {
 		return err
@@ -72,7 +72,7 @@ func (h *windowsHooks) Unregister(d *detector) error {
 	if err := convUnregisterCodeToErr(int32(C.UnregisterHooks())); err != nil {
 		return err
 	}
-	log.Debug().Message("Unregistered Windows hooks.")
+	log.Debug().Message("Unregistering Windows hooks WH_KEYBOARD_LL & WH_MOUSE_LL.")
 	h.detector = nil
 	if h.ticker != nil {
 		h.ticker.Stop()
@@ -135,19 +135,14 @@ func (h *windowsHooks) timerTickListener(ticker *time.Ticker) {
 			ticker.Stop()
 			return
 		case <-ticker.C:
+			errCode := int32(C.GetThreadStatus())
+			lastTickMs := uint32(C.GetLastEventTickMs())
+			nowTickMs := uint32(C.GetTickMs())
+			sinceAFK := (time.Duration(nowTickMs-lastTickMs) * time.Millisecond).Truncate(time.Second)
 			log.Debug().
-				WithError(convSysErrCode(int32(C.GetThreadStatus()))).
-				WithUint32("tick", uint32(C.GetLastEventTick())).
+				WithError(convSysErrCode(errCode)).
+				WithDuration("sinceAFK", sinceAFK).
 				Message("Tick check")
 		}
 	}
-}
-
-//export goWindowsKeyboardEvent
-func goWindowsKeyboardEvent() {
-	log.Debug().Message("Keyboard event.")
-	if singletonWindowsHooks.detector == nil {
-		return
-	}
-	singletonWindowsHooks.detector.markAsNoLongerAFK()
 }

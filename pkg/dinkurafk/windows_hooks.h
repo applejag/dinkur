@@ -24,5 +24,6 @@
 
 DWORD RegisterHooks();
 DWORD UnregisterHooks();
-DWORD GetLastEventTick();
+DWORD GetTickMs();
+DWORD GetLastEventTickMs();
 DWORD GetThreadStatus();

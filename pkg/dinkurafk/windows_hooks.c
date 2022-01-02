@@ -31,9 +31,14 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam);
 DWORD WINAPI ThreadProc(LPVOID lpParameter);
 
-DWORD GetLastEventTick()
+DWORD GetLastEventTickMs()
 {
 	return lastEventTick;
+}
+
+DWORD GetTickMs()
+{
+	return GetTickCount();
 }
 
 DWORD GetThreadStatus()
@@ -70,25 +75,6 @@ DWORD RegisterHooks()
 		return err;
 	}
 
-	//HINSTANCE hmod = GetModuleHandle(NULL);
-	//DWORD err = GetLastError();
-	//if (err != 0) {
-	//	return err;
-	//}
-	//const DWORD dwThreadId = 0; // all threads on the computer
-
-	//hhookKeyboard = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, hmod, dwThreadId);
-	//if (hhookKeyboard == NULL)
-	//{
-	//	return GetLastError();
-	//}
-
-	//hhookMouse = SetWindowsHookEx(WH_MOUSE, MouseProc, hmod, dwThreadId);
-	//if (hhookMouse == NULL)
-	//{
-	//	return GetLastError();
-	//}
-
 	hookedIn = true;
 	lastEventTick = GetTickCount();
 	return 0;
@@ -119,11 +105,11 @@ DWORD WINAPI ThreadProc(LPVOID lpParameter)
 		return GetLastError();
 	}
 
-	//hhookMouse = SetWindowsHookEx(WH_MOUSE, MouseProc, (HINSTANCE) NULL, dwThreadId);
-	//if (hhookMouse == NULL)
-	//{
-	//	return GetLastError();
-	//}
+	hhookMouse = SetWindowsHookEx(WH_MOUSE_LL, MouseProc, (HINSTANCE) NULL, dwThreadId);
+	if (hhookMouse == NULL)
+	{
+		return GetLastError();
+	}
 
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
@@ -137,12 +123,12 @@ DWORD WINAPI ThreadProc(LPVOID lpParameter)
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	lastEventTick = GetTickCount();
-	goWindowsKeyboardEvent();
     return CallNextHookEx(hhookKeyboard, nCode, wParam, lParam);
 }
 
 LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
+	// TODO: this value wraps after 49.7 days of computer uptime
 	lastEventTick = GetTickCount();
     return CallNextHookEx(hhookMouse, nCode, wParam, lParam);
 }
