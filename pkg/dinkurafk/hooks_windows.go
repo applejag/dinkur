@@ -138,10 +138,12 @@ func (h *windowsHooks) timerTickListener(ticker *time.Ticker) {
 			errCode := int32(C.GetThreadStatus())
 			lastTickMs := uint32(C.GetLastEventTickMs())
 			nowTickMs := uint32(C.GetTickMs())
+			lockedStatus := bool(C.GetWorkstationLocked())
 			sinceAFK := (time.Duration(nowTickMs-lastTickMs) * time.Millisecond).Truncate(time.Second)
 			log.Debug().
 				WithError(convSysErrCode(errCode)).
 				WithDuration("sinceAFK", sinceAFK).
+				WithBool("lockedStatus", lockedStatus).
 				Message("Tick check")
 		}
 	}

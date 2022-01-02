@@ -41,6 +41,12 @@ DWORD GetTickMs()
 	return GetTickCount();
 }
 
+bool GetWorkstationLocked()
+{
+	OpenInputDesktop(0, false, DESKTOP_READOBJECTS);
+	return GetLastError() == ERROR_ACCESS_DENIED;
+}
+
 DWORD GetThreadStatus()
 {
 	if (threadHandle == NULL)

@@ -27,3 +27,4 @@ DWORD UnregisterHooks();
 DWORD GetTickMs();
 DWORD GetLastEventTickMs();
 DWORD GetThreadStatus();
+bool GetWorkstationLocked();
