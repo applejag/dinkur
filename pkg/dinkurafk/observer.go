@@ -78,21 +78,14 @@ func (sub subStopped) Stopped() <-chan Stopped {
 	return sub.c
 }
 
-// NewObserver returns a new AFK-started and AFK-stopped observer.
-func NewObserver() Observer {
-	return &observer{}
+// NewObserverStarted returns a new AFK-started events observer.
+func NewObserverStarted() ObserverStarted {
+	return &obsStarted{}
 }
 
-type observer struct {
-	obsStarted
-	obsStopped
-}
-
-// Observer lets you publish and subscribe to both AFK-started and AFK-stopped
-// events.
-type Observer interface {
-	ObserverStarted
-	ObserverStopped
+// NewObserverStopped returns a new AFK-stopped events observer.
+func NewObserverStopped() ObserverStopped {
+	return &obsStopped{}
 }
 
 // ObserverStarted lets you publish and subscribe to AFK-started events.
@@ -102,6 +95,7 @@ type ObserverStarted interface {
 	PubStartedWait(Started)
 	SubStarted() SubStarted
 	UnsubStarted(SubStarted) error
+	UnsubAllStarted() error
 }
 
 // ObserverStopped lets you publish and subscribe to AFK-stopped events.
@@ -111,6 +105,7 @@ type ObserverStopped interface {
 	PubStoppedWait(Stopped)
 	SubStopped() SubStopped
 	UnsubStopped(SubStopped) error
+	UnsubAllStopped() error
 }
 
 type obsStarted struct {
@@ -157,6 +152,17 @@ func (o *obsStarted) UnsubStarted(sub SubStarted) error {
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
 	o.subs = append(o.subs[idx:], o.subs[idx+1:]...)
+	close(s.c)
+	return nil
+}
+
+func (o *obsStarted) UnsubAllStarted() error {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+	for _, sub := range o.subs {
+		close(sub.c)
+	}
+	o.subs = nil
 	return nil
 }
 
@@ -215,6 +221,16 @@ func (o *obsStopped) UnsubStopped(sub SubStopped) error {
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
 	o.subs = append(o.subs[idx:], o.subs[idx+1:]...)
+	return nil
+}
+
+func (o *obsStopped) UnsubAllStopped() error {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+	for _, sub := range o.subs {
+		close(sub.c)
+	}
+	o.subs = nil
 	return nil
 }
 

@@ -20,3 +20,60 @@
 // Package dinkurafk contains code to detect if the user has gone AFK or
 // returned from AFK.
 package dinkurafk
+
+import (
+	"errors"
+	"fmt"
+)
+
+// Errors specific to AFK-detectors.
+var (
+	ErrObserverIsNil = errors.New("observer is nil")
+)
+
+// Detector is an AFK-detector.
+type Detector interface {
+	// Start makes this detector start listening for OS-specific events to then
+	// trigger AFK-started or AFK-stopped events.
+	//
+	// You need to stop the detector to remove any dangling Goroutines.
+	StartDetecting() error
+	// StopDetecting makes this detector stop listening for OS-specific events by
+	// cleaning up its Goroutines and hooks.
+	StopDetecting() error
+
+	ObserverStarted
+	ObserverStopped
+}
+
+// New creates a new AFK-detector.
+func New() Detector {
+	return &detector{
+		ObserverStarted: NewObserverStarted(),
+		ObserverStopped: NewObserverStopped(),
+	}
+}
+
+type detector struct {
+	ObserverStarted
+	ObserverStopped
+
+	isAFK bool
+}
+
+func (d *detector) StartDetecting() error {
+	return errors.New("not implemented")
+}
+
+func (d *detector) StopDetecting() error {
+	unsubStartErr := d.UnsubAllStarted()
+	unsubStopErr := d.UnsubAllStopped()
+	if unsubStartErr != nil && unsubStopErr != nil {
+		return fmt.Errorf("unsub all afk-start and stop subs: %w; %v", unsubStartErr, unsubStopErr)
+	} else if unsubStartErr != nil {
+		return fmt.Errorf("unsub all afk-start subs: %w", unsubStartErr)
+	} else if unsubStopErr != nil {
+		return fmt.Errorf("unsub all afk-stop subs: %w", unsubStopErr)
+	}
+	return nil
+}
