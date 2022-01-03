@@ -114,6 +114,7 @@ func (d *detector) markAsAFK() {
 	if _, changed := d.setIsAFK(true); !changed {
 		return
 	}
+	log.Debug().Message("User is now AFK.")
 	d.ObserverStarted.PubStartedWait(Started{})
 }
 
@@ -122,6 +123,7 @@ func (d *detector) markAsNoLongerAFK() {
 	if !changed {
 		return
 	}
+	log.Debug().Message("User is no longer AFK.")
 	d.ObserverStopped.PubStoppedWait(Stopped{
 		AFKSince: t,
 	})

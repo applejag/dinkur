@@ -41,6 +41,7 @@ func (h dbusHookRegisterer) Register(d *detector) (detectorHook, error) {
 		log.Debug().WithError(err).Message("Failed to connect to session dbus.")
 		return nil, nil // swallow error, in case of GNU/Linux distros w/o dbus
 	}
+	log.Debug().Message("Registering dbus connection for org.gnome.Mutter, org.gnome.ScreenSaver & org.gnome.Shell.")
 	// https://unix.stackexchange.com/a/492328
 	// https://github.com/endlessm/mutter/blob/01a0fa9/src/org.gnome.Mutter.IdleMonitor.xml#L14-L16
 	idleMon := conn.Object("org.gnome.Mutter.IdleMonitor", "/org/gnome/Mutter/IdleMonitor/Core")
@@ -100,6 +101,7 @@ type dbusHook struct {
 }
 
 func (h *dbusHook) Unregister() error {
+	log.Debug().Message("Unregistering dbus connection.")
 	return h.conn.Close()
 }
 
