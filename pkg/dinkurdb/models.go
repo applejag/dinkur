@@ -152,10 +152,6 @@ const (
 	MigrationUpToDate MigrationVersion = LatestMigrationVersion
 )
 
-func (s MigrationVersion) IsOutdated() bool {
-	return s < LatestMigrationVersion
-}
-
 func (s MigrationVersion) String() string {
 	switch s {
 	case MigrationUnknown:
