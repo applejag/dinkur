@@ -43,7 +43,7 @@ func (h dbusHookRegisterer) Register(d *detector) (detectorHook, error) {
 	}
 	log.Debug().Message("Registering dbus connection for org.gnome.Mutter, org.gnome.ScreenSaver & org.gnome.Shell.")
 	// https://unix.stackexchange.com/a/492328
-	// https://github.com/endlessm/mutter/blob/01a0fa9/src/org.gnome.Mutter.IdleMonitor.xml#L14-L16
+	// https://gitlab.gnome.org/GNOME/mutter/-/blob/41.2/src/org.gnome.Mutter.IdleMonitor.xml#L14-16
 	idleMon := conn.Object("org.gnome.Mutter.IdleMonitor", "/org/gnome/Mutter/IdleMonitor/Core")
 	hook := &dbusHook{
 		d:       d,
