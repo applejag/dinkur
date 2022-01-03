@@ -37,14 +37,15 @@ func (c *client) MigrationStatus(ctx context.Context) (MigrationVersion, error) 
 }
 
 func (c *client) migrationStatus() (MigrationVersion, error) {
-	if c.prevMigStatus != MigrationUnknown {
-		return c.prevMigStatus, nil
+	if c.prevMigChecked {
+		return c.prevMigVersion, nil
 	}
 	status, err := getMigrationStatus(c.db)
 	if err != nil {
 		return MigrationUnknown, err
 	}
-	c.prevMigStatus = status
+	c.prevMigVersion = status
+	c.prevMigChecked = true
 	return status, nil
 }
 

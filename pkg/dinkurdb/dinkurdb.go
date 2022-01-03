@@ -75,7 +75,8 @@ type client struct {
 	Options
 	sqliteDsn      string
 	db             *gorm.DB
-	prevMigStatus  MigrationVersion
+	prevMigChecked bool
+	prevMigVersion MigrationVersion
 }
 
 func (c *client) assertConnected() error {
