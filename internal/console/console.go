@@ -39,7 +39,7 @@ var (
 
 	taskIDColor          = color.New(color.FgHiBlack)
 	taskLabelColor       = color.New(color.FgWhite, color.Italic)
-	taskNameColor        = color.New(color.FgHiYellow, color.Bold)
+	taskNameColor        = color.New(color.FgYellow)
 	taskTimeDelimColor   = color.New(color.FgHiBlack)
 	taskDateColor        = color.New(color.FgGreen)
 	taskStartColor       = color.New(color.FgGreen)
@@ -62,7 +62,7 @@ var (
 
 	tableEmptyColor   = color.New(color.FgHiBlack, color.Italic)
 	tableEmptyText    = "No results to display."
-	tableHeaderColor  = color.New(color.FgWhite, color.Underline, color.Bold)
+	tableHeaderColor  = color.New(color.FgWhite, color.Underline)
 	tableSummaryColor = color.New(color.FgHiBlack, color.Italic)
 
 	usageHeaderColor = color.New(color.FgYellow, color.Underline, color.Italic)
