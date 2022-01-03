@@ -49,7 +49,7 @@ type date struct {
 }
 
 func (d date) String() string {
-	return fmt.Sprintf("%s %d", d.month.String()[:3], d.day)
+	return fmt.Sprintf("%s-%d", d.month.String()[:3], d.day)
 }
 
 type taskDateGroup struct {

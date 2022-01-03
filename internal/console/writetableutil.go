@@ -32,7 +32,7 @@ func writeCellsLabelledTask(t *table, labelled LabelledTask) {
 	writeCellTaskName(t, labelled.Task.Name)
 	writeCellTaskStartEnd(t, labelled.Task.Start, labelled.Task.End)
 	if labelled.NoDuration {
-		t.WriteCellColor(taskDurationNilText, taskDurationNilColor)
+		t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
 	} else {
 		writeCellDuration(t, labelled.Task.Elapsed())
 	}

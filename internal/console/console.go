@@ -48,8 +48,6 @@ var (
 	taskEndNilText       = "active…"
 	taskEndNilTextLen    = utf8.RuneCountInString(taskEndNilText)
 	taskDurationColor    = color.New(color.FgCyan)
-	taskDurationNilColor = color.New(color.FgCyan)
-	taskDurationNilText  = "-"
 	taskEditDelimColor   = color.New(color.FgHiMagenta)
 	taskEditNoneColor    = color.New(color.FgHiBlack, color.Italic)
 
@@ -60,10 +58,12 @@ var (
 	fatalLabelColor = color.New(color.FgHiRed, color.Bold)
 	fatalValueColor = color.New(color.FgRed)
 
-	tableEmptyColor   = color.New(color.FgHiBlack, color.Italic)
-	tableEmptyText    = "No results to display."
-	tableHeaderColor  = color.New(color.FgWhite, color.Underline)
-	tableSummaryColor = color.New(color.FgHiBlack, color.Italic)
+	tableEmptyColor     = color.New(color.FgHiBlack, color.Italic)
+	tableEmptyText      = "No results to display."
+	tableHeaderColor    = color.New(color.FgWhite, color.Underline)
+	tableSummaryColor   = color.New(color.FgHiBlack, color.Italic)
+	tableCellEmptyText  = "-"
+	tableCellEmptyColor = color.New(color.FgHiBlack)
 
 	usageHeaderColor = color.New(color.FgYellow, color.Underline, color.Italic)
 	usageHelpColor   = color.New(color.FgHiBlack, color.Italic)
@@ -178,7 +178,7 @@ func PrintTaskList(tasks []dinkur.Task) {
 			if i == 0 {
 				writeCellDate(&t, group.date)
 			} else {
-				t.WriteCell("")
+				t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
 			}
 			writeCellTaskStartEnd(&t, task.Start, task.End)
 			writeCellDuration(&t, task.Elapsed())
@@ -192,9 +192,9 @@ func PrintTaskList(tasks []dinkur.Task) {
 		endStr = sum.end.Format(timeFormatShort)
 	}
 	t.WriteColoredRow(tableSummaryColor,
-		"", // ID
+		tableCellEmptyText, // ID
 		fmt.Sprintf("TOTAL: %d tasks", len(tasks)), // NAME
-		"",                                // DAY
+		tableCellEmptyText,                                // DAY
 		sum.start.Format(timeFormatShort), // START
 		endStr,                            // END
 		fmt.Sprintf("(%s)", FormatDuration(sum.duration)), // DURATION
