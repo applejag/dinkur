@@ -45,6 +45,7 @@ func init() {
 
 	var listCmd = &cobra.Command{
 		Use:     `list`,
+		Args:    cobra.NoArgs,
 		Aliases: []string{"ls", "l"},
 		Short:   "List your tasks",
 		Long: fmt.Sprintf(`Lists all your tasks.
@@ -87,7 +88,6 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 			"nextweek\tonly list next week's tasks (monday to sunday)",
 			"nw\talias for 'nextweek'",
 		},
-		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
 			search := dinkur.SearchTask{

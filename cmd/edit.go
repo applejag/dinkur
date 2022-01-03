@@ -40,6 +40,7 @@ func init() {
 
 	var editCmd = &cobra.Command{
 		Use:     "edit [new name of task]",
+		Args:    cobra.ArbitraryArgs,
 		Aliases: []string{"e"},
 		Short:   "Edit the latest or a specific task",
 		Long: `Applies changes to the currently active task, or the latest task, or

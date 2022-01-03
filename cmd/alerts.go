@@ -33,6 +33,7 @@ import (
 // alertsCmd represents the test command
 var alertsCmd = &cobra.Command{
 	Use:   "alerts",
+	Args:  cobra.NoArgs,
 	Short: "Testing alerts streaming",
 	Run: func(cmd *cobra.Command, args []string) {
 		if flagClient != "grpc" {

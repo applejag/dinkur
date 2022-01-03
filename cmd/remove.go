@@ -37,6 +37,7 @@ func init() {
 	// removeCmd represents the remove command
 	var removeCmd = &cobra.Command{
 		Use:     "remove",
+		Args:    cobra.NoArgs,
 		Aliases: []string{"rm", "r"},
 		Short:   "Removes a task",
 		Long: `Removes a task from your task data store.

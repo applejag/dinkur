@@ -32,6 +32,7 @@ import (
 // outCmd represents the out command
 var outCmd = &cobra.Command{
 	Use:     "out",
+	Args:    cobra.NoArgs,
 	Aliases: []string{"o", "end"},
 	Short:   "Check out/end the currently active task",
 	Long:    ``,

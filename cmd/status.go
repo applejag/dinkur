@@ -31,6 +31,7 @@ import (
 // statusCmd represents the status command
 var statusCmd = &cobra.Command{
 	Use:     "status",
+	Args:    cobra.NoArgs,
 	Aliases: []string{"s"},
 	Short:   "Show status of active task",
 	Long:    ``,

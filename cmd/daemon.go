@@ -35,6 +35,7 @@ import (
 // daemonCmd represents the daemon command
 var daemonCmd = &cobra.Command{
 	Use:   "daemon",
+	Args:  cobra.NoArgs,
 	Short: "Starts Dinkur daemon process",
 	Long: `The Dinkur daemon hosts a gRPC API on a random port.
 This daemon is used by Dinkur clients, and allows more features such as the
