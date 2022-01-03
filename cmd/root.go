@@ -111,7 +111,9 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&dataFile, "data", dataFile, "database file")
 	RootCmd.PersistentFlags().BoolVar(&flagDataMkdir, "data-mkdir", flagDataMkdir, "create directory for data if it doesn't exist")
 	RootCmd.PersistentFlags().StringVar(&flagColor, "color", flagColor, `colored output: "auto", "always", or "never"`)
+	RootCmd.RegisterFlagCompletionFunc("color", colorComplete)
 	RootCmd.PersistentFlags().StringVar(&flagClient, "client", flagClient, `Dinkur client: "db" or "grpc"`)
+	RootCmd.RegisterFlagCompletionFunc("client", clientComplete)
 	RootCmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", flagVerbose, `enables debug logging`)
 }
 
@@ -187,4 +189,19 @@ func connectToDBClient() (dinkur.Client, error) {
 		DebugLogging: flagVerbose,
 	})
 	return c, c.Connect(context.Background())
+}
+
+func colorComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+	return []string{
+		"auto\tuse colored terminal output iff session is interactive (default)",
+		"always\talways use colored terminal output; may cause issues when piping output",
+		"never\tdisables colored terminal output",
+	}, cobra.ShellCompDirectiveDefault
+}
+
+func clientComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+	return []string{
+		"grpc\tuse grpc client towards a Dinkur daemon",
+		"db\tuse database client directly towards an Sqlite3 file (default)",
+	}, cobra.ShellCompDirectiveDefault
 }
