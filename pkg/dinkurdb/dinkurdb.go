@@ -73,9 +73,9 @@ func NewClient(dsn string, opt Options) dinkur.Client {
 
 type client struct {
 	Options
-	sqliteDsn     string
-	db            *gorm.DB
-	prevMigStatus dinkur.MigrationStatus
+	sqliteDsn      string
+	db             *gorm.DB
+	prevMigStatus  MigrationVersion
 }
 
 func (c *client) assertConnected() error {

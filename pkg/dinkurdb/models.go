@@ -26,11 +26,15 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
+var (
+	commonFieldsColumnID = "id"
+)
+
 // CommonFields contains fields used by multiple other models.
 type CommonFields struct {
 	// ID is a unique identifier for this task. The same ID will never be used
 	// twice for a given database.
-	ID uint `gorm:"primarykey"`
+	ID uint `gorm:"primaryKey;autoIncrement;type:INTEGER PRIMARY KEY AUTOINCREMENT"`
 	// CreatedAt stores when the database object was added to the database.
 	//
 	// It is automatically set by GORM due to its naming convention.
@@ -125,5 +129,42 @@ func convTaskSlice(slice []Task) []dinkur.Task {
 // this object is expected to be in the database at any given time.
 type Migration struct {
 	CommonFields
-	Version int
+	Version MigrationVersion
+}
+
+// MigrationVersion is an enumeration stating how outdated the database schema is.
+type MigrationVersion int
+
+// LatestMigrationVersion is an integer revision identifier for what migration
+// was last applied to the database. This is stored in the database to quickly
+// figure out if new migrations needs to be applied.
+const LatestMigrationVersion MigrationVersion = 3
+
+const (
+	// MigrationUnknown means that Dinkur was unable to evaluate the database's
+	// migration status. Perhaps due to an error.
+	MigrationUnknown MigrationVersion = -1
+	// MigrationNeverApplied means the database has never been migrated before.
+	// In other words, it's a brand new database.
+	MigrationNeverApplied MigrationVersion = 0
+	// MigrationUpToDate means the database does not need any further migrations
+	// applied.
+	MigrationUpToDate MigrationVersion = LatestMigrationVersion
+)
+
+func (s MigrationVersion) IsOutdated() bool {
+	return s < LatestMigrationVersion
+}
+
+func (s MigrationVersion) String() string {
+	switch s {
+	case MigrationUnknown:
+		return "unknown"
+	case MigrationNeverApplied:
+		return "never applied"
+	case MigrationUpToDate:
+		return "up to date"
+	default:
+		return "outdated"
+	}
 }

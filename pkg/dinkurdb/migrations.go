@@ -26,47 +26,39 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dinkur/dinkur/pkg/dinkur"
 	"gorm.io/gorm"
 )
 
-// LatestMigrationVersion is an integer revision identifier for what migration
-// was last applied to the database. This is stored in the database to quickly
-// figure out if new migrations needs to be applied.
-const LatestMigrationVersion = 2
-
-func (c *client) MigrationStatus(ctx context.Context) (dinkur.MigrationStatus, error) {
+func (c *client) MigrationStatus(ctx context.Context) (MigrationVersion, error) {
 	if err := c.assertConnected(); err != nil {
-		return dinkur.MigrationUnknown, err
+		return MigrationUnknown, err
 	}
 	return c.withContext(ctx).migrationStatus()
 }
 
-func (c *client) migrationStatus() (dinkur.MigrationStatus, error) {
-	if c.prevMigStatus != dinkur.MigrationUnknown {
+func (c *client) migrationStatus() (MigrationVersion, error) {
+	if c.prevMigStatus != MigrationUnknown {
 		return c.prevMigStatus, nil
 	}
 	status, err := getMigrationStatus(c.db)
 	if err != nil {
-		return dinkur.MigrationUnknown, err
+		return MigrationUnknown, err
 	}
 	c.prevMigStatus = status
 	return status, nil
 }
 
-func getMigrationStatus(db *gorm.DB) (dinkur.MigrationStatus, error) {
+func getMigrationStatus(db *gorm.DB) (MigrationVersion, error) {
 	m := db.Migrator()
 	if !m.HasTable(&Migration{}) {
-		return dinkur.MigrationNeverApplied, nil
+		return MigrationNeverApplied, nil
 	}
 	var latest Migration
 	if err := db.First(&latest).Error; err != nil {
-		return dinkur.MigrationUnknown, nilNotFoundError(err)
+		return MigrationUnknown, nilNotFoundError(err)
 	}
-	if latest.Version < LatestMigrationVersion {
-		return dinkur.MigrationOutdated, nil
-	}
-	return dinkur.MigrationUpToDate, nil
+	v := MigrationVersion(latest.Version)
+	return v, nil
 }
 
 func (c *client) Migrate(ctx context.Context) error {
@@ -83,16 +75,22 @@ func (c *client) migrate() error {
 }
 
 func (c *client) migrateNoTran() error {
-	status, err := c.migrationStatus()
+	migVersion, err := c.migrationStatus()
 	if err != nil {
 		return fmt.Errorf("check migration status: %w", err)
 	}
-	log.Debug().WithStringer("status", status).Message("Migration status checked.")
-	if status == dinkur.MigrationUpToDate {
+	log.Debug().WithStringer("status", migVersion).Message("Migration status checked.")
+	if migVersion == MigrationUpToDate {
 		return nil
 	}
-	log.Info().Message("The database is outdated. Migrating...")
-	start := time.Now()
+	var start time.Time
+	if migVersion != MigrationNeverApplied {
+		start = time.Now()
+		log.Info().
+			WithInt("old", int(migVersion)).
+			WithInt("new", int(LatestMigrationVersion)).
+			Message("The database is outdated. Migrating...")
+	}
 	tables := []interface{}{
 		&Migration{},
 		&Task{},
@@ -111,7 +109,9 @@ func (c *client) migrateNoTran() error {
 	if err := c.db.Save(&migration).Error; err != nil {
 		return err
 	}
-	dur := time.Since(start)
-	log.Info().WithDuration("duration", dur).Message("Database migration complete.")
+	if migVersion != MigrationNeverApplied {
+		dur := time.Since(start)
+		log.Info().WithDuration("duration", dur).Message("Database migration complete.")
+	}
 	return nil
 }

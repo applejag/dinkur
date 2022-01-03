@@ -24,7 +24,6 @@ package dinkur
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math"
 	"strconv"
 	"time"
@@ -135,37 +134,4 @@ type NewTask struct {
 type StartedTask struct {
 	New      Task
 	Previous *Task
-}
-
-// MigrationStatus is an enumeration stating how outdated the database schema is.
-type MigrationStatus byte
-
-const (
-	// MigrationUnknown means that Dinkur was unable to evaluate the database's
-	// migration status. Perhaps due to an error.
-	MigrationUnknown MigrationStatus = iota
-	// MigrationNeverApplied means the database has never been migrated before.
-	// In other words, it's a brand new database.
-	MigrationNeverApplied
-	// MigrationOutdated means the database has been migrated before, but by an
-	// outdated version, and needs to be migrated yet further.
-	MigrationOutdated
-	// MigrationUpToDate means the database does not need any further migrations
-	// applied.
-	MigrationUpToDate
-)
-
-func (s MigrationStatus) String() string {
-	switch s {
-	case MigrationUnknown:
-		return "unknown"
-	case MigrationNeverApplied:
-		return "never applied"
-	case MigrationOutdated:
-		return "outdated"
-	case MigrationUpToDate:
-		return "up to date"
-	default:
-		return fmt.Sprintf("%T(%d)", s, s)
-	}
 }
