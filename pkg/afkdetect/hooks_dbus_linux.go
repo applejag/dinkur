@@ -41,12 +41,15 @@ func (h dbusHookRegisterer) Register(d *detector) (detectorHook, error) {
 		log.Debug().WithError(err).Message("Failed to connect to session dbus.")
 		return nil, nil // swallow error, in case of GNU/Linux distros w/o dbus
 	}
+	// https://unix.stackexchange.com/a/492328
+	// https://github.com/endlessm/mutter/blob/01a0fa9/src/org.gnome.Mutter.IdleMonitor.xml#L14-L16
 	idleMon := conn.Object("org.gnome.Mutter.IdleMonitor", "/org/gnome/Mutter/IdleMonitor/Core")
 	hook := &dbusHook{
 		d:       d,
 		conn:    conn,
 		idleMon: idleMon,
 	}
+	// https://people.gnome.org/~mccann/gnome-screensaver/docs/gnome-screensaver.html#gs-signals
 	if err := conn.AddMatchSignal(
 		dbus.WithMatchInterface("org.gnome.ScreenSaver"),
 	); err != nil {
