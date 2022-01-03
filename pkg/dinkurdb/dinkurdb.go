@@ -97,7 +97,7 @@ func (c *client) Connect(ctx context.Context) error {
 	}
 	if c.MkdirAll {
 		dir := filepath.Dir(c.sqliteDsn)
-		os.MkdirAll(dir, os.ModeDir)
+		os.MkdirAll(dir, 0700)
 	}
 	var err error
 	c.db, err = gorm.Open(sqlite.Open(c.sqliteDsn), &gorm.Config{
