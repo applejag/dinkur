@@ -24,9 +24,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func (c *client) MigrationStatus(ctx context.Context) (MigrationVersion, error) {
@@ -50,12 +53,19 @@ func (c *client) migrationStatus() (MigrationVersion, error) {
 }
 
 func getMigrationStatus(db *gorm.DB) (MigrationVersion, error) {
-	m := db.Migrator()
-	if !m.HasTable(&Migration{}) {
-		return MigrationNeverApplied, nil
-	}
 	var latest Migration
-	if err := db.First(&latest).Error; err != nil {
+	silentDB := db.Session(&gorm.Session{Logger: logger.Discard})
+	if err := silentDB.First(&latest).Error; err != nil {
+		var sqliteErr sqlite3.Error
+		if errors.As(err, &sqliteErr) && sqliteErr.Code == sqlite3.ErrError &&
+			strings.HasPrefix(sqliteErr.Error(), "no such table:") {
+			return MigrationNeverApplied, nil
+		} else {
+			m := db.Migrator()
+			if !m.HasTable(&Migration{}) {
+				return MigrationNeverApplied, nil
+			}
+		}
 		return MigrationUnknown, nilNotFoundError(err)
 	}
 	v := MigrationVersion(latest.Version)
