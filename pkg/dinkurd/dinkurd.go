@@ -220,6 +220,7 @@ func (d *daemon) Close() (finalErr error) {
 }
 
 func (d *daemon) listenForAFK(ctx context.Context) {
+	log.Debug().Message("Listen for AFK events...")
 	startedChan := d.afkDetector.SubStarted()
 	stoppedChan := d.afkDetector.SubStopped()
 	defer d.afkDetector.UnsubStarted(startedChan)

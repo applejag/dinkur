@@ -35,7 +35,7 @@ var (
 	ErrObserverIsNil = errors.New("observer is nil")
 )
 
-var afkPollIntervalDur = 5 * time.Second
+var afkPollIntervalDur = 3 * time.Second
 var afkThresholdDur = 5 * time.Minute
 var log = logger.NewScoped("AFK")
 
@@ -54,13 +54,16 @@ type Detector interface {
 	ObserverStopped
 }
 
+type detectorHookRegisterer interface {
+	Register(*detector) (detectorHook, error)
+}
+
 type detectorHook interface {
-	Register(*detector) error
-	Unregister(*detector) error
+	Unregister() error
 	Tick() error
 }
 
-var detectorHooks []detectorHook
+var detectorHooks []detectorHookRegisterer
 
 // New creates a new AFK-detector.
 func New() Detector {
@@ -132,12 +135,15 @@ func (d *detector) StartDetecting() error {
 	d.startStopMutex.Lock()
 	defer d.startStopMutex.Unlock()
 	d.hooks = nil
-	for _, hook := range detectorHooks {
-		if err := hook.Register(d); err != nil {
+	for _, reg := range detectorHooks {
+		hook, err := reg.Register(d)
+		if err != nil {
 			d.StopDetecting()
 			return err
 		}
-		d.hooks = append(d.hooks, hook)
+		if hook != nil {
+			d.hooks = append(d.hooks, hook)
+		}
 	}
 	d.ticker = time.NewTicker(afkPollIntervalDur)
 	go d.timerTickListener(d.ticker)
@@ -148,7 +154,7 @@ func (d *detector) StopDetecting() error {
 	d.startStopMutex.Lock()
 	defer d.startStopMutex.Unlock()
 	for _, hook := range d.hooks {
-		if err := hook.Unregister(d); err != nil {
+		if err := hook.Unregister(); err != nil {
 			log.Error().WithError(err).Messagef("Failed to unregister %T.", hook)
 		}
 	}

@@ -54,9 +54,8 @@ type Observer interface {
 }
 
 type observer struct {
-	nextID uint
-	subs   []chan AlertEvent
-	mutex  sync.RWMutex
+	subs  []chan AlertEvent
+	mutex sync.RWMutex
 }
 
 func (o *observer) PubAlertWait(s AlertEvent) {
@@ -75,10 +74,9 @@ func (o *observer) PubAlertWait(s AlertEvent) {
 
 func (o *observer) SubAlerts() <-chan AlertEvent {
 	o.mutex.Lock()
-	defer o.mutex.Unlock()
-	o.nextID++
 	sub := make(chan AlertEvent)
 	o.subs = append(o.subs, sub)
+	o.mutex.Unlock()
 	return sub
 }
 
@@ -86,30 +84,24 @@ func (o *observer) UnsubAlerts(sub <-chan AlertEvent) error {
 	if sub == nil {
 		return ErrSubscriptionNotInitalized
 	}
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
 	idx := o.subIndex(sub)
 	if idx == -1 {
 		return ErrAlreadyUnsubscribed
 	}
-	o.mutex.Lock()
-	defer o.mutex.Unlock()
-	close(o.subs[idx])
 	o.subs = append(o.subs[idx:], o.subs[idx+1:]...)
 	return nil
 }
 
 func (o *observer) UnsubAllAlerts() error {
 	o.mutex.Lock()
-	defer o.mutex.Unlock()
-	for _, sub := range o.subs {
-		close(sub)
-	}
 	o.subs = nil
+	o.mutex.Unlock()
 	return nil
 }
 
 func (o *observer) subIndex(sub <-chan AlertEvent) int {
-	o.mutex.RLock()
-	defer o.mutex.RUnlock()
 	for i, ch := range o.subs {
 		if ch == sub {
 			return i

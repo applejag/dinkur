@@ -39,28 +39,25 @@ type windowsHooks struct {
 	detMutex sync.RWMutex
 }
 
-func (h *windowsHooks) Register(d *detector) error {
+func (h *windowsHooks) Register(d *detector) (detectorHook, error) {
 	if d == nil {
-		return nil
+		return nil, nil
 	}
 	h.detMutex.Lock()
 	defer h.detMutex.Unlock()
 	if h.detector != nil {
-		return errors.New("only 1 windows hooks can be registered at a time")
+		return nil, errors.New("only 1 windows hooks can be registered at a time")
 	}
 	log.Debug().Message("Registering Windows hooks WH_KEYBOARD_LL & WH_MOUSE_LL.")
 	h.detector = d
-	return convRegisterCodeToErr(int32(C.RegisterHooks()))
+	return h, convRegisterCodeToErr(int32(C.RegisterHooks()))
 }
 
-func (h *windowsHooks) Unregister(d *detector) error {
+func (h *windowsHooks) Unregister() error {
 	h.detMutex.Lock()
 	defer h.detMutex.Unlock()
-	if d == nil || h.detector == nil {
+	if h.detector == nil {
 		return nil
-	}
-	if h.detector != d {
-		return errors.New("not the same detector")
 	}
 	if err := convUnregisterCodeToErr(int32(C.UnregisterHooks())); err != nil {
 		return err

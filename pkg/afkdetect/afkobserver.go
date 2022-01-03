@@ -70,17 +70,15 @@ type ObserverStopped interface {
 }
 
 type obsStarted struct {
-	nextID uint
-	subs   []chan Started
-	mutex  sync.RWMutex
+	subs  []chan Started
+	mutex sync.RWMutex
 }
 
 func (o *obsStarted) SubStarted() <-chan Started {
 	o.mutex.Lock()
-	defer o.mutex.Unlock()
-	o.nextID++
 	sub := make(chan Started)
 	o.subs = append(o.subs, sub)
+	o.mutex.Unlock()
 	return sub
 }
 
@@ -102,30 +100,24 @@ func (o *obsStarted) UnsubStarted(sub <-chan Started) error {
 	if sub == nil {
 		return ErrSubscriptionNotInitalized
 	}
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
 	idx := o.subStartedIndex(sub)
 	if idx == -1 {
 		return ErrAlreadyUnsubscribed
 	}
-	o.mutex.Lock()
-	defer o.mutex.Unlock()
-	close(o.subs[idx])
-	o.subs = append(o.subs[idx:], o.subs[idx+1:]...)
+	o.subs = append(o.subs[idx:], o.subs[:idx+1]...)
 	return nil
 }
 
 func (o *obsStarted) UnsubAllStarted() error {
 	o.mutex.Lock()
-	defer o.mutex.Unlock()
-	for _, sub := range o.subs {
-		close(sub)
-	}
 	o.subs = nil
+	o.mutex.Unlock()
 	return nil
 }
 
 func (o *obsStarted) subStartedIndex(sub <-chan Started) int {
-	o.mutex.RLock()
-	defer o.mutex.RUnlock()
 	for i, ch := range o.subs {
 		if ch == sub {
 			return i
@@ -135,17 +127,15 @@ func (o *obsStarted) subStartedIndex(sub <-chan Started) int {
 }
 
 type obsStopped struct {
-	nextID uint
-	chans  []chan Stopped
-	mutex  sync.RWMutex
+	chans []chan Stopped
+	mutex sync.RWMutex
 }
 
 func (o *obsStopped) SubStopped() <-chan Stopped {
 	o.mutex.Lock()
-	defer o.mutex.Unlock()
-	o.nextID++
 	ch := make(chan Stopped)
 	o.chans = append(o.chans, ch)
+	o.mutex.Unlock()
 	return ch
 }
 
@@ -167,30 +157,24 @@ func (o *obsStopped) UnsubStopped(sub <-chan Stopped) error {
 	if sub == nil {
 		return ErrSubscriptionNotInitalized
 	}
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
 	idx := o.subStoppedIndex(sub)
 	if idx == -1 {
 		return ErrAlreadyUnsubscribed
 	}
-	o.mutex.Lock()
-	defer o.mutex.Unlock()
-	close(o.chans[idx])
-	o.chans = append(o.chans[idx:], o.chans[idx+1:]...)
+	o.chans = append(o.chans[idx:], o.chans[:idx+1]...)
 	return nil
 }
 
 func (o *obsStopped) UnsubAllStopped() error {
 	o.mutex.Lock()
-	defer o.mutex.Unlock()
-	for _, c := range o.chans {
-		close(c)
-	}
 	o.chans = nil
+	o.mutex.Unlock()
 	return nil
 }
 
 func (o *obsStopped) subStoppedIndex(sub <-chan Stopped) int {
-	o.mutex.RLock()
-	defer o.mutex.RUnlock()
 	for i, ch := range o.chans {
 		if ch == sub {
 			return i
