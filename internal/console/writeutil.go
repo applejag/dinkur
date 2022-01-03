@@ -34,7 +34,7 @@ func writeTimeColor(w io.Writer, t time.Time, layout string, c *color.Color) int
 }
 
 func writeTaskName(w io.Writer, name string) int {
-	taskNameColor.Fprintf(w, `"%s"`, name)
+	taskNameColor.Fprintf(w, taskNameFormat, name)
 	return 2 + utf8.RuneCountInString(name)
 }
 

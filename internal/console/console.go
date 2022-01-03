@@ -40,6 +40,7 @@ var (
 	taskIDColor          = color.New(color.FgHiBlack)
 	taskLabelColor       = color.New(color.FgWhite, color.Italic)
 	taskNameColor        = color.New(color.FgYellow)
+	taskNameFormat       = "`%s`"
 	taskTimeDelimColor   = color.New(color.FgHiBlack)
 	taskDateColor        = color.New(color.FgGreen)
 	taskStartColor       = color.New(color.FgGreen)
