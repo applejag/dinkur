@@ -134,7 +134,7 @@ func (d *daemon) UpdateTask(ctx context.Context, req *dinkurapiv1.UpdateTaskRequ
 	if req == nil {
 		return nil, convError(ErrRequestIsNil)
 	}
-	id, err := convUint64(req.Id)
+	id, err := convUint64(req.IdOrZero)
 	if err != nil {
 		return nil, convError(err)
 	}
