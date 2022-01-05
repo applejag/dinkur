@@ -38,11 +38,12 @@ import (
 
 func init() {
 	var (
-		flagLimit  uint = 1000
-		flagStart       = &pflagutil.Time{}
-		flagEnd         = &pflagutil.Time{}
-		flagRange       = pflagutil.NewTimeRangePtr(timeutil.TimeSpanThisDay)
-		flagOutput      = "pretty"
+		flagLimit       uint = 1000
+		flagStart            = &pflagutil.Time{}
+		flagEnd              = &pflagutil.Time{}
+		flagRange            = pflagutil.NewTimeRangePtr(timeutil.TimeSpanThisDay)
+		flagOutput           = "pretty"
+		flagNoHighlight      = false
 	)
 
 	var listCmd = &cobra.Command{
@@ -82,7 +83,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				Shorthand: flagRange.TimeSpanShorthand(),
 				NameFuzzy: strings.Join(args, " "),
 			}
-			if strings.EqualFold(flagOutput, "pretty") {
+			if strings.EqualFold(flagOutput, "pretty") && !flagNoHighlight {
 				search.NameHighlightStart = fmt.Sprintf(">!@%d#>", rand.Intn(255))
 				search.NameHighlightEnd = fmt.Sprintf("<!@%d#<", rand.Intn(255))
 			}
@@ -126,6 +127,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 	listCmd.RegisterFlagCompletionFunc("range", pflagutil.TimeRangeCompletion)
 	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", or "jsonl"`)
 	listCmd.RegisterFlagCompletionFunc("output", outputFormatComplete)
+	listCmd.Flags().BoolVar(&flagNoHighlight, "no-highlight", false, `disables search highlighting in "pretty" output`)
 }
 
 func outputFormatComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
