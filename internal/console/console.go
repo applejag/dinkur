@@ -37,20 +37,20 @@ var (
 	timeFormatLong  = "Jan 02 15:04"
 	timeFormatShort = "15:04"
 
-	taskIDColor          = color.New(color.FgHiBlack)
-	taskLabelColor       = color.New(color.FgWhite, color.Italic)
-	taskNameColor        = color.New(color.FgYellow)
-	taskNameFormat       = "`%s`"
-	taskTimeDelimColor   = color.New(color.FgHiBlack)
-	taskDateColor        = color.New(color.FgGreen)
-	taskStartColor       = color.New(color.FgGreen)
-	taskEndColor         = color.New(color.FgGreen)
-	taskEndNilColor      = color.New(color.FgHiBlack, color.Italic)
-	taskEndNilText       = "active…"
-	taskEndNilTextLen    = utf8.RuneCountInString(taskEndNilText)
-	taskDurationColor    = color.New(color.FgCyan)
-	taskEditDelimColor   = color.New(color.FgHiMagenta)
-	taskEditNoneColor    = color.New(color.FgHiBlack, color.Italic)
+	taskIDColor        = color.New(color.FgHiBlack)
+	taskLabelColor     = color.New(color.FgWhite, color.Italic)
+	taskNameColor      = color.New(color.FgYellow)
+	taskNameFormat     = "`%s`"
+	taskTimeDelimColor = color.New(color.FgHiBlack)
+	taskDateColor      = color.New(color.FgGreen)
+	taskStartColor     = color.New(color.FgGreen)
+	taskEndColor       = color.New(color.FgGreen)
+	taskEndNilColor    = color.New(color.FgHiBlack, color.Italic)
+	taskEndNilText     = "active…"
+	taskEndNilTextLen  = utf8.RuneCountInString(taskEndNilText)
+	taskDurationColor  = color.New(color.FgCyan)
+	taskEditDelimColor = color.New(color.FgHiMagenta)
+	taskEditNoneColor  = color.New(color.FgHiBlack, color.Italic)
 
 	taskEditPrefix  = "  "
 	taskEditSpacing = "   "
@@ -68,6 +68,9 @@ var (
 
 	usageHeaderColor = color.New(color.FgYellow, color.Underline, color.Italic)
 	usageHelpColor   = color.New(color.FgHiBlack, color.Italic)
+
+	promptWarnIconColor = color.New(color.FgHiRed, color.Bold)
+	promptWarnIconText  = "!"
 )
 
 // LabelledTask holds a string label and a task. Used when printing multiple
@@ -193,11 +196,11 @@ func PrintTaskList(tasks []dinkur.Task) {
 		endStr = sum.end.Format(timeFormatShort)
 	}
 	t.WriteColoredRow(tableSummaryColor,
-		tableCellEmptyText, // ID
+		tableCellEmptyText,                         // ID
 		fmt.Sprintf("TOTAL: %d tasks", len(tasks)), // NAME
-		tableCellEmptyText,                                // DAY
-		sum.start.Format(timeFormatShort), // START
-		endStr,                            // END
+		tableCellEmptyText,                         // DAY
+		sum.start.Format(timeFormatShort),          // START
+		endStr,                                     // END
 		fmt.Sprintf("(%s)", FormatDuration(sum.duration)), // DURATION
 	)
 	t.Fprintln(stdout)

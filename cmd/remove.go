@@ -23,6 +23,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/dinkur/dinkur/internal/console"
@@ -31,7 +32,8 @@ import (
 
 func init() {
 	var (
-		flagID uint
+		flagID  uint
+		flagYes bool
 	)
 
 	// removeCmd represents the remove command
@@ -47,25 +49,39 @@ No bulk removal is supported.
 Warning: Removing a task cannot be undone!`,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
-			task, err := c.DeleteTask(context.Background(), flagID)
+			if !flagYes {
+				task, err := c.GetTask(context.Background(), flagID)
+				if err != nil {
+					console.PrintFatal("Error getting task:", err)
+				}
+				ok, err := console.PromptTaskRemoval(task)
+				if err != nil {
+					console.PrintFatal("Prompt error:", err)
+				}
+				if !ok {
+					fmt.Println("Aborted by user.")
+					os.Exit(1)
+				}
+			}
+			removedTask, err := c.DeleteTask(context.Background(), flagID)
 			if err != nil {
 				console.PrintFatal("Error removing task:", err)
 			}
 			console.PrintTaskLabel(console.LabelledTask{
 				Label: "Deleted task:",
-				Task:  task,
+				Task:  removedTask,
 			})
 			fmt.Println()
 			fmt.Println("If this was a mistake, you can add it back in with:")
-			if task.End != nil {
+			if removedTask.End != nil {
 				fmt.Printf("  $ dinkur in --start %q --end %q %q\n",
-					task.Start.Format(time.RFC3339),
-					task.End.Format(time.RFC3339),
-					task.Name)
+					removedTask.Start.Format(time.RFC3339),
+					removedTask.End.Format(time.RFC3339),
+					removedTask.Name)
 			} else {
 				fmt.Printf("  $ dinkur in --start %q %q\n",
-					task.Start.Format(time.RFC3339),
-					task.Name)
+					removedTask.Start.Format(time.RFC3339),
+					removedTask.Name)
 			}
 		},
 	}
@@ -75,4 +91,5 @@ Warning: Removing a task cannot be undone!`,
 	removeCmd.Flags().UintVarP(&flagID, "id", "i", 0, "ID of task to be removed (required)")
 	removeCmd.MarkFlagRequired("id")
 	removeCmd.RegisterFlagCompletionFunc("id", taskIDComplete)
+	removeCmd.Flags().BoolVarP(&flagYes, "yes", "y", false, "skip confirmation prompt")
 }

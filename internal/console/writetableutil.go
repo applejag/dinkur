@@ -39,7 +39,9 @@ func writeCellsLabelledTask(t *table, labelled LabelledTask) {
 }
 
 func writeCellTaskID(t *table, id uint) {
-	t.WriteCellWidth(taskIDColor.Sprintf("#%d", id), uintWidth(id)+1)
+	var sb strings.Builder
+	w := writeTaskID(&sb, id)
+	t.WriteCellWidth(sb.String(), w)
 }
 
 func writeCellTaskName(t *table, name string) {

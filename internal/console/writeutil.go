@@ -33,6 +33,11 @@ func writeTimeColor(w io.Writer, t time.Time, layout string, c *color.Color) int
 	return len(formatted)
 }
 
+func writeTaskID(w io.Writer, id uint) int {
+	taskIDColor.Fprintf(w, "#%d", id)
+	return uintWidth(id) + 1
+}
+
 func writeTaskName(w io.Writer, name string) int {
 	taskNameColor.Fprintf(w, taskNameFormat, name)
 	return 2 + utf8.RuneCountInString(name)
