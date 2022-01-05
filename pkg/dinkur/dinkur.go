@@ -111,7 +111,10 @@ type EditTask struct {
 	End *time.Time
 	// AppendName changes the name field to append the name to the task's
 	// existing name (delimited with a space) instead of replacing it.
-	AppendName bool
+	AppendName         bool
+	StartAfterIDOrZero uint
+	EndBeforeIDOrZero  uint
+	StartAfterLast     bool
 }
 
 // UpdatedTask is the response from an edited task, with values for before the
@@ -123,10 +126,9 @@ type UpdatedTask struct {
 
 // NewTask holds parameters used when creating a new task.
 type NewTask struct {
-	Name  string
-	Start *time.Time
-	End   *time.Time
-
+	Name               string
+	Start              *time.Time
+	End                *time.Time
 	StartAfterIDOrZero uint
 	EndBeforeIDOrZero  uint
 	StartAfterLast     bool

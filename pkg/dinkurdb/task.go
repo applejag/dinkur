@@ -186,6 +186,20 @@ func (c *client) editDBTaskNoTran(edit dinkur.EditTask) (updatedDBTask, error) {
 		}
 		return updatedDBTask{}, fmt.Errorf("get task to edit: %w", err)
 	}
+	startAfterTime, err := c.getTimeToStartAfterOrNow(edit.StartAfterIDOrZero, edit.StartAfterLast)
+	if err != nil {
+		return updatedDBTask{}, err
+	}
+	if startAfterTime != nil {
+		edit.Start = startAfterTime
+	}
+	endBeforeTime, err := c.getTimeToEndBefore(edit.EndBeforeIDOrZero)
+	if err != nil {
+		return updatedDBTask{}, err
+	}
+	if endBeforeTime != nil {
+		edit.End = endBeforeTime
+	}
 	var anyEdit bool
 	taskBeforeEdit := dbTask
 	if edit.Name != nil {
@@ -216,6 +230,66 @@ func (c *client) editDBTaskNoTran(edit dinkur.EditTask) (updatedDBTask, error) {
 		old:     taskBeforeEdit,
 		updated: dbTask,
 	}, nil
+}
+
+func (c *client) getDBTaskToStartAfter(idOrZero uint, lastTask bool) (*Task, error) {
+	if idOrZero != 0 {
+		startAfter, err := c.getDBTask(idOrZero)
+		if err != nil {
+			return nil, fmt.Errorf("get task by ID to start after: %w", err)
+		}
+		return &startAfter, nil
+	} else if lastTask {
+		lastTasks, err := c.listDBTasks(dinkur.SearchTask{
+			Shorthand: timeutil.TimeSpanNone,
+			Limit:     1,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("get last task to start after: %w", err)
+		}
+		if len(lastTasks) == 0 {
+			return nil, fmt.Errorf("get last task to start after: %w", dinkur.ErrNotFound)
+		}
+		return &lastTasks[0], nil
+	}
+	return nil, nil
+}
+
+func (c *client) getTimeToStartAfterOrNow(idOrZero uint, lastTask bool) (*time.Time, error) {
+	startAfter, err := c.getDBTaskToStartAfter(idOrZero, lastTask)
+	if err != nil {
+		return nil, err
+	}
+	if startAfter == nil {
+		return nil, nil
+	}
+	if startAfter.End == nil {
+		now := time.Now()
+		return &now, nil
+	}
+	return startAfter.End, nil
+}
+
+func (c *client) getDBTaskToEndBefore(idOrZero uint) (*Task, error) {
+	if idOrZero == 0 {
+		return nil, nil
+	}
+	endBefore, err := c.getDBTask(idOrZero)
+	if err != nil {
+		return nil, fmt.Errorf("get task by ID to end before: %w", err)
+	}
+	return &endBefore, nil
+}
+
+func (c *client) getTimeToEndBefore(idOrZero uint) (*time.Time, error) {
+	endBefore, err := c.getDBTaskToEndBefore(idOrZero)
+	if err != nil {
+		return nil, err
+	}
+	if endBefore == nil {
+		return nil, nil
+	}
+	return &endBefore.Start, nil
 }
 
 func (c *client) getDBTaskToEditNoTran(idOrZero uint) (Task, error) {
@@ -336,32 +410,19 @@ func (c *client) startDBTask(newTask newTask) (startedDBTask, error) {
 }
 
 func (c *client) startDBTaskNoTran(newTask newTask) (startedDBTask, error) {
-	if newTask.startAfterIDOrZero != 0 {
-		startAfter, err := c.getDBTask(newTask.startAfterIDOrZero)
-		if err != nil {
-			return startedDBTask{}, fmt.Errorf("get task by ID to start after: %w", err)
-		}
-		if startAfter.End != nil {
-			newTask.Start = *startAfter.End
-		}
-	} else if newTask.startAfterLast {
-		lastTasks, err := c.listDBTasks(dinkur.SearchTask{
-			Shorthand: timeutil.TimeSpanNone,
-			Limit:     1,
-		})
-		if err != nil {
-			return startedDBTask{}, fmt.Errorf("get last task to start after: %w", err)
-		}
-		if len(lastTasks) > 0 && lastTasks[0].End != nil {
-			newTask.Start = *lastTasks[0].End
-		}
+	startAfterTime, err := c.getTimeToStartAfterOrNow(newTask.startAfterIDOrZero, newTask.startAfterLast)
+	if err != nil {
+		return startedDBTask{}, err
 	}
-	if newTask.endBeforeIDOrZero != 0 {
-		endBefore, err := c.getDBTask(newTask.endBeforeIDOrZero)
-		if err != nil {
-			return startedDBTask{}, fmt.Errorf("get task by ID to end before: %w", err)
-		}
-		newTask.End = &endBefore.Start
+	if startAfterTime != nil {
+		newTask.Start = *startAfterTime
+	}
+	endBeforeTime, err := c.getTimeToEndBefore(newTask.endBeforeIDOrZero)
+	if err != nil {
+		return startedDBTask{}, err
+	}
+	if endBeforeTime != nil {
+		newTask.End = endBeforeTime
 	}
 	previousDBTask, err := c.stopActiveDBTaskNoTran(newTask.Start)
 	if err != nil {

@@ -112,20 +112,21 @@ func (d *daemon) CreateTask(ctx context.Context, req *dinkurapiv1.CreateTaskRequ
 	if req == nil {
 		return nil, convError(ErrRequestIsNil)
 	}
+	startAfterID, err := convUint64(req.StartAfterIdOrZero)
+	if err != nil {
+		return nil, convError(err)
+	}
+	endBeforeID, err := convUint64(req.EndBeforeIdOrZero)
+	if err != nil {
+		return nil, convError(err)
+	}
 	newTask := dinkur.NewTask{
-		Name:           req.Name,
-		Start:          convTimestampPtr(req.Start),
-		End:            convTimestampPtr(req.End),
-		StartAfterLast: req.StartAfterLast,
-	}
-	var err error
-	newTask.StartAfterIDOrZero, err = convUint64(req.StartAfterIdOrZero)
-	if err != nil {
-		return nil, convError(err)
-	}
-	newTask.EndBeforeIDOrZero, err = convUint64(req.EndBeforeIdOrZero)
-	if err != nil {
-		return nil, convError(err)
+		Name:               req.Name,
+		Start:              convTimestampPtr(req.Start),
+		End:                convTimestampPtr(req.End),
+		StartAfterIDOrZero: startAfterID,
+		EndBeforeIDOrZero:  endBeforeID,
+		StartAfterLast:     req.StartAfterLast,
 	}
 	startedTask, err := d.client.StartTask(ctx, newTask)
 	if err != nil {
@@ -148,12 +149,23 @@ func (d *daemon) UpdateTask(ctx context.Context, req *dinkurapiv1.UpdateTaskRequ
 	if err != nil {
 		return nil, convError(err)
 	}
+	startAfterID, err := convUint64(req.StartAfterIdOrZero)
+	if err != nil {
+		return nil, convError(err)
+	}
+	endBeforeID, err := convUint64(req.EndBeforeIdOrZero)
+	if err != nil {
+		return nil, convError(err)
+	}
 	edit := dinkur.EditTask{
-		Name:       convString(req.Name),
-		Start:      convTimestampPtr(req.Start),
-		End:        convTimestampPtr(req.End),
-		IDOrZero:   id,
-		AppendName: req.AppendName,
+		Name:               convString(req.Name),
+		Start:              convTimestampPtr(req.Start),
+		End:                convTimestampPtr(req.End),
+		IDOrZero:           id,
+		AppendName:         req.AppendName,
+		StartAfterIDOrZero: startAfterID,
+		EndBeforeIDOrZero:  endBeforeID,
+		StartAfterLast:     req.StartAfterLast,
 	}
 	update, err := d.client.EditTask(ctx, edit)
 	if err != nil {

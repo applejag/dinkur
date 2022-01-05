@@ -32,10 +32,13 @@ import (
 
 func init() {
 	var (
-		flagID     uint
-		flagAppend bool
-		flagStart  = &pflagutil.Time{}
-		flagEnd    = &pflagutil.Time{}
+		flagID        uint
+		flagAppend    bool
+		flagStart     = &pflagutil.Time{}
+		flagEnd       = &pflagutil.Time{}
+		flagAfterID   uint
+		flagAfterLast bool
+		flagBeforeID  uint
 	)
 
 	var editCmd = &cobra.Command{
@@ -53,10 +56,13 @@ a specific task using the --id or -i flag.`,
 				WithBool("append", flagAppend).
 				Message("Flags")
 			edit := dinkur.EditTask{
-				IDOrZero:   flagID,
-				Start:      flagStart.TimePtr(),
-				End:        flagEnd.TimePtr(),
-				AppendName: flagAppend,
+				IDOrZero:           flagID,
+				Start:              flagStart.TimePtr(),
+				End:                flagEnd.TimePtr(),
+				AppendName:         flagAppend,
+				StartAfterIDOrZero: flagAfterID,
+				EndBeforeIDOrZero:  flagBeforeID,
+				StartAfterLast:     flagAfterLast,
 			}
 			if len(args) > 0 {
 				name := strings.Join(args, " ")
@@ -77,4 +83,9 @@ a specific task using the --id or -i flag.`,
 	editCmd.Flags().BoolVarP(&flagAppend, "append", "z", flagAppend, `add name to the end of the existing name, instead of replacing it`)
 	editCmd.Flags().UintVarP(&flagID, "id", "i", 0, `ID of task (default is active or latest task)`)
 	editCmd.RegisterFlagCompletionFunc("id", taskIDComplete)
+	editCmd.Flags().UintVarP(&flagAfterID, "afterid", "a", 0, `sets --start time to the end time of task with ID`)
+	editCmd.RegisterFlagCompletionFunc("afterid", taskIDComplete)
+	editCmd.Flags().BoolVarP(&flagAfterLast, "afterlast", "L", false, `sets --start time to the end time of latest task`)
+	editCmd.Flags().UintVarP(&flagBeforeID, "beforeid", "b", 0, `sets --end time to the start time of task with ID`)
+	editCmd.RegisterFlagCompletionFunc("beforeid", taskIDComplete)
 }

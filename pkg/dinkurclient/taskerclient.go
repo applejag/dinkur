@@ -78,11 +78,14 @@ func (c *client) EditTask(ctx context.Context, edit dinkur.EditTask) (dinkur.Upd
 		return dinkur.UpdatedTask{}, err
 	}
 	res, err := c.tasker.UpdateTask(ctx, &dinkurapiv1.UpdateTaskRequest{
-		IdOrZero:   uint64(edit.IDOrZero),
-		Name:       convStringPtr(edit.Name),
-		Start:      convTimePtr(edit.Start),
-		End:        convTimePtr(edit.End),
-		AppendName: edit.AppendName,
+		IdOrZero:           uint64(edit.IDOrZero),
+		Name:               convStringPtr(edit.Name),
+		Start:              convTimePtr(edit.Start),
+		End:                convTimePtr(edit.End),
+		AppendName:         edit.AppendName,
+		StartAfterIdOrZero: uint64(edit.StartAfterIDOrZero),
+		EndBeforeIdOrZero:  uint64(edit.EndBeforeIDOrZero),
+		StartAfterLast:     edit.StartAfterLast,
 	})
 	if err != nil {
 		return dinkur.UpdatedTask{}, convError(err)
