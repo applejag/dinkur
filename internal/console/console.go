@@ -173,7 +173,7 @@ func PrintTaskList(tasks []dinkur.Task, searchStart, searchEnd string) {
 		return
 	}
 	var reg *regexp.Regexp
-	if (searchStart != "" || searchEnd != "") && !color.NoColor {
+	if searchStart != "" || searchEnd != "" {
 		var err error
 		reg, err = regexp.Compile(fmt.Sprintf("%s(.*?)%s",
 			regexp.QuoteMeta(searchStart), regexp.QuoteMeta(searchEnd)))
