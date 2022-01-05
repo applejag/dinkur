@@ -91,9 +91,9 @@ func init() {
 
 	inCmd.Flags().VarP(flagStart, "start", "s", `start time of task`)
 	inCmd.Flags().VarP(flagEnd, "end", "e", `end time of task; new task will not be active if set`)
-	inCmd.Flags().UintVarP(&flagAfterID, "afterid", "a", 0, `sets --start time to the end time of task with ID`)
-	inCmd.RegisterFlagCompletionFunc("afterid", taskIDComplete)
-	inCmd.Flags().BoolVarP(&flagAfterLast, "afterlast", "L", false, `sets --start time to the end time of latest task`)
-	inCmd.Flags().UintVarP(&flagBeforeID, "beforeid", "b", 0, `sets --end time to the start time of task with ID`)
-	inCmd.RegisterFlagCompletionFunc("beforeid", taskIDComplete)
+	inCmd.Flags().UintVarP(&flagAfterID, "after-id", "a", 0, `sets --start time to the end time of task with ID`)
+	inCmd.RegisterFlagCompletionFunc("after-id", taskIDComplete)
+	inCmd.Flags().BoolVarP(&flagAfterLast, "after-last", "L", false, `sets --start time to the end time of latest task`)
+	inCmd.Flags().UintVarP(&flagBeforeID, "before-id", "b", 0, `sets --end time to the start time of task with ID`)
+	inCmd.RegisterFlagCompletionFunc("before-id", taskIDComplete)
 }
