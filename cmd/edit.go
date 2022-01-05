@@ -76,6 +76,6 @@ a specific task using the --id or -i flag.`,
 
 	editCmd.Flags().VarP(flagStart, "start", "s", `start time of task`)
 	editCmd.Flags().VarP(flagEnd, "end", "e", `end time of task; task will be unmarked as active if set`)
-	editCmd.Flags().BoolVarP(&flagAppend, "append", "a", flagAppend, `add name to the end of the existing name, instead of replacing it`)
+	editCmd.Flags().BoolVarP(&flagAppend, "append", "z", flagAppend, `add name to the end of the existing name, instead of replacing it`)
 	editCmd.Flags().UintVarP(&flagID, "id", "i", 0, `ID of task (default is active or latest task)`)
 }
