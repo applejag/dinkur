@@ -144,18 +144,18 @@ func initLogger() {
 }
 
 func connectClientOrExit() {
-	client, err := connectClient()
+	client, err := connectClient(false)
 	if err != nil {
 		console.PrintFatal("Error connecting to client:", err)
 	}
 	c = client
 }
 
-func connectClient() (dinkur.Client, error) {
+func connectClient(skipMigrate bool) (dinkur.Client, error) {
 	switch strings.ToLower(flagClient) {
 	case "db":
 		log.Debug().Message("Using DB client.")
-		dbClient, err := connectToDBClient()
+		dbClient, err := connectToDBClient(skipMigrate)
 		if err != nil {
 			return nil, fmt.Errorf("DB client: %w", err)
 		}
@@ -183,10 +183,11 @@ func connectToGRPCClient() (dinkur.Client, error) {
 	return c, nil
 }
 
-func connectToDBClient() (dinkur.Client, error) {
+func connectToDBClient(skipMigrate bool) (dinkur.Client, error) {
 	c := dinkurdb.NewClient(dataFile, dinkurdb.Options{
-		MkdirAll:     flagDataMkdir,
-		DebugLogging: flagVerbose,
+		MkdirAll:             flagDataMkdir,
+		DebugLogging:         flagVerbose,
+		SkipMigrateOnConnect: skipMigrate,
 	})
 	return c, c.Connect(context.Background())
 }
@@ -204,4 +205,30 @@ func clientComplete(*cobra.Command, []string, string) ([]string, cobra.ShellComp
 		"grpc\tuse grpc client towards a Dinkur daemon",
 		"db\tuse database client directly towards an Sqlite3 file (default)",
 	}, cobra.ShellCompDirectiveDefault
+}
+
+func taskIDComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+	client, err := connectClient(true)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	tasks, err := client.ListTasks(context.Background(), dinkur.SearchTask{
+		Limit: 12,
+	})
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	completions := make([]string, len(tasks))
+	var sb strings.Builder
+	for i, task := range tasks {
+		sb.Reset()
+		sb.Grow(len(task.Name) + 10)
+		if task.End == nil {
+			fmt.Fprintf(&sb, "%[1]d\ttask #%[1]d `%[2]s` (active)", task.ID, task.Name)
+		} else {
+			fmt.Fprintf(&sb, "%[1]d\ttask #%[1]d `%[2]s`", task.ID, task.Name)
+		}
+		completions[i] = sb.String()
+	}
+	return completions, cobra.ShellCompDirectiveDefault
 }
