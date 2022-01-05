@@ -76,13 +76,15 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 			connectClientOrExit()
 			rand.Seed(time.Now().UnixMicro())
 			search := dinkur.SearchTask{
-				Limit:              flagLimit,
-				Start:              flagStart.TimePtr(),
-				End:                flagEnd.TimePtr(),
-				Shorthand:          flagRange.TimeSpanShorthand(),
-				NameFuzzy:          strings.Join(args, " "),
-				NameHighlightStart: fmt.Sprintf(">!@%d#>", rand.Intn(255)),
-				NameHighlightEnd:   fmt.Sprintf("<!@%d#<", rand.Intn(255)),
+				Limit:     flagLimit,
+				Start:     flagStart.TimePtr(),
+				End:       flagEnd.TimePtr(),
+				Shorthand: flagRange.TimeSpanShorthand(),
+				NameFuzzy: strings.Join(args, " "),
+			}
+			if strings.EqualFold(flagOutput, "pretty") {
+				search.NameHighlightStart = fmt.Sprintf(">!@%d#>", rand.Intn(255))
+				search.NameHighlightEnd = fmt.Sprintf("<!@%d#<", rand.Intn(255))
 			}
 			log.Debug().
 				WithStringf("--start", "%v", search.Start).
@@ -123,4 +125,13 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 	listCmd.Flags().VarP(flagRange, "range", "r", "baseline time range")
 	listCmd.RegisterFlagCompletionFunc("range", pflagutil.TimeRangeCompletion)
 	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", or "jsonl"`)
+	listCmd.RegisterFlagCompletionFunc("output", outputFormatComplete)
+}
+
+func outputFormatComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+	return []string{
+		"pretty\thuman readable and colored table formatting (default)",
+		"json\ta single indented JSON array containing all tasks",
+		"jsonl\teach task JSON object on a separate line",
+	}, cobra.ShellCompDirectiveDefault
 }
