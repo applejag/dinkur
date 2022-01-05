@@ -65,7 +65,7 @@ var (
 
 	tableEmptyColor     = color.New(color.FgHiBlack, color.Italic)
 	tableEmptyText      = "No results to display."
-	tableHeaderColor    = color.New(color.FgWhite, color.Underline)
+	tableHeaderColor    = color.New(color.FgHiBlack)
 	tableSummaryColor   = color.New(color.FgHiBlack, color.Italic)
 	tableCellEmptyText  = "-"
 	tableCellEmptyColor = color.New(color.FgHiBlack)
@@ -218,7 +218,7 @@ func PrintTaskList(tasks []dinkur.Task, searchStart, searchEnd string) {
 		tableCellEmptyText,                         // DAY
 		sum.start.Format(timeFormatShort),          // START
 		endStr,                                     // END
-		fmt.Sprintf("(%s)", FormatDuration(sum.duration)), // DURATION
+		FormatDuration(sum.duration),               // DURATION
 	)
 	t.Fprintln(stdout)
 }

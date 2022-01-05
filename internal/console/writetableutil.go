@@ -79,7 +79,7 @@ func writeCellTaskTimeSpanDuration(t *table, start time.Time, end *time.Time, du
 	w := writeTaskTimeSpan(&sb, start, end)
 	sb.WriteByte(' ')
 	w++
-	w += writeTaskDuration(&sb, dur)
+	w += writeTaskDurationWithDelim(&sb, dur)
 	t.WriteCellWidth(sb.String(), w)
 }
 

@@ -99,10 +99,15 @@ func writeTaskTimeSpan(w io.Writer, start time.Time, end *time.Time) int {
 	return len(startStr) + 3 + endLen
 }
 
-func writeTaskDuration(w io.Writer, dur time.Duration) int {
+func writeTaskDurationWithDelim(w io.Writer, dur time.Duration) int {
 	taskTimeDelimColor.Fprint(w, "(")
+	width := writeTaskDuration(w, dur)
+	taskTimeDelimColor.Fprint(w, ")")
+	return width + 2
+}
+
+func writeTaskDuration(w io.Writer, dur time.Duration) int {
 	str := FormatDuration(dur)
 	taskDurationColor.Fprint(w, str)
-	taskTimeDelimColor.Fprint(w, ")")
-	return len(str) + 2
+	return len(str)
 }
