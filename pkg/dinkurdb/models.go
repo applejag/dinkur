@@ -57,6 +57,7 @@ func convCommonFields(f CommonFields) dinkur.CommonFields {
 const (
 	taskFieldEnd = "End"
 
+	taskColumnID    = "id"
 	taskColumnStart = "start"
 	taskColumnEnd   = "end"
 )
@@ -82,6 +83,22 @@ func (t Task) Elapsed() time.Duration {
 		end = time.Now()
 	}
 	return end.Sub(t.Start)
+}
+
+const (
+	taskFTS5ColumnRowID = "rowid"
+	taskFTS5ColumnName  = "name"
+)
+
+// TaskFTS5 is used for free-text searching tasks.
+type TaskFTS5 struct {
+	RowID uint   `gorm:"primaryKey;column:rowid"`
+	Name  string `gorm:"not null;default:''"`
+}
+
+// TableName overrides the table name used by GORM.
+func (TaskFTS5) TableName() string {
+	return "tasks_idx"
 }
 
 func timePtrUTC(t *time.Time) *time.Time {
@@ -138,7 +155,7 @@ type MigrationVersion int
 // LatestMigrationVersion is an integer revision identifier for what migration
 // was last applied to the database. This is stored in the database to quickly
 // figure out if new migrations needs to be applied.
-const LatestMigrationVersion MigrationVersion = 3
+const LatestMigrationVersion MigrationVersion = 4
 
 const (
 	// MigrationUnknown means that Dinkur was unable to evaluate the database's

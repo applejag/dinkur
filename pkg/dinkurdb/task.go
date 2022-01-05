@@ -74,23 +74,23 @@ func (c *client) getDBTask(id uint) (Task, error) {
 
 var (
 	taskSQLBetweenStart = fmt.Sprintf(
-		"(%[1]s >= @start) OR "+
+		"((%[1]s >= @start) OR "+
 			"(%[2]s IS NOT NULL AND %[1]s >= @start) OR "+
-			"(%[2]s IS NULL AND CURRENT_TIMESTAMP >= @start)",
+			"(%[2]s IS NULL AND CURRENT_TIMESTAMP >= @start))",
 		taskColumnStart, taskColumnEnd,
 	)
 
 	taskSQLBetweenEnd = fmt.Sprintf(
-		"(%[2]s <= @end) OR "+
+		"((%[2]s <= @end) OR "+
 			"(%[2]s IS NOT NULL AND %[2]s <= @end) OR "+
-			"(%[2]s IS NULL AND CURRENT_TIMESTAMP <= @end)",
+			"(%[2]s IS NULL AND CURRENT_TIMESTAMP <= @end))",
 		taskColumnStart, taskColumnEnd,
 	)
 
 	taskSQLBetween = fmt.Sprintf(
-		"(%[1]s BETWEEN @start AND @end) OR "+
+		"((%[1]s BETWEEN @start AND @end) OR "+
 			"(%[2]s IS NOT NULL AND %[2]s BETWEEN @start AND @end) OR "+
-			"(%[2]s IS NULL AND CURRENT_TIMESTAMP BETWEEN @start AND @end)",
+			"(%[2]s IS NULL AND CURRENT_TIMESTAMP BETWEEN @start AND @end))",
 		taskColumnStart, taskColumnEnd,
 	)
 )
@@ -127,13 +127,19 @@ func (c *client) listDBTasks(search dinkur.SearchTask) ([]Task, error) {
 		// smallest time unit is a second.
 		start := (*search.Start).UTC().Add(-time.Second)
 		end := (*search.End).UTC().Add(time.Second)
-		q = q.Or(c.db.Where(taskSQLBetween, sql.Named("start", start), sql.Named("end", end)))
+		q = q.Where(taskSQLBetween, sql.Named("start", start), sql.Named("end", end))
 	case search.Start != nil:
 		start := (*search.Start).UTC().Add(-time.Second)
-		q = q.Or(c.db.Where(taskSQLBetweenStart, sql.Named("start", start)))
+		q = q.Where(taskSQLBetweenStart, sql.Named("start", start))
 	case search.End != nil:
 		end := (*search.End).UTC().Add(time.Second)
-		q = q.Or(c.db.Where(taskSQLBetweenEnd, sql.Named("end", end)))
+		q = q.Where(taskSQLBetweenEnd, sql.Named("end", end))
+	}
+	if search.NameFuzzy != "" {
+		subQ := c.db.Model(&TaskFTS5{}).
+			Select(taskFTS5ColumnRowID).
+			Where(taskFTS5ColumnName+" MATCH ?", search.NameFuzzy)
+		q = q.Where(taskColumnID+" IN (?)", subQ)
 	}
 	if err := q.Find(&dbTasks).Error; err != nil {
 		return nil, err

@@ -88,6 +88,7 @@ type SearchTask struct {
 	Limit uint
 
 	Shorthand timeutil.TimeSpanShorthand
+	NameFuzzy string
 }
 
 // EditTask holds parameters used when editing a task.

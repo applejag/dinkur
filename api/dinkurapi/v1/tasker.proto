@@ -74,6 +74,7 @@ message GetTaskListRequest {
     NEXT_MON_TO_SUN = 8;
   }
   Shorthand shorthand = 4;
+  string name_fuzzy = 5;
 }
 
 message GetTaskListResponse {

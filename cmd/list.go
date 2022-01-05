@@ -44,11 +44,14 @@ func init() {
 	)
 
 	var listCmd = &cobra.Command{
-		Use:     `list`,
-		Args:    cobra.NoArgs,
+		Use:     `list [name search terms]`,
+		Args:    cobra.ArbitraryArgs,
 		Aliases: []string{"ls", "l"},
 		Short:   "List your tasks",
 		Long: fmt.Sprintf(`Lists all your tasks.
+
+Any non-flag arguments are used as task name search terms. Due to technical
+limitation, terms shorter than 3 characters are ignored.
 
 By default, this will only list today's tasks. You can supply the --range flag
 to declare a different baseline range. The --start and --end flags will always
@@ -67,27 +70,6 @@ take precedence over the baseline range.
 Day baselines sets the range 00:00:00 - 24:59:59.
 Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 `, RootCmd.Name()),
-		ValidArgs: []string{
-			"all\tlist all tasks",
-			"a\talias for 'all'",
-			"past\tlist all tasks before now",
-			"p\talias for 'past'",
-			"future\tlist all tasks since now",
-			"f\talias for 'future'",
-			"today\tonly list today's tasks (default)",
-			"t\talias for 'today'",
-			"week\tonly list this week's tasks (monday to sunday)",
-			"w\talias for 'week'",
-			"yesterday\tonly list yesterday's tasks",
-			"y\talias for 'yesterday'",
-			"ld\talias for 'yesterday'",
-			"lastweek\tonly list last (previous) week's tasks (monday to sunday)",
-			"lw\talias for 'lastweek'",
-			"tomorrow\tonly list tomorrow's tasks",
-			"nd\talias for 'tomorrow'",
-			"nextweek\tonly list next week's tasks (monday to sunday)",
-			"nw\talias for 'nextweek'",
-		},
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
 			search := dinkur.SearchTask{
@@ -97,6 +79,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 			search.Shorthand = flagRange.TimeSpanShorthand()
 			search.Start = flagStart.TimePtr()
 			search.End = flagEnd.TimePtr()
+			search.NameFuzzy = strings.Join(args, " ")
 			log.Debug().
 				WithStringf("--start", "%v", search.Start).
 				WithStringf("--end", "%v", search.End).

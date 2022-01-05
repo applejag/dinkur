@@ -90,6 +90,7 @@ func (d *daemon) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTaskListRe
 		Start:     convTimestampPtr(req.Start),
 		End:       convTimestampPtr(req.End),
 		Shorthand: convShorthand(req.Shorthand),
+		NameFuzzy: req.NameFuzzy,
 	}
 	var err error
 	search.Limit, err = uint64ToUint(req.Limit)

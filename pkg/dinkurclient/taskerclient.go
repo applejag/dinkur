@@ -58,6 +58,7 @@ func (c *client) ListTasks(ctx context.Context, search dinkur.SearchTask) ([]din
 		End:       convTimePtr(search.End),
 		Limit:     uint64(search.Limit),
 		Shorthand: convShorthand(search.Shorthand),
+		NameFuzzy: search.NameFuzzy,
 	}
 	res, err := c.tasker.GetTaskList(ctx, &req)
 	if err != nil {

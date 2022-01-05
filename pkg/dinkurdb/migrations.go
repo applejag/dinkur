@@ -85,28 +85,54 @@ func (c *client) migrate() error {
 }
 
 func (c *client) migrateNoTran() error {
-	migVersion, err := c.migrationStatus()
+	oldVersion, err := c.migrationStatus()
 	if err != nil {
 		return fmt.Errorf("check migration status: %w", err)
 	}
-	log.Debug().WithStringer("status", migVersion).Message("Migration status checked.")
-	if migVersion == MigrationUpToDate {
+	log.Debug().WithStringer("status", oldVersion).Message("Migration status checked.")
+	if oldVersion == MigrationUpToDate {
 		return nil
 	}
 	var start time.Time
-	if migVersion != MigrationNeverApplied {
+	if oldVersion != MigrationNeverApplied {
 		start = time.Now()
 		log.Info().
-			WithInt("old", int(migVersion)).
+			WithInt("old", int(oldVersion)).
 			WithInt("new", int(LatestMigrationVersion)).
 			Message("The database is outdated. Migrating...")
 	}
 	tables := []interface{}{
 		&Migration{},
 		&Task{},
+		// Note: Do not add TaskFTS5 to auto migration! It is created separately
+		// through manual SQL queries down below.
 	}
 	for _, tbl := range tables {
 		if err := c.db.AutoMigrate(tbl); err != nil {
+			return err
+		}
+	}
+	if oldVersion < 4 {
+		// Creates FTS5 (Sqlite free-text search) virtual table
+		// and triggers to keep it up-to-date.
+		// Lastly it feeds it data from existing tasks table in case of old data.
+		err = c.db.Exec(`
+CREATE VIRTUAL TABLE tasks_idx USING fts5(name, content='tasks',
+	tokenize="porter trigram"
+);
+CREATE TRIGGER tasks_idx_insert AFTER INSERT ON tasks BEGIN
+	INSERT INTO tasks_idx(rowid, name) VALUES (new.id, new.name);
+END;
+CREATE TRIGGER tasks_idx_delete AFTER DELETE ON tasks BEGIN
+	INSERT INTO tasks_idx(tasks_idx, rowid, name) VALUES ('delete', old.id, old.name);
+END;
+CREATE TRIGGER tasks_idx_update AFTER UPDATE ON tasks BEGIN
+	INSERT INTO tasks_idx(tasks_idx, rowid, name) VALUES ('delete', old.id, old.name);
+	INSERT INTO tasks_idx(rowid, name) VALUES (new.id, new.name);
+END;
+INSERT INTO tasks_idx (rowid, name) SELECT id, name FROM tasks;
+`).Error
+		if err != nil {
 			return err
 		}
 	}
@@ -119,7 +145,7 @@ func (c *client) migrateNoTran() error {
 	if err := c.db.Save(&migration).Error; err != nil {
 		return err
 	}
-	if migVersion != MigrationNeverApplied {
+	if oldVersion != MigrationNeverApplied {
 		dur := time.Since(start)
 		log.Info().WithDuration("duration", dur).Message("Database migration complete.")
 	}
