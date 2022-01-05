@@ -44,7 +44,7 @@ This daemon is used by Dinkur clients, and allows more features such as the
 Information about the daemon, such as which port was selected and what
 authentication token can be used, is outputted to the console.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		dbClient, err := connectToDBClient()
+		dbClient, err := connectToDBClient(false)
 		if err != nil {
 			console.PrintFatal("Error connecting to database for daemon:", err)
 		}

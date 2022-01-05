@@ -78,7 +78,7 @@ func (c *client) EditTask(ctx context.Context, edit dinkur.EditTask) (dinkur.Upd
 		return dinkur.UpdatedTask{}, err
 	}
 	res, err := c.tasker.UpdateTask(ctx, &dinkurapiv1.UpdateTaskRequest{
-		Id:         convUintPtr(edit.ID),
+		Id:         uint64(edit.IDOrZero),
 		Name:       convStringPtr(edit.Name),
 		Start:      convTimePtr(edit.Start),
 		End:        convTimePtr(edit.End),

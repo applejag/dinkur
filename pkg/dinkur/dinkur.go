@@ -92,10 +92,10 @@ type SearchTask struct {
 
 // EditTask holds parameters used when editing a task.
 type EditTask struct {
-	// ID of the task to edit. If set to nil, then Dinkur will attempt to make
+	// IDOrZero of the task to edit. If set to nil, then Dinkur will attempt to make
 	// an educated guess on what task to edit by editing the active task or a
 	// recent task.
-	ID *uint
+	IDOrZero uint
 	// Name is the new task name. If AppendName is enabled, then this value will
 	// append to the existing name, delimited with a space.
 	//
@@ -126,6 +126,10 @@ type NewTask struct {
 	Name  string
 	Start *time.Time
 	End   *time.Time
+
+	StartAfterID   uint
+	StartAfterLast bool
+	EndBeforeID    uint
 }
 
 // StartedTask is the response from creating a new task, with the newly created

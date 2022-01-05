@@ -79,15 +79,11 @@ func uint64ToUint(i uint64) (uint, error) {
 	return uint(i), nil
 }
 
-func convUint64(i uint64) (*uint, error) {
-	if i == 0 {
-		return nil, nil
-	}
+func convUint64(i uint64) (uint, error) {
 	if i > math.MaxUint {
-		return nil, ErrUintTooLarge
+		return 0, ErrUintTooLarge
 	}
-	i2 := uint(i)
-	return &i2, nil
+	return uint(i), nil
 }
 
 func convString(s string) *string {

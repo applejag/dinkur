@@ -142,7 +142,7 @@ func (d *daemon) UpdateTask(ctx context.Context, req *dinkurapiv1.UpdateTaskRequ
 		Name:       convString(req.Name),
 		Start:      convTimestampPtr(req.Start),
 		End:        convTimestampPtr(req.End),
-		ID:         id,
+		IDOrZero:   id,
 		AppendName: req.AppendName,
 	}
 	update, err := d.client.EditTask(ctx, edit)

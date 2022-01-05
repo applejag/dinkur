@@ -160,13 +160,6 @@ func uint64ToUint(v uint64) (uint, error) {
 	return uint(v), nil
 }
 
-func convUintPtr(i *uint) uint64 {
-	if i == nil {
-		return 0
-	}
-	return uint64(*i)
-}
-
 func convStringPtr(s *string) string {
 	if s == nil {
 		return ""

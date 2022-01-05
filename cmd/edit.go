@@ -53,6 +53,7 @@ a specific task using the --id or -i flag.`,
 				WithBool("append", flagAppend).
 				Message("Flags")
 			edit := dinkur.EditTask{
+				IDOrZero:   flagID,
 				Start:      flagStart.TimePtr(),
 				End:        flagEnd.TimePtr(),
 				AppendName: flagAppend,
@@ -60,9 +61,6 @@ a specific task using the --id or -i flag.`,
 			if len(args) > 0 {
 				name := strings.Join(args, " ")
 				edit.Name = &name
-			}
-			if cmd.Flags().Changed("id") {
-				edit.ID = &flagID
 			}
 			update, err := c.EditTask(context.Background(), edit)
 			if err != nil {

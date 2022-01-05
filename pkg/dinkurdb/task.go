@@ -178,7 +178,7 @@ func (c *client) editDBTask(edit dinkur.EditTask) (updatedDBTask, error) {
 }
 
 func (c *client) editDBTaskNoTran(edit dinkur.EditTask) (updatedDBTask, error) {
-	dbTask, err := c.getDBTaskToEditNoTran(edit.ID)
+	dbTask, err := c.getDBTaskToEditNoTran(edit.IDOrZero)
 	if err != nil {
 		if errors.Is(err, dinkur.ErrNotFound) {
 			return updatedDBTask{}, fmt.Errorf("no task to edit, failed finding latest task: %w", err)
@@ -217,11 +217,11 @@ func (c *client) editDBTaskNoTran(edit dinkur.EditTask) (updatedDBTask, error) {
 	}, nil
 }
 
-func (c *client) getDBTaskToEditNoTran(id *uint) (Task, error) {
-	if id != nil {
-		dbTaskByID, err := c.getDBTask(*id)
+func (c *client) getDBTaskToEditNoTran(idOrZero uint) (Task, error) {
+	if idOrZero != 0 {
+		dbTaskByID, err := c.getDBTask(idOrZero)
 		if err != nil {
-			return Task{}, fmt.Errorf("get task by ID: %d: %w", *id, err)
+			return Task{}, fmt.Errorf("get task by ID: %d: %w", idOrZero, err)
 		}
 		return dbTaskByID, nil
 	}
