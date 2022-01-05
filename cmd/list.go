@@ -24,8 +24,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/internal/pflagutil"
@@ -72,14 +74,15 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 `, RootCmd.Name()),
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
+			rand.Seed(time.Now().UnixMicro())
 			search := dinkur.SearchTask{
 				Limit:              flagLimit,
 				Start:              flagStart.TimePtr(),
 				End:                flagEnd.TimePtr(),
 				Shorthand:          flagRange.TimeSpanShorthand(),
 				NameFuzzy:          strings.Join(args, " "),
-				NameHighlightStart: ">!@#>",
-				NameHighlightEnd:   "<!@#<",
+				NameHighlightStart: fmt.Sprintf(">!@%d#>", rand.Intn(255)),
+				NameHighlightEnd:   fmt.Sprintf("<!@%d#<", rand.Intn(255)),
 			}
 			log.Debug().
 				WithStringf("--start", "%v", search.Start).
