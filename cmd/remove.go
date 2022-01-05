@@ -74,4 +74,5 @@ Warning: Removing a task cannot be undone!`,
 
 	removeCmd.Flags().UintVarP(&flagID, "id", "i", 0, "ID of task to be removed (required)")
 	removeCmd.MarkFlagRequired("id")
+	removeCmd.RegisterFlagCompletionFunc("id", taskIDComplete)
 }
