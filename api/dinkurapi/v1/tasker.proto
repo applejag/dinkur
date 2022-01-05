@@ -75,6 +75,8 @@ message GetTaskListRequest {
   }
   Shorthand shorthand = 4;
   string name_fuzzy = 5;
+  string name_highlight_start = 6;
+  string name_highlight_end = 7;
 }
 
 message GetTaskListResponse {

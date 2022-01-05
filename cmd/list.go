@@ -73,13 +73,14 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
 			search := dinkur.SearchTask{
-				Limit:     flagLimit,
-				Shorthand: timeutil.TimeSpanThisDay,
+				Limit:              flagLimit,
+				Start:              flagStart.TimePtr(),
+				End:                flagEnd.TimePtr(),
+				Shorthand:          flagRange.TimeSpanShorthand(),
+				NameFuzzy:          strings.Join(args, " "),
+				NameHighlightStart: ">!@#>",
+				NameHighlightEnd:   "<!@#<",
 			}
-			search.Shorthand = flagRange.TimeSpanShorthand()
-			search.Start = flagStart.TimePtr()
-			search.End = flagEnd.TimePtr()
-			search.NameFuzzy = strings.Join(args, " ")
 			log.Debug().
 				WithStringf("--start", "%v", search.Start).
 				WithStringf("--end", "%v", search.End).
@@ -91,7 +92,11 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 			}
 			switch strings.ToLower(flagOutput) {
 			case "pretty":
-				console.PrintTaskList(tasks)
+				searchStart, searchEnd := search.NameHighlightStart, search.NameHighlightEnd
+				if len(args) == 0 {
+					searchStart, searchEnd = "", ""
+				}
+				console.PrintTaskList(tasks, searchStart, searchEnd)
 			case "json":
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")

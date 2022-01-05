@@ -54,11 +54,13 @@ func (c *client) ListTasks(ctx context.Context, search dinkur.SearchTask) ([]din
 		return nil, err
 	}
 	req := dinkurapiv1.GetTaskListRequest{
-		Start:     convTimePtr(search.Start),
-		End:       convTimePtr(search.End),
-		Limit:     uint64(search.Limit),
-		Shorthand: convShorthand(search.Shorthand),
-		NameFuzzy: search.NameFuzzy,
+		Start:              convTimePtr(search.Start),
+		End:                convTimePtr(search.End),
+		Limit:              uint64(search.Limit),
+		Shorthand:          convShorthand(search.Shorthand),
+		NameFuzzy:          search.NameFuzzy,
+		NameHighlightStart: search.NameHighlightStart,
+		NameHighlightEnd:   search.NameHighlightEnd,
 	}
 	res, err := c.tasker.GetTaskList(ctx, &req)
 	if err != nil {

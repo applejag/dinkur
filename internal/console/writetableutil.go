@@ -20,6 +20,7 @@
 package console
 
 import (
+	"regexp"
 	"strings"
 	"time"
 
@@ -47,6 +48,12 @@ func writeCellTaskID(t *table, id uint) {
 func writeCellTaskName(t *table, name string) {
 	var sb strings.Builder
 	w := writeTaskName(&sb, name)
+	t.WriteCellWidth(sb.String(), w)
+}
+
+func writeCellTaskNameSearched(t *table, name string, reg *regexp.Regexp) {
+	var sb strings.Builder
+	w := writeTaskNameSearched(&sb, name, reg)
 	t.WriteCellWidth(sb.String(), w)
 }
 

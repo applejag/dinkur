@@ -23,6 +23,7 @@ package console
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -37,20 +38,23 @@ var (
 	timeFormatLong  = "Jan 02 15:04"
 	timeFormatShort = "15:04"
 
-	taskIDColor        = color.New(color.FgHiBlack)
-	taskLabelColor     = color.New(color.FgWhite, color.Italic)
-	taskNameColor      = color.New(color.FgYellow)
-	taskNameFormat     = "`%s`"
-	taskTimeDelimColor = color.New(color.FgHiBlack)
-	taskDateColor      = color.New(color.FgGreen)
-	taskStartColor     = color.New(color.FgGreen)
-	taskEndColor       = color.New(color.FgGreen)
-	taskEndNilColor    = color.New(color.FgHiBlack, color.Italic)
-	taskEndNilText     = "active…"
-	taskEndNilTextLen  = utf8.RuneCountInString(taskEndNilText)
-	taskDurationColor  = color.New(color.FgCyan)
-	taskEditDelimColor = color.New(color.FgHiMagenta)
-	taskEditNoneColor  = color.New(color.FgHiBlack, color.Italic)
+	taskIDColor              = color.New(color.FgHiBlack)
+	taskLabelColor           = color.New(color.FgWhite, color.Italic)
+	taskNameColor            = color.New(color.FgYellow)
+	taskNameHighlightColor   = color.New(color.FgHiYellow, color.Underline)
+	taskNameHighlightReplace = taskNameHighlightColor.Sprint("$1")
+	taskNameQuote            = "`"
+	taskNameFormat           = taskNameQuote + "%s" + taskNameQuote
+	taskTimeDelimColor       = color.New(color.FgHiBlack)
+	taskDateColor            = color.New(color.FgGreen)
+	taskStartColor           = color.New(color.FgGreen)
+	taskEndColor             = color.New(color.FgGreen)
+	taskEndNilColor          = color.New(color.FgHiBlack, color.Italic)
+	taskEndNilText           = "active…"
+	taskEndNilTextLen        = utf8.RuneCountInString(taskEndNilText)
+	taskDurationColor        = color.New(color.FgCyan)
+	taskEditDelimColor       = color.New(color.FgHiMagenta)
+	taskEditNoneColor        = color.New(color.FgHiBlack, color.Italic)
 
 	taskEditPrefix  = "  "
 	taskEditSpacing = "   "
@@ -163,10 +167,19 @@ func PrintTaskEdit(update dinkur.UpdatedTask) {
 
 // PrintTaskList writes a table for a list of tasks, grouped by the date
 // (year, month, day), to STDOUT.
-func PrintTaskList(tasks []dinkur.Task) {
+func PrintTaskList(tasks []dinkur.Task, searchStart, searchEnd string) {
 	if len(tasks) == 0 {
 		tableEmptyColor.Fprintln(stdout, tableEmptyText)
 		return
+	}
+	var reg *regexp.Regexp
+	if searchStart != "" || searchEnd != "" {
+		var err error
+		reg, err = regexp.Compile(fmt.Sprintf("%s(.*?)%s",
+			regexp.QuoteMeta(searchStart), regexp.QuoteMeta(searchEnd)))
+		if err != nil {
+			PrintFatal("Failed to compile highlight regex:", err)
+		}
 	}
 	var t table
 	t.SetSpacing("  ")
@@ -178,7 +191,11 @@ func PrintTaskList(tasks []dinkur.Task) {
 		}
 		for i, task := range group.tasks {
 			writeCellTaskID(&t, task.ID)
-			writeCellTaskName(&t, task.Name)
+			if reg != nil {
+				writeCellTaskNameSearched(&t, task.Name, reg)
+			} else {
+				writeCellTaskName(&t, task.Name)
+			}
 			if i == 0 {
 				writeCellDate(&t, group.date)
 			} else {

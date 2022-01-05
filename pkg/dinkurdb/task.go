@@ -136,10 +136,18 @@ func (c *client) listDBTasks(search dinkur.SearchTask) ([]Task, error) {
 		q = q.Where(taskSQLBetweenEnd, sql.Named("end", end))
 	}
 	if search.NameFuzzy != "" {
-		subQ := c.db.Model(&TaskFTS5{}).
-			Select(taskFTS5ColumnRowID).
-			Where(taskFTS5ColumnName+" MATCH ?", search.NameFuzzy)
-		q = q.Where(taskColumnID+" IN (?)", subQ)
+		if search.NameHighlightStart != "" || search.NameHighlightEnd != "" {
+			q = q.Joins("INNER JOIN tasks_idx ON tasks.id = tasks_idx.rowid").
+				Select(
+					"id, created_at, updated_at, highlight(tasks_idx, 0, ?, ?) AS name, start, end",
+					search.NameHighlightStart, search.NameHighlightEnd).
+				Where(taskFTS5ColumnName+" MATCH ?", search.NameFuzzy)
+		} else {
+			subQ := c.db.Model(&TaskFTS5{}).
+				Select(taskFTS5ColumnRowID).
+				Where(taskFTS5ColumnName+" MATCH ?", search.NameFuzzy)
+			q = q.Where(taskColumnID+" IN (?)", subQ)
+		}
 	}
 	if err := q.Find(&dbTasks).Error; err != nil {
 		return nil, err

@@ -21,6 +21,7 @@ package console
 
 import (
 	"io"
+	"regexp"
 	"time"
 	"unicode/utf8"
 
@@ -41,6 +42,37 @@ func writeTaskID(w io.Writer, id uint) int {
 func writeTaskName(w io.Writer, name string) int {
 	taskNameColor.Fprintf(w, taskNameFormat, name)
 	return 2 + utf8.RuneCountInString(name)
+}
+
+func writeTaskNameSearched(w io.Writer, name string, reg *regexp.Regexp) int {
+	matches := reg.FindAllStringSubmatchIndex(name, -1)
+	const (
+		g0Start = 0 // group 0 = full match
+		g0End   = 1
+		g1Start = 2
+		g1End   = 3
+	)
+	var width int
+	width++
+	taskNameColor.Fprint(w, taskNameQuote)
+	var lastIdx int
+	for _, match := range matches {
+		nameUntilMatch := name[lastIdx:match[g0Start]]
+		width += utf8.RuneCountInString(nameUntilMatch)
+		taskNameColor.Fprint(w, nameUntilMatch)
+
+		matchGroup1 := name[match[g1Start]:match[g1End]]
+		width += utf8.RuneCountInString(matchGroup1)
+		taskNameHighlightColor.Fprint(w, matchGroup1)
+
+		lastIdx = match[g0End]
+	}
+	nameUntilEnd := name[lastIdx:]
+	width += utf8.RuneCountInString(nameUntilEnd)
+	taskNameColor.Fprint(w, nameUntilEnd)
+	width++
+	taskNameColor.Fprint(w, taskNameQuote)
+	return width
 }
 
 func writeTaskTimeSpan(w io.Writer, start time.Time, end *time.Time) int {

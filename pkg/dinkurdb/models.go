@@ -86,8 +86,8 @@ func (t Task) Elapsed() time.Duration {
 }
 
 const (
-	taskFTS5ColumnRowID = "rowid"
-	taskFTS5ColumnName  = "name"
+	taskFTS5ColumnRowID = "tasks_idx.rowid"
+	taskFTS5ColumnName  = "tasks_idx.name"
 )
 
 // TaskFTS5 is used for free-text searching tasks.
