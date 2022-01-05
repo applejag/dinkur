@@ -24,6 +24,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/dinkur/dinkur/internal/console"
 	"github.com/spf13/cobra"
@@ -38,7 +39,7 @@ var outCmd = &cobra.Command{
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		connectClientOrExit()
-		stoppedTask, err := c.StopActiveTask(context.Background())
+		stoppedTask, err := c.StopActiveTask(context.Background(), time.Now())
 		if err != nil {
 			console.PrintFatal("Error stopping task:", err)
 		}

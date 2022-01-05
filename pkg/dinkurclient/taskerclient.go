@@ -22,6 +22,7 @@ package dinkurclient
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 
@@ -170,11 +171,13 @@ func (c *client) ActiveTask(ctx context.Context) (*dinkur.Task, error) {
 	return task, nil
 }
 
-func (c *client) StopActiveTask(ctx context.Context) (*dinkur.Task, error) {
+func (c *client) StopActiveTask(ctx context.Context, endTime time.Time) (*dinkur.Task, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
-	res, err := c.tasker.StopActiveTask(ctx, &dinkurapiv1.StopActiveTaskRequest{})
+	res, err := c.tasker.StopActiveTask(ctx, &dinkurapiv1.StopActiveTaskRequest{
+		End: convTimePtr(&endTime),
+	})
 	if err != nil {
 		return nil, convError(err)
 	}

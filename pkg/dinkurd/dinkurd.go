@@ -288,6 +288,14 @@ func convTimestampPtr(ts *timestamppb.Timestamp) *time.Time {
 	return &t
 }
 
+func convTimestampOrNow(ts *timestamppb.Timestamp) time.Time {
+	if ts == nil {
+		return time.Now()
+	}
+	t := ts.AsTime()
+	return t
+}
+
 func convShorthand(s dinkurapiv1.GetTaskListRequest_Shorthand) timeutil.TimeSpanShorthand {
 	switch s {
 	case dinkurapiv1.GetTaskListRequest_PAST:

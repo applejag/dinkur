@@ -182,7 +182,7 @@ func (d *daemon) StopActiveTask(ctx context.Context, req *dinkurapiv1.StopActive
 	if req == nil {
 		return nil, convError(ErrRequestIsNil)
 	}
-	stoppedTask, err := d.client.StopActiveTask(ctx)
+	stoppedTask, err := d.client.StopActiveTask(ctx, convTimestampOrNow(req.End))
 	if err != nil {
 		return nil, convError(err)
 	}

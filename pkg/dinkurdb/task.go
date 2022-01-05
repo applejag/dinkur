@@ -323,7 +323,7 @@ func (c *client) startDBTask(dbTask Task) (startedDBTask, error) {
 }
 
 func (c *client) startDBTaskNoTran(dbTask Task) (startedDBTask, error) {
-	previousDBTask, err := c.stopActiveDBTaskNoTran()
+	previousDBTask, err := c.stopActiveDBTaskNoTran(dbTask.Start)
 	if err != nil {
 		return startedDBTask{}, err
 	}
@@ -337,51 +337,44 @@ func (c *client) startDBTaskNoTran(dbTask Task) (startedDBTask, error) {
 	}, nil
 }
 
-func (c *client) StopActiveTask(ctx context.Context) (*dinkur.Task, error) {
+func (c *client) StopActiveTask(ctx context.Context, endTime time.Time) (*dinkur.Task, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
-	dbTask, err := c.withContext(ctx).stopActiveDBTask()
+	dbTask, err := c.withContext(ctx).stopActiveDBTask(endTime)
 	if err != nil {
 		return nil, err
 	}
 	return convTaskPtr(dbTask), nil
 }
 
-func (c *client) stopActiveDBTask() (*Task, error) {
+func (c *client) stopActiveDBTask(endTime time.Time) (*Task, error) {
 	var activeDBTask *Task
 	err := c.transaction(func(tx *client) (tranErr error) {
-		activeDBTask, tranErr = tx.stopActiveDBTaskNoTran()
+		activeDBTask, tranErr = tx.stopActiveDBTaskNoTran(endTime)
 		return
 	})
 	return activeDBTask, err
 }
 
-func (c *client) stopActiveDBTaskNoTran() (*Task, error) {
-	var err error
-	activeTask, err := c.activeDBTask()
-	if err != nil {
-		return nil, fmt.Errorf("get previously active task: %w", err)
+func (c *client) stopActiveDBTaskNoTran(endTime time.Time) (*Task, error) {
+	var tasks []Task
+	if err := c.db.Where(&Task{End: nil}, taskFieldEnd).Find(&tasks).Error; err != nil {
+		return nil, err
 	}
-	_, err = c.stopAllTasks()
-	if err != nil {
-		return nil, fmt.Errorf("stop previously active task: %w", err)
+	if len(tasks) == 0 {
+		return nil, nil
 	}
-	if activeTask != nil {
-		updatedTask, err := c.getDBTask(activeTask.ID)
-		if err != nil {
-			return nil, fmt.Errorf("get updated previously active task: %w", err)
+	for _, task := range tasks {
+		if endTime.Before(task.Start) {
+			return nil, dinkur.ErrTaskEndBeforeStart
 		}
-		activeTask = &updatedTask
+		task.End = &endTime
 	}
-	return activeTask, nil
-}
-
-func (c *client) stopAllTasks() (bool, error) {
-	res := c.db.Model(&Task{}).
-		Where(&Task{End: nil}, taskFieldEnd).
-		Update(taskColumnEnd, time.Now())
-	return res.RowsAffected > 0, res.Error
+	if err := c.db.Save(tasks).Error; err != nil {
+		return nil, err
+	}
+	return &tasks[0], nil
 }
 
 func reverseTaskSlice(slice []Task) {

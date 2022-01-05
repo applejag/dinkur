@@ -113,6 +113,7 @@ message DeleteTaskResponse {
 }
 
 message StopActiveTaskRequest {
+  google.protobuf.Timestamp end = 1;
 }
 
 message StopActiveTaskResponse {

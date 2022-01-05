@@ -19,7 +19,10 @@
 
 package dinkur
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // NilClient returns "client is nil" error on all of its methods.
 type NilClient struct {
@@ -81,7 +84,7 @@ func (*NilClient) ActiveTask(context.Context) (*Task, error) {
 
 // StopActiveTask is a dummy implementation of the dinkur.Client that only
 // returns the "client is nil" error.
-func (*NilClient) StopActiveTask(context.Context) (*Task, error) {
+func (*NilClient) StopActiveTask(context.Context, time.Time) (*Task, error) {
 	return nil, ErrClientIsNil
 }
 

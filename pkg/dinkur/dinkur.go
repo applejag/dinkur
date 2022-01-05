@@ -65,7 +65,7 @@ type Tasker interface {
 	DeleteTask(ctx context.Context, id uint) (Task, error)
 	StartTask(ctx context.Context, task NewTask) (StartedTask, error)
 	ActiveTask(ctx context.Context) (*Task, error)
-	StopActiveTask(ctx context.Context) (*Task, error)
+	StopActiveTask(ctx context.Context, endTime time.Time) (*Task, error)
 }
 
 // Alerter is the Dinkur client methods targeted to reading alerts.
