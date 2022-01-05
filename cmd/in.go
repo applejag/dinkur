@@ -33,8 +33,11 @@ import (
 
 func init() {
 	var (
-		flagStart = &pflagutil.Time{Now: true}
-		flagEnd   = &pflagutil.Time{}
+		flagStart     = &pflagutil.Time{Now: true}
+		flagEnd       = &pflagutil.Time{}
+		flagAfterID   uint
+		flagAfterLast bool
+		flagBeforeID  uint
 	)
 
 	var inCmd = &cobra.Command{
@@ -46,9 +49,12 @@ func init() {
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
 			newTask := dinkur.NewTask{
-				Name:  strings.Join(args, " "),
-				Start: flagStart.TimePtr(),
-				End:   flagEnd.TimePtr(),
+				Name:               strings.Join(args, " "),
+				Start:              flagStart.TimePtr(),
+				End:                flagEnd.TimePtr(),
+				StartAfterIDOrZero: flagAfterID,
+				EndBeforeIDOrZero:  flagBeforeID,
+				StartAfterLast:     flagAfterLast,
 			}
 			startedTask, err := c.StartTask(context.Background(), newTask)
 			if err != nil {
@@ -85,4 +91,9 @@ func init() {
 
 	inCmd.Flags().VarP(flagStart, "start", "s", `start time of task`)
 	inCmd.Flags().VarP(flagEnd, "end", "e", `end time of task; new task will not be active if set`)
+	inCmd.Flags().UintVarP(&flagAfterID, "afterid", "a", 0, `sets --start time to the end time of task with ID`)
+	inCmd.RegisterFlagCompletionFunc("afterid", taskIDComplete)
+	inCmd.Flags().BoolVarP(&flagAfterLast, "afterlast", "L", false, `sets --start time to the end time of latest task`)
+	inCmd.Flags().UintVarP(&flagBeforeID, "beforeid", "b", 0, `sets --end time to the start time of task with ID`)
+	inCmd.RegisterFlagCompletionFunc("beforeid", taskIDComplete)
 }

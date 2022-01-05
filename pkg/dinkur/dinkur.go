@@ -127,9 +127,9 @@ type NewTask struct {
 	Start *time.Time
 	End   *time.Time
 
-	StartAfterID   uint
-	StartAfterLast bool
-	EndBeforeID    uint
+	StartAfterIDOrZero uint
+	EndBeforeIDOrZero  uint
+	StartAfterLast     bool
 }
 
 // StartedTask is the response from creating a new task, with the newly created

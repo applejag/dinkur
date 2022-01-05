@@ -84,6 +84,10 @@ message CreateTaskRequest {
   string name = 1;
   google.protobuf.Timestamp start = 2;
   google.protobuf.Timestamp end = 3;
+
+  uint64 start_after_id_or_zero = 4;
+  uint64 end_before_id_or_zero = 5;
+  bool start_after_last = 6;
 }
 
 message CreateTaskResponse {

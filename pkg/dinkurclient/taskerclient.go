@@ -129,9 +129,12 @@ func (c *client) StartTask(ctx context.Context, task dinkur.NewTask) (dinkur.Sta
 		return dinkur.StartedTask{}, err
 	}
 	res, err := c.tasker.CreateTask(ctx, &dinkurapiv1.CreateTaskRequest{
-		Name:  task.Name,
-		Start: convTimePtr(task.Start),
-		End:   convTimePtr(task.End),
+		Name:               task.Name,
+		Start:              convTimePtr(task.Start),
+		End:                convTimePtr(task.End),
+		StartAfterIdOrZero: uint64(task.StartAfterIDOrZero),
+		EndBeforeIdOrZero:  uint64(task.EndBeforeIDOrZero),
+		StartAfterLast:     task.StartAfterLast,
 	})
 	if err != nil {
 		return dinkur.StartedTask{}, convError(err)

@@ -113,9 +113,19 @@ func (d *daemon) CreateTask(ctx context.Context, req *dinkurapiv1.CreateTaskRequ
 		return nil, convError(ErrRequestIsNil)
 	}
 	newTask := dinkur.NewTask{
-		Name:  req.Name,
-		Start: convTimestampPtr(req.Start),
-		End:   convTimestampPtr(req.End),
+		Name:           req.Name,
+		Start:          convTimestampPtr(req.Start),
+		End:            convTimestampPtr(req.End),
+		StartAfterLast: req.StartAfterLast,
+	}
+	var err error
+	newTask.StartAfterIDOrZero, err = convUint64(req.StartAfterIdOrZero)
+	if err != nil {
+		return nil, convError(err)
+	}
+	newTask.EndBeforeIDOrZero, err = convUint64(req.EndBeforeIdOrZero)
+	if err != nil {
+		return nil, convError(err)
 	}
 	startedTask, err := d.client.StartTask(ctx, newTask)
 	if err != nil {

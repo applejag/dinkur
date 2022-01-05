@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
+	"github.com/dinkur/dinkur/pkg/timeutil"
 )
 
 func (c *client) ActiveTask(ctx context.Context) (*dinkur.Task, error) {
@@ -293,12 +294,17 @@ func (c *client) StartTask(ctx context.Context, task dinkur.NewTask) (dinkur.Sta
 	if task.End != nil && task.End.Before(start) {
 		return dinkur.StartedTask{}, dinkur.ErrTaskEndBeforeStart
 	}
-	dbTask := Task{
-		Name:  task.Name,
-		Start: start.UTC(),
-		End:   timePtrUTC(task.End),
+	newTask := newTask{
+		Task: Task{
+			Name:  task.Name,
+			Start: start.UTC(),
+			End:   timePtrUTC(task.End),
+		},
+		startAfterIDOrZero: task.StartAfterIDOrZero,
+		endBeforeIDOrZero:  task.EndBeforeIDOrZero,
+		startAfterLast:     task.StartAfterLast,
 	}
-	startedTask, err := c.withContext(ctx).startDBTask(dbTask)
+	startedTask, err := c.withContext(ctx).startDBTask(newTask)
 	if err != nil {
 		return dinkur.StartedTask{}, err
 	}
@@ -313,27 +319,61 @@ type startedDBTask struct {
 	new      Task
 }
 
-func (c *client) startDBTask(dbTask Task) (startedDBTask, error) {
+type newTask struct {
+	Task
+	startAfterIDOrZero uint
+	endBeforeIDOrZero  uint
+	startAfterLast     bool
+}
+
+func (c *client) startDBTask(newTask newTask) (startedDBTask, error) {
 	var startedTask startedDBTask
 	err := c.transaction(func(tx *client) (tranErr error) {
-		startedTask, tranErr = tx.startDBTaskNoTran(dbTask)
+		startedTask, tranErr = tx.startDBTaskNoTran(newTask)
 		return
 	})
 	return startedTask, err
 }
 
-func (c *client) startDBTaskNoTran(dbTask Task) (startedDBTask, error) {
-	previousDBTask, err := c.stopActiveDBTaskNoTran(dbTask.Start)
+func (c *client) startDBTaskNoTran(newTask newTask) (startedDBTask, error) {
+	if newTask.startAfterIDOrZero != 0 {
+		startAfter, err := c.getDBTask(newTask.startAfterIDOrZero)
+		if err != nil {
+			return startedDBTask{}, fmt.Errorf("get task by ID to start after: %w", err)
+		}
+		if startAfter.End != nil {
+			newTask.Start = *startAfter.End
+		}
+	} else if newTask.startAfterLast {
+		lastTasks, err := c.listDBTasks(dinkur.SearchTask{
+			Shorthand: timeutil.TimeSpanNone,
+			Limit:     1,
+		})
+		if err != nil {
+			return startedDBTask{}, fmt.Errorf("get last task to start after: %w", err)
+		}
+		if len(lastTasks) > 0 && lastTasks[0].End != nil {
+			newTask.Start = *lastTasks[0].End
+		}
+	}
+	if newTask.endBeforeIDOrZero != 0 {
+		endBefore, err := c.getDBTask(newTask.endBeforeIDOrZero)
+		if err != nil {
+			return startedDBTask{}, fmt.Errorf("get task by ID to end before: %w", err)
+		}
+		newTask.End = &endBefore.Start
+	}
+	previousDBTask, err := c.stopActiveDBTaskNoTran(newTask.Start)
 	if err != nil {
 		return startedDBTask{}, fmt.Errorf("stop previously active task: %w", err)
 	}
-	err = c.db.Create(&dbTask).Error
+	err = c.db.Create(&newTask.Task).Error
 	if err != nil {
 		return startedDBTask{}, fmt.Errorf("create new active task: %w", err)
 	}
 	return startedDBTask{
 		previous: previousDBTask,
-		new:      dbTask,
+		new:      newTask.Task,
 	}, nil
 }
 
