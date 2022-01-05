@@ -37,7 +37,7 @@ var (
 	ErrAlreadyConnected   = errors.New("client is already connected to database")
 	ErrNotConnected       = errors.New("client is not connected to database")
 	ErrTaskNameEmpty      = errors.New("task name cannot be empty")
-	ErrTaskEndBeforeStart = errors.New("task end date cannot be before start date")
+	ErrTaskEndBeforeStart = errors.New("task end time cannot be before start time")
 	ErrNotFound           = gorm.ErrRecordNotFound
 	ErrLimitTooLarge      = errors.New("search limit is too large, maximum: " + strconv.Itoa(math.MaxInt))
 	ErrClientIsNil        = errors.New("client is nil")

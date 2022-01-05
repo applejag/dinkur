@@ -51,10 +51,10 @@ func init() {
 				End:   flagEnd.TimePtr(),
 			}
 			startedTask, err := c.StartTask(context.Background(), newTask)
-			var toPrint []console.LabelledTask
 			if err != nil {
 				console.PrintFatal("Error starting task:", err)
 			}
+			var toPrint []console.LabelledTask
 			if startedTask.Previous != nil {
 				toPrint = append(toPrint, console.LabelledTask{
 					Label: "Stopped task:",

@@ -315,17 +315,17 @@ type startedDBTask struct {
 
 func (c *client) startDBTask(dbTask Task) (startedDBTask, error) {
 	var startedTask startedDBTask
-	c.transaction(func(tx *client) (tranErr error) {
+	err := c.transaction(func(tx *client) (tranErr error) {
 		startedTask, tranErr = tx.startDBTaskNoTran(dbTask)
 		return
 	})
-	return startedTask, nil
+	return startedTask, err
 }
 
 func (c *client) startDBTaskNoTran(dbTask Task) (startedDBTask, error) {
 	previousDBTask, err := c.stopActiveDBTaskNoTran(dbTask.Start)
 	if err != nil {
-		return startedDBTask{}, err
+		return startedDBTask{}, fmt.Errorf("stop previously active task: %w", err)
 	}
 	err = c.db.Create(&dbTask).Error
 	if err != nil {
@@ -365,13 +365,17 @@ func (c *client) stopActiveDBTaskNoTran(endTime time.Time) (*Task, error) {
 	if len(tasks) == 0 {
 		return nil, nil
 	}
-	for _, task := range tasks {
+	for i, task := range tasks {
 		if endTime.Before(task.Start) {
 			return nil, dinkur.ErrTaskEndBeforeStart
 		}
-		task.End = &endTime
+		tasks[i].End = &endTime
 	}
-	if err := c.db.Save(tasks).Error; err != nil {
+	err := c.db.Model(&Task{}).
+		Where(&Task{End: nil}, taskFieldEnd).
+		Update(taskFieldEnd, endTime).
+		Error
+	if err != nil {
 		return nil, err
 	}
 	return &tasks[0], nil
