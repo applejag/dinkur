@@ -60,11 +60,10 @@ func getMigrationStatus(db *gorm.DB) (MigrationVersion, error) {
 		if errors.As(err, &sqliteErr) && sqliteErr.Code == sqlite3.ErrError &&
 			strings.HasPrefix(sqliteErr.Error(), "no such table:") {
 			return MigrationNeverApplied, nil
-		} else {
-			m := db.Migrator()
-			if !m.HasTable(&Migration{}) {
-				return MigrationNeverApplied, nil
-			}
+		}
+		m := db.Migrator()
+		if !m.HasTable(&Migration{}) {
+			return MigrationNeverApplied, nil
 		}
 		return MigrationUnknown, nilNotFoundError(err)
 	}
