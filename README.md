@@ -55,6 +55,19 @@ Full documentation can be found at [docs/cmd/dinkur.md](docs/cmd/dinkur.md).
 Read how to contribute over at [CONTRIBUTING.md](CONTRIBUTING.md), including
 how to set up your development environment, if you so feel inclined.
 
+## Similar projects comparison
+
+<!--lint disable maximum-line-length-->
+
+| Project                                       | License?          | CLI? | GUI?                | Sync?                        | OS?                   |
+| --------------------------------------------- | ----------------- | ---- | ------------------- | ---------------------------- | --------------------- |
+| [Grindstone](https://epiforge.com/grindstone) | Proprietary       | ❌   | ✅                  | ✅ _($)_                     | Windows, Android, iOS |
+| [𝑓𝑓](https://github.com/ff-notes/ff)          | FOSS _(GPL 3.0)_  | ✅   | ✅ _(Experimental)_ | ✅ _(via external, eg. Git)_ | Linux, Mac, Android   |
+| [timetrap](https://github.com/samg/timetrap)  | OSS _(MIT)_       | ✅   | ❌                  | ❌                           | Windows, Linux, Mac   |
+| Dinkur _(this repo)_                          | FOSS _(GPL 3.0+)_ | ✅   | ❌                  | ❌                           | Windows, Linux, Mac   |
+
+<!--lint enable maximum-line-length-->
+
 ## License
 
 This repository is created and maintained by Kalle Fagerberg

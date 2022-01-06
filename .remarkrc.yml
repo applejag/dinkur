@@ -29,3 +29,9 @@ plugins:
       rule: "-"
       emphasis: "_"
       strong: "*"
+  - # Buggy in VS Code
+    - lint-table-cell-padding
+    - false
+  - # Buggy in VS Code
+    - lint-table-pipe-alignment
+    - false
