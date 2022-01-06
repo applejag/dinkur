@@ -59,12 +59,12 @@ how to set up your development environment, if you so feel inclined.
 
 <!--lint disable maximum-line-length-->
 
-| Project                                       | License?          | CLI? | GUI?                | Sync?                        | OS?                   |
-| --------------------------------------------- | ----------------- | ---- | ------------------- | ---------------------------- | --------------------- |
-| [Grindstone](https://epiforge.com/grindstone) | Proprietary       | ❌   | ✅                  | ✅ _($)_                     | Windows, Android, iOS |
-| [𝑓𝑓](https://github.com/ff-notes/ff)          | FOSS _(GPL 3.0)_  | ✅   | ✅ _(Experimental)_ | ✅ _(via external, eg. Git)_ | Linux, Mac, Android   |
-| [timetrap](https://github.com/samg/timetrap)  | OSS _(MIT)_       | ✅   | ❌                  | ❌                           | Windows, Linux, Mac   |
-| Dinkur _(this repo)_                          | FOSS _(GPL 3.0+)_ | ✅   | ❌                  | ❌                           | Windows, Linux, Mac   |
+| Project              | License?        | CLI? | GUI? | Sync?    | OS?                   |
+| -------------------- | --------------- | ---- | ---- | -------- | --------------------- |
+| [Grindstone][g]      | Proprietary     | ❌   | ✅   | ✅ _($)_ | Windows, Android, iOS |
+| [𝑓𝑓][ff]             | FOSS _(GPLv3)_  | ✅   | ✅   | ✅       | Linux, Mac, Android   |
+| [timetrap][t]        | OSS _(MIT)_     | ✅   | ❌   | ❌       | Windows, Linux, Mac   |
+| Dinkur _(this repo)_ | FOSS _(GPLv3+)_ | ✅   | ❌   | ❌       | Windows, Linux, Mac   |
 
 <!--lint enable maximum-line-length-->
 
@@ -77,3 +77,7 @@ The code in this project is licensed under GNU General Public License v3.0
 or later ([LICENSES/GPL-3.0-or-later.txt](LICENSES/GPL-3.0-or-later.txt)),
 and documentation is licensed under Creative Commons Attribution 4.0
 International ([LICENSES/CC-BY-4.0.txt](LICENSES/CC-BY-4.0.txt)).
+
+[g]: https://epiforge.com/grindstone
+[ff]: https://github.com/ff-notes/ff
+[t]: https://github.com/samg/timetrap
