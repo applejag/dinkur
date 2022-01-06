@@ -37,6 +37,15 @@ that I can keep tracking time when having outdoor meetings.
   [Go mobile](https://pkg.go.dev/golang.org/x/mobile#section-readme) could be a
   wise solution.
 
-- Data needs to be merged. If new tasks are created on both the desktop and
-  phone in parallell, and then they sync, then it should resolve this somehow.
-  Best letting the human resolve it.
+- Data needs to be merged. Consider making the Dinkur tasks behave as an
+  [CRDT](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type).
+
+  Could timestamp all changes, such as via
+  [event sourcing](https://martinfowler.com/eaaDev/EventSourcing.html), and only
+  use the Sqlite database for faster queries.
+
+  Prioritize keeping data. So if one the desktop Dinkur daemon instance deletes
+  a task and the mobile app Dinkur daemon edits that same task, then it should
+  resolve as non-deleted edited task.
+
+  May be of use: [RON](http://replicated.cc/)
