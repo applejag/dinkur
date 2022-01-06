@@ -9,10 +9,12 @@ module github.com/dinkur/dinkur
 go 1.17
 
 require (
+	github.com/AlecAivazis/survey/v2 v2.3.2
 	github.com/fatih/color v1.13.0
 	github.com/godbus/dbus/v5 v5.0.6
 	github.com/iver-wharf/wharf-core v1.3.0
 	github.com/mattn/go-colorable v0.1.12
+	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/olebedev/when v0.0.0-20211212231525-59bd4edcf9d6
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
@@ -23,7 +25,6 @@ require (
 )
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.3.2 // indirect
 	github.com/AlekSi/pointer v1.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
@@ -35,7 +36,6 @@ require (
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
-	github.com/mattn/go-sqlite3 v1.14.9 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
