@@ -55,18 +55,20 @@ Full documentation can be found at [docs/cmd/dinkur.md](docs/cmd/dinkur.md).
 Read how to contribute over at [CONTRIBUTING.md](CONTRIBUTING.md), including
 how to set up your development environment, if you so feel inclined.
 
-## Similar projects comparison
+## Inspiration sources
 
 <!--lint disable maximum-line-length-->
 
-| Project              | License?        | CLI? | GUI? | Sync?    | OS?                   |
-| -------------------- | --------------- | ---- | ---- | -------- | --------------------- |
-| [Grindstone][g]      | Proprietary     | ❌   | ✅   | ✅ _($)_ | Windows, Android, iOS |
-| [𝑓𝑓][ff]             | FOSS _(GPLv3)_  | ✅   | ✅   | ✅       | Linux, Mac, Android   |
-| [timetrap][t]        | OSS _(MIT)_     | ✅   | ❌   | ❌       | Windows, Linux, Mac   |
-| Dinkur _(this repo)_ | FOSS _(GPLv3+)_ | ✅   | ❌   | ❌       | Windows, Linux, Mac   |
+| Project         | License?       | CLI? | GUI? | Sync?    | AFK detect?    | OS?                   |
+| --------------- | -------------- | ---- | ---- | -------- | -------------- | --------------------- |
+| [Grindstone][g] | Proprietary    | ❌   | ✅   | ✅ _($)_ | ✅ _(Windows)_ | Windows, Android, iOS |
+| [𝑓𝑓][ff]        | FOSS _(GPLv3)_ | ✅   | ✅   | ✅       | ❌             | Linux, Mac, Android   |
+| [timetrap][t]   | OSS _(MIT)_    | ✅   | ❌   | ❌       | ❌             | Windows, Linux, Mac   |
 
 <!--lint enable maximum-line-length-->
+
+No code is taken from the above projects. However, they all have some distinct
+features each that I'm greatly inspired by and have implemented into Dinkur.
 
 ## License
 
