@@ -19,8 +19,13 @@ plugins:
     - lint-no-file-name-irregular-characters
     - "\\.a-zA-Z0-9-_"
   -
+    - lint-emphasis-marker
+    - _
+  -
     - stringify
     - bullet: "-"
       fences: true
       listItemIndent: one
       rule: "-"
+      emphasis: "_"
+      strong: "*"

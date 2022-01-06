@@ -15,11 +15,11 @@ Name of the product. Combination of "dinka", Swedish slang for pocket watch, and
 
 ## Dinkur daemon
 
-A [daemon](https://en.wikipedia.org/wiki/Daemon_\(computing\)) with an
+A [daemon](<https://en.wikipedia.org/wiki/Daemon_(computing)>) with an
 [gRPC](https://grpc.io/) API to allow reading+writing to the task tracking from
 other applications, such as [Dinkur clients](#dinkur-client).
 
-The Dinkur daemon also performs ["away detection"](away_detection.md).
+The Dinkur daemon also performs ["away detection"](away-detection.md).
 
 ## Dinkur client
 
