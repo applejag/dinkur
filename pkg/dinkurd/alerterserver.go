@@ -54,7 +54,7 @@ func (d *daemon) StreamAlert(req *dinkurapiv1.StreamAlertRequest, stream dinkura
 	}
 }
 
-func (d *daemon) GetAlertList(ctx context.Context, req *dinkurapiv1.GetAlertListRequest) (*dinkurapiv1.GetAlertListResponse, error) {
+func (d *daemon) GetAlertList(_ context.Context, req *dinkurapiv1.GetAlertListRequest) (*dinkurapiv1.GetAlertListResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
@@ -67,7 +67,7 @@ func (d *daemon) GetAlertList(ctx context.Context, req *dinkurapiv1.GetAlertList
 	}, nil
 }
 
-func (d *daemon) DeleteAlert(ctx context.Context, req *dinkurapiv1.DeleteAlertRequest) (*dinkurapiv1.DeleteAlertResponse, error) {
+func (d *daemon) DeleteAlert(_ context.Context, req *dinkurapiv1.DeleteAlertRequest) (*dinkurapiv1.DeleteAlertResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
