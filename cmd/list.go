@@ -22,10 +22,13 @@ package cmd
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -34,6 +37,7 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/timeutil"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 func init() {
@@ -106,11 +110,55 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 			case "json":
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")
-				enc.Encode(tasks)
-			case "jsonl":
+				if err := enc.Encode(tasks); err != nil {
+					console.PrintFatal("Error encoding tasks as JSON:", err)
+				}
+			case "json-line":
 				enc := json.NewEncoder(os.Stdout)
 				for _, t := range tasks {
-					enc.Encode(t)
+					if err := enc.Encode(t); err != nil {
+						console.PrintFatal(fmt.Sprintf("Error encoding task #%d as JSON:", t.ID), err)
+					}
+				}
+			case "yaml":
+				enc := yaml.NewEncoder(os.Stdout)
+				enc.SetIndent(2)
+				if err := enc.Encode(tasks); err != nil {
+					console.PrintFatal("Error encoding tasks as YAML:", err)
+				}
+			case "xml":
+				enc := xml.NewEncoder(os.Stdout)
+				enc.Indent("", "    ")
+				if err := enc.Encode(tasks); err != nil {
+					console.PrintFatal("Error encoding tasks as XML:", err)
+				}
+				fmt.Println()
+			case "xml-line":
+				enc := xml.NewEncoder(os.Stdout)
+				for _, t := range tasks {
+					if err := enc.Encode(t); err != nil {
+						fmt.Println()
+						console.PrintFatal(fmt.Sprintf("Error encoding task #%d as XML:", t.ID), err)
+					}
+					fmt.Println()
+				}
+			case "csv":
+				w := csv.NewWriter(os.Stdout)
+				var records [][]string
+				for _, t := range tasks {
+					records = append(records, convTaskCSVRecord(t))
+				}
+				if err := w.WriteAll(records); err != nil {
+					console.PrintFatal("Error encoding tasks as CSV:", err)
+				}
+			case "csv-header":
+				w := csv.NewWriter(os.Stdout)
+				records := [][]string{taskCSVHeaderRecord()}
+				for _, t := range tasks {
+					records = append(records, convTaskCSVRecord(t))
+				}
+				if err := w.WriteAll(records); err != nil {
+					console.PrintFatal("Error encoding tasks as CSV:", err)
 				}
 			default:
 				console.PrintFatal("Error parsing --output:", fmt.Errorf("invalid output format: %q", flagOutput))
@@ -125,7 +173,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 	listCmd.Flags().VarP(flagEnd, "end", "e", "list tasks ending before or at date time")
 	listCmd.Flags().VarP(flagRange, "range", "r", "baseline time range")
 	listCmd.RegisterFlagCompletionFunc("range", pflagutil.TimeRangeCompletion)
-	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", or "jsonl"`)
+	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", "json-line", "yaml", "xml", "xml-line", "csv", "csv-header"`)
 	listCmd.RegisterFlagCompletionFunc("output", outputFormatComplete)
 	listCmd.Flags().BoolVar(&flagNoHighlight, "no-highlight", false, `disables search highlighting in "pretty" output`)
 }
@@ -134,6 +182,38 @@ func outputFormatComplete(*cobra.Command, []string, string) ([]string, cobra.She
 	return []string{
 		"pretty\thuman readable and colored table formatting (default)",
 		"json\ta single indented JSON array containing all tasks",
-		"jsonl\teach task JSON object on a separate line",
+		"json-line\teach task JSON object on a separate line",
+		"yaml\tYAML array of tasks",
+		"xml\tXML list of tasks",
+		"xml-line\teach task XML element on a separate line",
+		"csv\teach task on a separate line with field as comma-separated-values",
+		"csv-header\tsame as --output=csv, but with additional header row",
 	}, cobra.ShellCompDirectiveDefault
+}
+
+func taskCSVHeaderRecord() []string {
+	return []string{
+		"ID",
+		"Created at",
+		"Updated at",
+		"Name",
+		"Start",
+		"End",
+	}
+}
+
+func convTaskCSVRecord(task dinkur.Task) []string {
+	const timeLayout = time.RFC3339Nano
+	endStr := ""
+	if task.End != nil {
+		endStr = task.End.String()
+	}
+	return []string{
+		strconv.FormatUint(uint64(task.ID), 10),
+		task.CreatedAt.Format(timeLayout),
+		task.UpdatedAt.Format(timeLayout),
+		task.Name,
+		task.Start.Format(timeLayout),
+		endStr,
+	}
 }
