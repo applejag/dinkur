@@ -23,6 +23,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"math/rand"
 	"os"
@@ -123,6 +124,22 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				if err := enc.Encode(tasks); err != nil {
 					console.PrintFatal("Error encoding tasks as YAML:", err)
 				}
+			case "xml":
+				enc := xml.NewEncoder(os.Stdout)
+				enc.Indent("", "    ")
+				if err := enc.Encode(tasks); err != nil {
+					console.PrintFatal("Error encoding tasks as XML:", err)
+				}
+				fmt.Println()
+			case "xml-line":
+				enc := xml.NewEncoder(os.Stdout)
+				for _, t := range tasks {
+					if err := enc.Encode(t); err != nil {
+						fmt.Println()
+						console.PrintFatal(fmt.Sprintf("Error encoding task #%d as XML:", t.ID), err)
+					}
+					fmt.Println()
+				}
 			default:
 				console.PrintFatal("Error parsing --output:", fmt.Errorf("invalid output format: %q", flagOutput))
 			}
@@ -136,7 +153,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 	listCmd.Flags().VarP(flagEnd, "end", "e", "list tasks ending before or at date time")
 	listCmd.Flags().VarP(flagRange, "range", "r", "baseline time range")
 	listCmd.RegisterFlagCompletionFunc("range", pflagutil.TimeRangeCompletion)
-	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", "json-line", "yaml"`)
+	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", "json-line", "yaml", "xml", "xml-line"`)
 	listCmd.RegisterFlagCompletionFunc("output", outputFormatComplete)
 	listCmd.Flags().BoolVar(&flagNoHighlight, "no-highlight", false, `disables search highlighting in "pretty" output`)
 }
@@ -147,5 +164,7 @@ func outputFormatComplete(*cobra.Command, []string, string) ([]string, cobra.She
 		"json\ta single indented JSON array containing all tasks",
 		"json-line\teach task JSON object on a separate line",
 		"yaml\tYAML array of tasks",
+		"xml\tXML list of tasks",
+		"xml-line\teach task XML element on a separate line",
 	}, cobra.ShellCompDirectiveDefault
 }

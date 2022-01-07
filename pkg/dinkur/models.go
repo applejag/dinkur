@@ -25,22 +25,22 @@ import "time"
 type CommonFields struct {
 	// ID is a unique identifier for this task. The same ID will never be used
 	// twice for a given database.
-	ID uint `json:"id" yaml:"id"`
+	ID uint `json:"id" yaml:"id" xml:"Id"`
 	// CreatedAt is when the object was created.
-	CreatedAt time.Time `json:"createdAt" yaml:"createdAt"`
+	CreatedAt time.Time `json:"createdAt" yaml:"createdAt" xml:"CreatedAt"`
 	// UpdatedAt stores when the object was last updated/edited.
-	UpdatedAt time.Time `json:"updatedAt" yaml:"updatedAt"`
+	UpdatedAt time.Time `json:"updatedAt" yaml:"updatedAt" xml:"UpdatedAt"`
 }
 
 // Task is a time tracked task.
 type Task struct {
 	CommonFields `yaml:",inline"`
 	// Name of the task.
-	Name string `json:"name" yaml:"name"`
+	Name string `json:"name" yaml:"name" xml:"Name"`
 	// Start time of the task.
-	Start time.Time `json:"start" yaml:"start"`
+	Start time.Time `json:"start" yaml:"start" xml:"Start"`
 	// End time of the task, or nil if the task is still active.
-	End *time.Time `json:"end" yaml:"end"`
+	End *time.Time `json:"end" yaml:"end" xml:"End"`
 }
 
 // Elapsed returns the duration of the task. If the task is currently active,
