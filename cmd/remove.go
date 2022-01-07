@@ -23,7 +23,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/dinkur/dinkur/internal/console"
@@ -54,13 +53,9 @@ Warning: Removing a task cannot be undone!`,
 				if err != nil {
 					console.PrintFatal("Error getting task:", err)
 				}
-				ok, err := console.PromptTaskRemoval(task)
+				err = console.PromptTaskRemoval(task)
 				if err != nil {
 					console.PrintFatal("Prompt error:", err)
-				}
-				if !ok {
-					fmt.Println("Aborted by user.")
-					os.Exit(1)
 				}
 			}
 			removedTask, err := c.DeleteTask(context.Background(), flagID)

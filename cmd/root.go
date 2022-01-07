@@ -42,12 +42,13 @@ import (
 )
 
 var (
-	cfgFile       = cfgpath.ConfigPath
-	dataFile      = cfgpath.DataPath
-	flagDataMkdir = true
-	flagColor     = "auto"
-	flagClient    = "db"
-	flagVerbose   = false
+	cfgFile         = cfgpath.ConfigPath
+	dataFile        = cfgpath.DataPath
+	flagDataMkdir   = true
+	flagColor       = "auto"
+	flagClient      = "db"
+	flagVerbose     = false
+	flagGrpcAddress = "localhost:59122"
 
 	flagLicenseWarranty   bool
 	flagLicenseConditions bool
@@ -115,6 +116,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&flagClient, "client", flagClient, `Dinkur client: "db" or "grpc"`)
 	RootCmd.RegisterFlagCompletionFunc("client", clientComplete)
 	RootCmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", flagVerbose, `enables debug logging`)
+	RootCmd.PersistentFlags().StringVar(&flagGrpcAddress, "grpc-address", flagGrpcAddress, `address of Dinkur daemon gRPC API`)
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -173,14 +175,57 @@ func connectClient(skipMigrate bool) (dinkur.Client, error) {
 }
 
 func connectToGRPCClient() (dinkur.Client, error) {
-	c := dinkurclient.NewClient("localhost:59122", dinkurclient.Options{})
+	c := dinkurclient.NewClient(flagGrpcAddress, dinkurclient.Options{})
 	if err := c.Connect(context.Background()); err != nil {
 		return nil, err
 	}
 	if err := c.Ping(context.Background()); err != nil {
 		return nil, fmt.Errorf("attempting ping: %w", err)
 	}
+	checkAlerts(c)
 	return c, nil
+}
+
+func checkAlerts(c dinkur.Client) {
+	alerts, err := c.GetAlertList(context.Background())
+	if err != nil {
+		console.PrintFatal("Error getting alerts list:", err)
+	}
+	for _, alert := range alerts {
+		if formerlyAFK, ok := alert.Type.(dinkur.AlertFormerlyAFK); ok {
+			promptAFKResolution(c, alert, formerlyAFK)
+			break
+		}
+	}
+}
+
+func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, formerlyAFK dinkur.AlertFormerlyAFK) {
+	res, err := console.PromptAFKResolution(formerlyAFK)
+	fmt.Println()
+	if err != nil {
+		console.PrintFatal("Prompt error:", err)
+	}
+	if res.Edit != nil {
+		update, err := c.EditTask(context.Background(), *res.Edit)
+		if err != nil {
+			console.PrintFatal("Error editing task:", err)
+		}
+		console.PrintTaskEdit(update)
+		fmt.Println()
+	}
+	if res.NewTask != nil {
+		startedTask, err := c.StartTask(context.Background(), *res.NewTask)
+		if err != nil {
+			console.PrintFatal("Error starting task:", err)
+		}
+		printStartedTask(startedTask)
+		fmt.Println()
+	}
+	if _, err := c.DeleteAlert(context.Background(), alert.ID); err != nil {
+		console.PrintFatal("Error removing alert:", err)
+	}
+	fmt.Println("Continuing with command...")
+	fmt.Println()
 }
 
 func connectToDBClient(skipMigrate bool) (dinkur.Client, error) {

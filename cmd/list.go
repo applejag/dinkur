@@ -102,7 +102,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				if len(args) == 0 {
 					searchStart, searchEnd = "", ""
 				}
-				console.PrintTaskList(tasks, searchStart, searchEnd)
+				console.PrintTaskListSearched(tasks, searchStart, searchEnd)
 			case "json":
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")

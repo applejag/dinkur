@@ -41,20 +41,20 @@ func writeCellsLabelledTask(t *table, labelled LabelledTask) {
 
 func writeCellTaskID(t *table, id uint) {
 	var sb strings.Builder
-	w := writeTaskID(&sb, id)
-	t.WriteCellWidth(sb.String(), w)
+	width := writeTaskID(&sb, id)
+	t.WriteCellWidth(sb.String(), width)
 }
 
 func writeCellTaskName(t *table, name string) {
 	var sb strings.Builder
-	w := writeTaskName(&sb, name)
-	t.WriteCellWidth(sb.String(), w)
+	width := writeTaskName(&sb, name)
+	t.WriteCellWidth(sb.String(), width)
 }
 
 func writeCellTaskNameSearched(t *table, name string, reg *regexp.Regexp) {
 	var sb strings.Builder
-	w := writeTaskNameSearched(&sb, name, reg)
-	t.WriteCellWidth(sb.String(), w)
+	width := writeTaskNameSearched(&sb, name, reg)
+	t.WriteCellWidth(sb.String(), width)
 }
 
 func writeCellDate(t *table, d date) {
@@ -64,23 +64,20 @@ func writeCellDate(t *table, d date) {
 
 func writeCellTimeColor(t *table, ti time.Time, layout string, c *color.Color) {
 	var sb strings.Builder
-	w := writeTimeColor(&sb, ti, layout, c)
-	t.WriteCellWidth(sb.String(), w)
+	width := writeTimeColor(&sb, ti, layout, c)
+	t.WriteCellWidth(sb.String(), width)
 }
 
 func writeCellTaskTimeSpan(t *table, start time.Time, end *time.Time) {
 	var sb strings.Builder
-	visualLen := writeTaskTimeSpan(&sb, start, end)
-	t.WriteCellWidth(sb.String(), visualLen)
+	width := writeTaskTimeSpanActive(&sb, start, end)
+	t.WriteCellWidth(sb.String(), width)
 }
 
 func writeCellTaskTimeSpanDuration(t *table, start time.Time, end *time.Time, dur time.Duration) {
 	var sb strings.Builder
-	w := writeTaskTimeSpan(&sb, start, end)
-	sb.WriteByte(' ')
-	w++
-	w += writeTaskDurationWithDelim(&sb, dur)
-	t.WriteCellWidth(sb.String(), w)
+	width := writeTaskTimeSpanActiveDuration(&sb, start, end, dur)
+	t.WriteCellWidth(sb.String(), width)
 }
 
 func writeCellTaskStartEnd(t *table, start time.Time, end *time.Time) {
@@ -92,12 +89,12 @@ func writeCellTaskStartEnd(t *table, start time.Time, end *time.Time) {
 		}
 		writeCellTimeColor(t, *end, endLayout, taskEndColor)
 	} else {
-		t.WriteCellColor(taskEndNilText, taskEndNilColor)
+		t.WriteCellColor(taskEndNilTextActive, taskEndNilColor)
 	}
 }
 
 func writeCellDuration(t *table, d time.Duration) {
 	var sb strings.Builder
-	w := writeTaskDuration(&sb, d)
-	t.WriteCellWidth(sb.String(), w)
+	width := writeTaskDuration(&sb, d)
+	t.WriteCellWidth(sb.String(), width)
 }

@@ -60,31 +60,7 @@ func init() {
 			if err != nil {
 				console.PrintFatal("Error starting task:", err)
 			}
-			var toPrint []console.LabelledTask
-			if startedTask.Previous != nil {
-				toPrint = append(toPrint, console.LabelledTask{
-					Label: "Stopped task:",
-					Task:  *startedTask.Previous,
-				})
-			}
-			noActive := false
-			if startedTask.New.End != nil {
-				toPrint = append(toPrint, console.LabelledTask{
-					Label: "Added task:",
-					Task:  startedTask.New,
-				})
-				noActive = true
-			} else {
-				toPrint = append(toPrint, console.LabelledTask{
-					Label:      "Started task:",
-					Task:       startedTask.New,
-					NoDuration: true,
-				})
-			}
-			console.PrintTaskLabelSlice(toPrint)
-			if noActive {
-				fmt.Println("You have no active task.")
-			}
+			printStartedTask(startedTask)
 		},
 	}
 	RootCmd.AddCommand(inCmd)
@@ -96,4 +72,32 @@ func init() {
 	inCmd.Flags().BoolVarP(&flagAfterLast, "after-last", "L", false, `sets --start time to the end time of latest task`)
 	inCmd.Flags().UintVarP(&flagBeforeID, "before-id", "b", 0, `sets --end time to the start time of task with ID`)
 	inCmd.RegisterFlagCompletionFunc("before-id", taskIDComplete)
+}
+
+func printStartedTask(startedTask dinkur.StartedTask) {
+	var toPrint []console.LabelledTask
+	if startedTask.Previous != nil {
+		toPrint = append(toPrint, console.LabelledTask{
+			Label: "Stopped task:",
+			Task:  *startedTask.Previous,
+		})
+	}
+	noActive := false
+	if startedTask.New.End != nil {
+		toPrint = append(toPrint, console.LabelledTask{
+			Label: "Added task:",
+			Task:  startedTask.New,
+		})
+		noActive = true
+	} else {
+		toPrint = append(toPrint, console.LabelledTask{
+			Label:      "Started task:",
+			Task:       startedTask.New,
+			NoDuration: true,
+		})
+	}
+	console.PrintTaskLabelSlice(toPrint)
+	if noActive {
+		fmt.Println("You have no active task.")
+	}
 }

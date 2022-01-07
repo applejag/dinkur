@@ -41,26 +41,35 @@ type Store struct {
 // Alerts returns a slice of all alerts.
 func (s *Store) Alerts() []dinkur.Alert {
 	var alerts []dinkur.Alert
-	// TODO
+	if s.afkAlert != nil {
+		alerts = append(alerts, *s.afkAlert)
+	}
+	if s.formerlyAFKAlert != nil {
+		alerts = append(alerts, *s.formerlyAFKAlert)
+	}
 	return alerts
 }
 
 // Delete removes an alert by ID.
-func (s *Store) Delete(id uint) error {
+func (s *Store) Delete(id uint) (dinkur.Alert, error) {
 	if s.afkAlert != nil && s.afkAlert.ID == id {
 		s.PubAlertWait(AlertEvent{
 			Alert: *s.afkAlert,
 			Event: dinkur.EventDeleted,
 		})
+		alert := *s.afkAlert
 		s.afkAlert = nil
+		return alert, nil
 	} else if s.formerlyAFKAlert != nil && s.formerlyAFKAlert.ID == id {
 		s.PubAlertWait(AlertEvent{
 			Alert: *s.formerlyAFKAlert,
 			Event: dinkur.EventDeleted,
 		})
+		alert := *s.formerlyAFKAlert
 		s.formerlyAFKAlert = nil
+		return alert, nil
 	}
-	return nil
+	return dinkur.Alert{}, dinkur.ErrNotFound
 }
 
 // SetAFK marks the user as AFK and creates the AFK alert if it doesn't exist,
