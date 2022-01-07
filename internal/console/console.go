@@ -55,9 +55,10 @@ var (
 	taskEditDelimColor       = color.New(color.FgHiMagenta)
 	taskEditNoneColor        = color.New(color.FgHiBlack, color.Italic)
 
-	taskEditPrefix  = "  "
-	taskEditSpacing = "   "
-	taskEditDelim   = "=>"
+	taskEditPrefix   = "  "
+	taskEditNoChange = "No changes were applied."
+	taskEditSpacing  = "   "
+	taskEditDelim    = "=>"
 
 	fatalLabelColor = color.New(color.FgHiRed, color.Bold)
 	fatalValueColor = color.New(color.FgRed)
@@ -72,9 +73,10 @@ var (
 	usageHeaderColor = color.New(color.FgYellow, color.Underline, color.Italic)
 	usageHelpColor   = color.New(color.FgHiBlack, color.Italic)
 
-	promptWarnIconColor = color.New(color.FgHiRed, color.Bold)
-	promptWarnIconText  = "!"
-	promptErrorColor    = color.New(color.FgRed)
+	promptWarnIconColor  = color.New(color.FgHiRed, color.Bold)
+	promptWarnIconText   = "!"
+	promptErrorColor     = color.New(color.FgRed)
+	promptCtrlCHelpColor = color.New(color.FgHiBlack, color.Italic)
 )
 
 // LabelledTask holds a string label and a task. Used when printing multiple
@@ -158,7 +160,7 @@ func PrintTaskEdit(update dinkur.UpdatedTask) {
 		t.CommitRow()
 	}
 	if t.Rows() == 0 {
-		taskEditNoneColor.Fprint(stdout, taskEditPrefix, "No changes were applied.")
+		taskEditNoneColor.Fprint(stdout, taskEditPrefix, taskEditNoChange)
 		fmt.Fprintln(&sb)
 	} else {
 		t.Fprintln(stdout)

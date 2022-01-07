@@ -100,10 +100,11 @@ func PromptAFKResolution(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
 
 	if checkIfNonInteractiveTTY() {
 		promptWarnIconColor.Fprint(&sb, promptWarnIconText)
-		sb.WriteString(" The terminal seems to be non-interactive.\n")
+		sb.WriteString(" The terminal seems to be non-interactive. Skipping prompt.\n")
 		promptWarnIconColor.Fprint(&sb, promptWarnIconText)
 		sb.WriteString(` Assuming option "1. Leave the active task as-is and continue with the invoked command."`)
 		fmt.Fprintln(stderr, sb.String())
+		taskEditNoneColor.Fprint(stdout, taskEditPrefix, taskEditNoChange)
 		return AFKResolution{}, nil
 	}
 
@@ -111,23 +112,25 @@ func PromptAFKResolution(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
 
 	sb.WriteString(" 1. Leave the active task as-is and continue with the invoked command.\n")
 
-	sb.WriteString(" 2. Discard the time I was away, changing active task to ")
-	writeTaskTimeSpanNowDuration(&sb, alert.ActiveTask.Start, &now, now.Sub(alert.ActiveTask.Start))
+	sb.WriteString(" 2. Discard the away time I was away, changing active task to ")
+	writeTaskTimeSpanNowDuration(&sb, alert.ActiveTask.Start, &alert.AFKSince, alert.AFKSince.Sub(alert.ActiveTask.Start))
 	sb.WriteString(".\n")
 
-	sb.WriteString(" 3. Save the time as a new task ")
+	sb.WriteString(" 3. Save the away time as a new task ")
 	writeTaskTimeSpanNowDuration(&sb, alert.AFKSince, nil, now.Sub(alert.AFKSince))
 	sb.WriteString(" (naming it in a later prompt).\n")
 
-	sb.WriteString(" 4. Split the time up into multiple tasks (interactively in later prompts).\n")
+	sb.WriteByte(' ')
+	promptCtrlCHelpColor.Fprint(&sb, "(press Ctrl+C to abort)")
+	sb.WriteByte('\n')
 	sb.WriteByte('\n')
 
 	fmt.Fprint(stderr, sb.String())
 
 	prompt := &survey.Input{
-		Message: "Select option [1-4]:",
+		Message: "Select option [1-3]:",
 	}
-	answerInt, err := promptIntRange(prompt, 1, 4)
+	answerInt, err := promptIntRange(prompt, 1, 3)
 	if err != nil {
 		return AFKResolution{}, err
 	}
@@ -135,7 +138,7 @@ func PromptAFKResolution(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
 	switch answerInt {
 	case 1:
 		// Leave the active task as-is.
-		fmt.Fprintln(stderr, "Leaving the active task as-is.")
+		taskEditNoneColor.Fprint(stdout, taskEditPrefix, taskEditNoChange)
 		return AFKResolution{}, nil
 
 	case 2:
@@ -150,38 +153,38 @@ func PromptAFKResolution(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
 
 	case 3:
 		// Save the time as a new task
-		name, err := promptNonEmptyString(&survey.Input{
-			Message: "Enter name of new task:",
-		})
-		if err != nil {
-			return AFKResolution{}, err
-		}
-		sb.Reset()
-		sb.WriteString("Saving the away time as a new task with name ")
-		writeTaskName(&sb, name)
-		sb.WriteString(".\n")
-		fmt.Fprint(stderr, sb.String())
-		return AFKResolution{
-			Edit: &dinkur.EditTask{
-				IDOrZero: alert.ActiveTask.ID,
-				End:      &alert.AFKSince,
-			},
-			NewTasks: []dinkur.NewTask{
-				{
-					Name:               name,
-					Start:              &alert.AFKSince,
-					StartAfterIDOrZero: alert.ActiveTask.ID,
-				},
-			},
-		}, nil
-
-	case 4:
-		// Split the time up into multiple tasks
-		return AFKResolution{}, nil // TODO:
+		return promptAFKSaveAsNewTask(alert)
 
 	default:
 		return AFKResolution{}, errors.New("no answer chosen")
 	}
+}
+
+func promptAFKSaveAsNewTask(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
+	name, err := promptNonEmptyString(&survey.Input{
+		Message: "Enter name of new task:",
+	})
+	if err != nil {
+		return AFKResolution{}, err
+	}
+	var sb strings.Builder
+	sb.WriteString("Saving the away time as a new task with name ")
+	writeTaskName(&sb, name)
+	sb.WriteString(".\n")
+	fmt.Fprint(stderr, sb.String())
+	return AFKResolution{
+		Edit: &dinkur.EditTask{
+			IDOrZero: alert.ActiveTask.ID,
+			End:      &alert.AFKSince,
+		},
+		NewTasks: []dinkur.NewTask{
+			{
+				Name:               name,
+				Start:              &alert.AFKSince,
+				StartAfterIDOrZero: alert.ActiveTask.ID,
+			},
+		},
+	}, nil
 }
 
 func promptNonEmptyString(prompt survey.Prompt) (string, error) {
