@@ -107,7 +107,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")
 				enc.Encode(tasks)
-			case "jsonl":
+			case "json-line":
 				enc := json.NewEncoder(os.Stdout)
 				for _, t := range tasks {
 					enc.Encode(t)
@@ -125,7 +125,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 	listCmd.Flags().VarP(flagEnd, "end", "e", "list tasks ending before or at date time")
 	listCmd.Flags().VarP(flagRange, "range", "r", "baseline time range")
 	listCmd.RegisterFlagCompletionFunc("range", pflagutil.TimeRangeCompletion)
-	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", or "jsonl"`)
+	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", or "json-line"`)
 	listCmd.RegisterFlagCompletionFunc("output", outputFormatComplete)
 	listCmd.Flags().BoolVar(&flagNoHighlight, "no-highlight", false, `disables search highlighting in "pretty" output`)
 }
@@ -134,6 +134,6 @@ func outputFormatComplete(*cobra.Command, []string, string) ([]string, cobra.She
 	return []string{
 		"pretty\thuman readable and colored table formatting (default)",
 		"json\ta single indented JSON array containing all tasks",
-		"jsonl\teach task JSON object on a separate line",
+		"json-line\teach task JSON object on a separate line",
 	}, cobra.ShellCompDirectiveDefault
 }
