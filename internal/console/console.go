@@ -25,7 +25,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/fatih/color"
@@ -50,8 +49,8 @@ var (
 	taskStartColor           = color.New(color.FgGreen)
 	taskEndColor             = color.New(color.FgGreen)
 	taskEndNilColor          = color.New(color.FgHiBlack, color.Italic)
-	taskEndNilText           = "active…"
-	taskEndNilTextLen        = utf8.RuneCountInString(taskEndNilText)
+	taskEndNilTextNow        = "now…"
+	taskEndNilTextActive     = "active…"
 	taskDurationColor        = color.New(color.FgCyan)
 	taskEditDelimColor       = color.New(color.FgHiMagenta)
 	taskEditNoneColor        = color.New(color.FgHiBlack, color.Italic)
@@ -75,6 +74,7 @@ var (
 
 	promptWarnIconColor = color.New(color.FgHiRed, color.Bold)
 	promptWarnIconText  = "!"
+	promptErrorColor    = color.New(color.FgRed)
 )
 
 // LabelledTask holds a string label and a task. Used when printing multiple
@@ -167,7 +167,13 @@ func PrintTaskEdit(update dinkur.UpdatedTask) {
 
 // PrintTaskList writes a table for a list of tasks, grouped by the date
 // (year, month, day), to STDOUT.
-func PrintTaskList(tasks []dinkur.Task, searchStart, searchEnd string) {
+func PrintTaskList(tasks []dinkur.Task) {
+	PrintTaskListSearched(tasks, "", "")
+}
+
+// PrintTaskListSearched writes a table for a list of tasks, grouped by the date
+// (year, month, day), to STDOUT, as well as highlighting search terms (if any).
+func PrintTaskListSearched(tasks []dinkur.Task, searchStart, searchEnd string) {
 	if len(tasks) == 0 {
 		tableEmptyColor.Fprintln(stdout, tableEmptyText)
 		return
@@ -208,7 +214,7 @@ func PrintTaskList(tasks []dinkur.Task, searchStart, searchEnd string) {
 	}
 	sum := sumTasks(tasks)
 	t.CommitRow() // commit empty delimiting row
-	endStr := taskEndNilText
+	endStr := taskEndNilTextActive
 	if sum.end != nil {
 		endStr = sum.end.Format(timeFormatShort)
 	}

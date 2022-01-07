@@ -75,6 +75,22 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 `, RootCmd.Name()),
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
+			activeTask, err := c.ActiveTask(context.Background())
+			if err == nil && activeTask != nil {
+				res, err := console.PromptAFKResolution(dinkur.AlertFormerlyAFK{
+					AFKSince:   time.Now().Add(-15 * time.Minute),
+					ActiveTask: *activeTask,
+				})
+				if err != nil {
+					console.PrintFatal("Prompt error:", err)
+				}
+				fmt.Println()
+				fmt.Println("Resolution:")
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				enc.Encode(res)
+				os.Exit(1)
+			}
 			rand.Seed(time.Now().UnixMicro())
 			search := dinkur.SearchTask{
 				Limit:     flagLimit,
@@ -102,7 +118,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				if len(args) == 0 {
 					searchStart, searchEnd = "", ""
 				}
-				console.PrintTaskList(tasks, searchStart, searchEnd)
+				console.PrintTaskListSearched(tasks, searchStart, searchEnd)
 			case "json":
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")
