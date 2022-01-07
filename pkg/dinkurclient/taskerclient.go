@@ -22,6 +22,7 @@ package dinkurclient
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
@@ -198,4 +199,49 @@ func (c *client) StopActiveTask(ctx context.Context, endTime time.Time) (*dinkur
 		return nil, convError(err)
 	}
 	return task, nil
+}
+
+func (c *client) StreamTask(ctx context.Context) (<-chan dinkur.StreamedTask, error) {
+	if err := c.assertConnected(); err != nil {
+		return nil, err
+	}
+	stream, err := c.tasker.StreamTask(ctx, &dinkurapiv1.StreamTaskRequest{})
+	if err != nil {
+		return nil, convError(err)
+	}
+	taskChan := make(chan dinkur.StreamedTask)
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err != nil {
+				if err != io.EOF {
+					log.Error().
+						WithError(convError(err)).
+						Message("Error when streaming tasks. Closing stream.")
+				}
+				close(taskChan)
+				return
+			}
+			if res == nil {
+				continue
+			}
+			const logWarnMsg = "Error when streaming tasks. Ignoring message."
+			task, err := convTaskPtr(res.Task)
+			if err != nil {
+				log.Warn().WithError(convError(err)).
+					Message(logWarnMsg)
+				continue
+			}
+			if task == nil {
+				log.Warn().WithError(ErrUnexpectedNilTask).
+					Message(logWarnMsg)
+				continue
+			}
+			taskChan <- dinkur.StreamedTask{
+				Task:  *task,
+				Event: convEvent(res.Event),
+			}
+		}
+	}()
+	return taskChan, nil
 }

@@ -66,6 +66,7 @@ type Tasker interface {
 	StartTask(ctx context.Context, task NewTask) (StartedTask, error)
 	ActiveTask(ctx context.Context) (*Task, error)
 	StopActiveTask(ctx context.Context, endTime time.Time) (*Task, error)
+	StreamTask(ctx context.Context) (<-chan StreamedTask, error)
 }
 
 // Alerter is the Dinkur client methods targeted to reading alerts.
@@ -143,4 +144,10 @@ type NewTask struct {
 type StartedTask struct {
 	New      Task
 	Previous *Task
+}
+
+// StreamedTask holds a task and its event type.
+type StreamedTask struct {
+	Task  Task
+	Event EventType
 }

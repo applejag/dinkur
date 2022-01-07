@@ -496,6 +496,10 @@ func (c *client) stopActiveDBTaskNoTran(endTime time.Time) (*Task, error) {
 	return &tasks[0], nil
 }
 
+func (*client) StreamTask(context.Context) (<-chan dinkur.StreamedTask, error) {
+	return nil, errors.New("not yet implemented")
+}
+
 func reverseTaskSlice(slice []Task) {
 	for i, j := 0, len(slice)-1; i < j; i, j = i+1, j-1 {
 		slice[i], slice[j] = slice[j], slice[i]

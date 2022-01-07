@@ -88,6 +88,12 @@ func (*NilClient) StopActiveTask(context.Context, time.Time) (*Task, error) {
 	return nil, ErrClientIsNil
 }
 
+// StreamTask is a dummy implementation of the dinkur.Client that only
+// returns the "client is nil" error.
+func (*NilClient) StreamTask(context.Context) (<-chan StreamedTask, error) {
+	return nil, ErrClientIsNil
+}
+
 // StreamAlert is a dummy implementation of the dinkur.Client that only
 // returns the "client is nil" error.
 func (*NilClient) StreamAlert(context.Context) (<-chan StreamedAlert, error) {
