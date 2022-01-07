@@ -218,3 +218,27 @@ func (d *daemon) StopActiveTask(ctx context.Context, req *dinkurapiv1.StopActive
 		StoppedTask: convTaskPtr(stoppedTask),
 	}, nil
 }
+
+func (d *daemon) StreamTask(req *dinkurapiv1.StreamTaskRequest, stream dinkurapiv1.Tasker_StreamTaskServer) error {
+	if err := d.assertConnected(); err != nil {
+		return convError(err)
+	}
+	if req == nil {
+		return convError(ErrRequestIsNil)
+	}
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
+	ch, err := d.client.StreamTask(ctx)
+	if err != nil {
+		return convError(err)
+	}
+	for ev := range ch {
+		if err := stream.Send(&dinkurapiv1.StreamTaskResponse{
+			Task:  convTaskPtr(&ev.Task),
+			Event: convEvent(ev.Event),
+		}); err != nil {
+			return convError(err)
+		}
+	}
+	return nil
+}

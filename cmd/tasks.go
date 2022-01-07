@@ -22,68 +22,42 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/dinkur/dinkur/internal/console"
-	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/spf13/cobra"
 )
 
-// alertsCmd represents the test command
-var alertsCmd = &cobra.Command{
-	Use:   "alerts",
+// tasksCmd represents the test command
+var tasksCmd = &cobra.Command{
+	Use:   "tasks",
 	Args:  cobra.NoArgs,
-	Short: "Testing alerts streaming",
+	Short: "Testing task streaming",
 	Run: func(cmd *cobra.Command, args []string) {
 		if flagClient != "grpc" {
 			console.PrintFatal("Error running test:", `--client must be set to "grpc"`)
 		}
 		connectClientOrExit()
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-		alertChan, err := c.StreamAlert(ctx)
+		taskChan, err := c.StreamTask(ctx)
 		if err != nil {
 			cancel()
 			console.PrintFatal("Error streaming events:", err)
 		}
-		fmt.Println("Streaming alerts...")
-		for {
-			alert, ok := <-alertChan
-			if !ok {
-				cancel()
-				fmt.Println("Channel was closed.")
-				os.Exit(0)
-			}
+		fmt.Println("Streaming tasks...")
+		for ev := range taskChan {
 			log.Info().
-				WithUint("id", alert.Alert.ID).
-				WithStringer("event", alert.Event).
-				WithStringf("type", "%T", alert.Alert.Type).
-				WithTime("createdAt", alert.Alert.CreatedAt).
-				WithTime("updatedAt", alert.Alert.UpdatedAt).
-				Message("Received alert.")
-			switch alertType := alert.Alert.Type.(type) {
-			case dinkur.AlertPlainMessage:
-				fmt.Println("  Plain message:")
-				fmt.Printf("    Message: %q\n", alertType.Message)
-			case dinkur.AlertAFK:
-				fmt.Println("  AFK:")
-				console.PrintTaskLabel(console.LabelledTask{
-					Label: "    Active task:",
-					Task:  alertType.ActiveTask,
-				})
-			case dinkur.AlertFormerlyAFK:
-				fmt.Println("  Formerly AFK:")
-				fmt.Println("    AFK since:", alertType.AFKSince)
-				console.PrintTaskLabel(console.LabelledTask{
-					Label: "    Active task:",
-					Task:  alertType.ActiveTask,
-				})
-			}
-			fmt.Println()
+				WithUint("id", ev.Task.ID).
+				WithString("name", ev.Task.Name).
+				WithStringer("event", ev.Event).
+				WithTime("createdAt", ev.Task.CreatedAt).
+				WithTime("updatedAt", ev.Task.UpdatedAt).
+				Message("Received task.")
 		}
+		cancel()
 	},
 }
 
 func init() {
-	streamCmd.AddCommand(alertsCmd)
+	streamCmd.AddCommand(tasksCmd)
 }

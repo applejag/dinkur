@@ -106,7 +106,7 @@ func (o *obsStarted) UnsubStarted(sub <-chan Started) error {
 	if idx == -1 {
 		return ErrAlreadyUnsubscribed
 	}
-	o.subs = append(o.subs[idx:], o.subs[:idx+1]...)
+	o.subs = append(o.subs[:idx], o.subs[idx+1:]...)
 	return nil
 }
 
@@ -163,7 +163,7 @@ func (o *obsStopped) UnsubStopped(sub <-chan Stopped) error {
 	if idx == -1 {
 		return ErrAlreadyUnsubscribed
 	}
-	o.chans = append(o.chans[idx:], o.chans[:idx+1]...)
+	o.chans = append(o.chans[:idx], o.chans[idx+1:]...)
 	return nil
 }
 

@@ -17,91 +17,80 @@
 // You should have received a copy of the GNU General Public License along
 // with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package dinkuralert
+package dinkurdb
 
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
 // Errors specific for the listener and subscriptions.
 var (
-	ErrAlreadyUnsubscribed       = errors.New("already unsubscribed")
-	ErrSubscriptionNotInitalized = errors.New("subscription is not initialized")
+	errAlreadyUnsubscribed       = errors.New("already unsubscribed")
+	errSubscriptionNotInitalized = errors.New("subscription is not initialized")
 )
 
-// AlertEvent is an alert and its event type.
-type AlertEvent struct {
-	Alert dinkur.Alert
-	Event dinkur.EventType
+type taskEvent struct {
+	dbTask Task
+	event  dinkur.EventType
 }
 
-// NewObserver returns a new Dinkur alerts observer.
-func NewObserver() Observer {
-	return &observer{}
-}
-
-// Observer lets you publish and subscribe Dinkur alerts.
-type Observer interface {
-	// PubAlertWait publishes an alert and waits until all
-	// subscriptions has received their events.
-	PubAlertWait(AlertEvent)
-	SubAlerts() <-chan AlertEvent
-	UnsubAlerts(<-chan AlertEvent) error
-	UnsubAllAlerts() error
-}
-
-type observer struct {
-	subs  []chan AlertEvent
+type taskObserver struct {
+	subs  []chan taskEvent
 	mutex sync.RWMutex
 }
 
-func (o *observer) PubAlertWait(s AlertEvent) {
-	var wg sync.WaitGroup
+func (o *taskObserver) pubTask(ev taskEvent) {
 	o.mutex.RLock()
-	wg.Add(len(o.subs))
 	for _, sub := range o.subs {
-		go func(s AlertEvent, sub chan AlertEvent, wg *sync.WaitGroup) {
-			sub <- s
-			wg.Done()
-		}(s, sub, &wg)
+		go func(ev taskEvent, sub chan taskEvent) {
+			select {
+			case sub <- ev:
+			case <-time.After(10 * time.Second):
+				log.Warn().
+					WithUint("id", ev.dbTask.ID).
+					WithString("name", ev.dbTask.Name).
+					WithStringer("event", ev.event).
+					Message("Timed out sending task event.")
+			}
+		}(ev, sub)
 	}
 	o.mutex.RUnlock()
-	wg.Wait()
 }
 
-func (o *observer) SubAlerts() <-chan AlertEvent {
+func (o *taskObserver) subTasks() <-chan taskEvent {
 	o.mutex.Lock()
-	sub := make(chan AlertEvent)
+	sub := make(chan taskEvent)
 	o.subs = append(o.subs, sub)
 	o.mutex.Unlock()
 	return sub
 }
 
-func (o *observer) UnsubAlerts(sub <-chan AlertEvent) error {
+func (o *taskObserver) unsubTasks(sub <-chan taskEvent) error {
 	if sub == nil {
-		return ErrSubscriptionNotInitalized
+		return errSubscriptionNotInitalized
 	}
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
 	idx := o.subIndex(sub)
 	if idx == -1 {
-		return ErrAlreadyUnsubscribed
+		return errAlreadyUnsubscribed
 	}
 	o.subs = append(o.subs[:idx], o.subs[idx+1:]...)
 	return nil
 }
 
-func (o *observer) UnsubAllAlerts() error {
+func (o *taskObserver) unsubAllTasks() error {
 	o.mutex.Lock()
 	o.subs = nil
 	o.mutex.Unlock()
 	return nil
 }
 
-func (o *observer) subIndex(sub <-chan AlertEvent) int {
+func (o *taskObserver) subIndex(sub <-chan taskEvent) int {
 	for i, ch := range o.subs {
 		if ch == sub {
 			return i

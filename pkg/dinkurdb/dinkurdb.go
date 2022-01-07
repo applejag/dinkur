@@ -68,7 +68,10 @@ type Options struct {
 // NewClient creates a new dinkur.Client-compatible client that uses an Sqlite3
 // database file for persistence.
 func NewClient(dsn string, opt Options) dinkur.Client {
-	return &client{Options: opt, sqliteDsn: dsn}
+	return &client{
+		Options:   opt,
+		sqliteDsn: dsn,
+	}
 }
 
 type client struct {
@@ -77,6 +80,7 @@ type client struct {
 	db             *gorm.DB
 	prevMigChecked bool
 	prevMigVersion MigrationVersion
+	taskObs        taskObserver
 }
 
 func (c *client) assertConnected() error {
@@ -139,6 +143,9 @@ func (c *client) Ping(ctx context.Context) error {
 func (c *client) Close() error {
 	if err := c.assertConnected(); err != nil {
 		return err
+	}
+	if err := c.taskObs.unsubAllTasks(); err != nil {
+		log.Warn().WithError(err).Message("Failed to unsub all task subscriptions.")
 	}
 	sql, err := c.db.DB()
 	if err != nil {

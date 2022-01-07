@@ -41,6 +41,8 @@ type TaskerClient interface {
 	// StopActiveTask stops the currently active task and returns that task
 	// (if any).
 	StopActiveTask(ctx context.Context, in *StopActiveTaskRequest, opts ...grpc.CallOption) (*StopActiveTaskResponse, error)
+	// StreamAlert streams task change events: created, updated, deleted.
+	StreamTask(ctx context.Context, in *StreamTaskRequest, opts ...grpc.CallOption) (Tasker_StreamTaskClient, error)
 }
 
 type taskerClient struct {
@@ -123,6 +125,38 @@ func (c *taskerClient) StopActiveTask(ctx context.Context, in *StopActiveTaskReq
 	return out, nil
 }
 
+func (c *taskerClient) StreamTask(ctx context.Context, in *StreamTaskRequest, opts ...grpc.CallOption) (Tasker_StreamTaskClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Tasker_ServiceDesc.Streams[0], "/dinkurapi.v1.Tasker/StreamTask", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &taskerStreamTaskClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Tasker_StreamTaskClient interface {
+	Recv() (*StreamTaskResponse, error)
+	grpc.ClientStream
+}
+
+type taskerStreamTaskClient struct {
+	grpc.ClientStream
+}
+
+func (x *taskerStreamTaskClient) Recv() (*StreamTaskResponse, error) {
+	m := new(StreamTaskResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // TaskerServer is the server API for Tasker service.
 // All implementations must embed UnimplementedTaskerServer
 // for forward compatibility
@@ -150,6 +184,8 @@ type TaskerServer interface {
 	// StopActiveTask stops the currently active task and returns that task
 	// (if any).
 	StopActiveTask(context.Context, *StopActiveTaskRequest) (*StopActiveTaskResponse, error)
+	// StreamAlert streams task change events: created, updated, deleted.
+	StreamTask(*StreamTaskRequest, Tasker_StreamTaskServer) error
 	mustEmbedUnimplementedTaskerServer()
 }
 
@@ -180,6 +216,9 @@ func (UnimplementedTaskerServer) DeleteTask(context.Context, *DeleteTaskRequest)
 }
 func (UnimplementedTaskerServer) StopActiveTask(context.Context, *StopActiveTaskRequest) (*StopActiveTaskResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopActiveTask not implemented")
+}
+func (UnimplementedTaskerServer) StreamTask(*StreamTaskRequest, Tasker_StreamTaskServer) error {
+	return status.Errorf(codes.Unimplemented, "method StreamTask not implemented")
 }
 func (UnimplementedTaskerServer) mustEmbedUnimplementedTaskerServer() {}
 
@@ -338,6 +377,27 @@ func _Tasker_StopActiveTask_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Tasker_StreamTask_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StreamTaskRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TaskerServer).StreamTask(m, &taskerStreamTaskServer{stream})
+}
+
+type Tasker_StreamTaskServer interface {
+	Send(*StreamTaskResponse) error
+	grpc.ServerStream
+}
+
+type taskerStreamTaskServer struct {
+	grpc.ServerStream
+}
+
+func (x *taskerStreamTaskServer) Send(m *StreamTaskResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // Tasker_ServiceDesc is the grpc.ServiceDesc for Tasker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -378,6 +438,12 @@ var Tasker_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Tasker_StopActiveTask_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamTask",
+			Handler:       _Tasker_StreamTask_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/dinkurapi/v1/tasker.proto",
 }

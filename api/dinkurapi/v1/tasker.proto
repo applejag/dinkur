@@ -22,6 +22,7 @@ syntax = "proto3";
 
 package dinkurapi.v1;
 
+import "api/dinkurapi/v1/event.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/dinkur/dinkur/api/dinkurapi/v1";
@@ -51,6 +52,8 @@ service Tasker {
   // StopActiveTask stops the currently active task and returns that task
   // (if any).
   rpc StopActiveTask (StopActiveTaskRequest) returns (StopActiveTaskResponse);
+  // StreamAlert streams task change events: created, updated, deleted.
+  rpc StreamTask(StreamTaskRequest) returns (stream StreamTaskResponse);
 }
 
 // PingRequest is an empty message and unused. It is here as a
@@ -256,6 +259,20 @@ message StopActiveTaskRequest {
 message StopActiveTaskResponse {
   // StoppedTask is the task that was stopped (if any).
   Task stopped_task = 1;
+}
+
+// StreamTaskRequest is an empty message and unused. It is here as a
+// placeholder for potential future use.
+message StreamTaskRequest {
+}
+
+// StreamTaskResponse is a task event. A task has been created, updated,
+// or deleted.
+message StreamTaskResponse {
+  // Task is the created, updated, or deleted task.
+  Task task = 1;
+  // Event is the type of event.
+  Event event = 2;
 }
 
 // Task is a Dinkur task.
