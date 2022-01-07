@@ -529,6 +529,7 @@ func (c *client) StreamTask(ctx context.Context) (<-chan dinkur.StreamedTask, er
 func (c *client) streamTaskGoroutine(ctx context.Context, ch chan dinkur.StreamedTask) {
 	done := ctx.Done()
 	dbTaskChan := c.taskObs.subTasks()
+	defer close(ch)
 	defer c.taskObs.unsubTasks(dbTaskChan)
 	for {
 		select {
