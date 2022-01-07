@@ -4,8 +4,10 @@
 name: Go format
 
 on:
+  push:
+    branches: [main]
   pull_request:
-    branches: [ '**' ]
+    branches: [main]
 
 jobs:
   goimports_diff:

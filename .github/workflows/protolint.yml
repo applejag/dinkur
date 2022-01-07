@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2019 Plex Systems
+# SPDX-License-Identifier: MIT
+
+name: "Lint protobuf"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pr-check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout source
+      uses: actions/checkout@v1
+
+    - name: run protolint
+      uses: plexsystems/protolint-action@v0.4.0
