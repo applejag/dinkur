@@ -34,6 +34,7 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/timeutil"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 func init() {
@@ -112,6 +113,10 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				for _, t := range tasks {
 					enc.Encode(t)
 				}
+			case "yaml":
+				enc := yaml.NewEncoder(os.Stdout)
+				enc.SetIndent(2)
+				enc.Encode(tasks)
 			default:
 				console.PrintFatal("Error parsing --output:", fmt.Errorf("invalid output format: %q", flagOutput))
 			}
@@ -125,7 +130,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 	listCmd.Flags().VarP(flagEnd, "end", "e", "list tasks ending before or at date time")
 	listCmd.Flags().VarP(flagRange, "range", "r", "baseline time range")
 	listCmd.RegisterFlagCompletionFunc("range", pflagutil.TimeRangeCompletion)
-	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", or "json-line"`)
+	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", "json-line", "yaml"`)
 	listCmd.RegisterFlagCompletionFunc("output", outputFormatComplete)
 	listCmd.Flags().BoolVar(&flagNoHighlight, "no-highlight", false, `disables search highlighting in "pretty" output`)
 }
@@ -135,5 +140,6 @@ func outputFormatComplete(*cobra.Command, []string, string) ([]string, cobra.She
 		"pretty\thuman readable and colored table formatting (default)",
 		"json\ta single indented JSON array containing all tasks",
 		"json-line\teach task JSON object on a separate line",
+		"yaml\tYAML array of tasks",
 	}, cobra.ShellCompDirectiveDefault
 }
