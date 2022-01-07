@@ -45,8 +45,13 @@ DWORD GetTickMs()
 
 bool GetWorkstationLocked()
 {
-	OpenInputDesktop(0, false, DESKTOP_READOBJECTS);
-	return GetLastError() == ERROR_ACCESS_DENIED;
+	HDESK desktop = OpenInputDesktop(0, false, DESKTOP_READOBJECTS);
+	DWORD err = GetLastError();
+	if (desktop != NULL)
+	{
+		CloseDesktop(desktop);
+	}
+	return err == ERROR_ACCESS_DENIED;
 }
 
 DWORD GetThreadStatus()
