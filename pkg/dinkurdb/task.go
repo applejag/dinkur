@@ -166,6 +166,10 @@ func (c *client) EditTask(ctx context.Context, edit dinkur.EditTask) (dinkur.Upd
 	if err != nil {
 		return dinkur.UpdatedTask{}, err
 	}
+	c.taskObs.pubTaskWait(taskEvent{
+		dbTask: update.updated,
+		event:  dinkur.EventUpdated,
+	})
 	return dinkur.UpdatedTask{
 		Old:     convTask(update.old),
 		Updated: convTask(update.updated),
@@ -343,6 +347,10 @@ func (c *client) DeleteTask(ctx context.Context, id uint) (dinkur.Task, error) {
 	if err != nil {
 		return dinkur.Task{}, err
 	}
+	c.taskObs.pubTaskWait(taskEvent{
+		dbTask: dbTask,
+		event:  dinkur.EventDeleted,
+	})
 	return convTask(dbTask), err
 }
 
@@ -396,6 +404,16 @@ func (c *client) StartTask(ctx context.Context, task dinkur.NewTask) (dinkur.Sta
 	if err != nil {
 		return dinkur.StartedTask{}, err
 	}
+	if startedTask.previous != nil {
+		c.taskObs.pubTaskWait(taskEvent{
+			dbTask: *startedTask.previous,
+			event:  dinkur.EventUpdated,
+		})
+	}
+	c.taskObs.pubTaskWait(taskEvent{
+		dbTask: startedTask.new,
+		event:  dinkur.EventCreated,
+	})
 	return dinkur.StartedTask{
 		New:      convTask(startedTask.new),
 		Previous: convTaskPtr(startedTask.previous),
@@ -460,6 +478,12 @@ func (c *client) StopActiveTask(ctx context.Context, endTime time.Time) (*dinkur
 	if err != nil {
 		return nil, err
 	}
+	if err == nil && dbTask != nil {
+		c.taskObs.pubTaskWait(taskEvent{
+			dbTask: *dbTask,
+			event:  dinkur.EventUpdated,
+		})
+	}
 	return convTaskPtr(dbTask), nil
 }
 
@@ -496,8 +520,30 @@ func (c *client) stopActiveDBTaskNoTran(endTime time.Time) (*Task, error) {
 	return &tasks[0], nil
 }
 
-func (*client) StreamTask(context.Context) (<-chan dinkur.StreamedTask, error) {
-	return nil, errors.New("not yet implemented")
+func (c *client) StreamTask(ctx context.Context) (<-chan dinkur.StreamedTask, error) {
+	ch := make(chan dinkur.StreamedTask, 4)
+	go c.streamTaskGoroutine(ctx, ch)
+	return ch, nil
+}
+
+func (c *client) streamTaskGoroutine(ctx context.Context, ch chan dinkur.StreamedTask) {
+	done := ctx.Done()
+	dbTaskChan := c.taskObs.subTasks()
+	defer c.taskObs.unsubTasks(dbTaskChan)
+	for {
+		select {
+		case ev, ok := <-dbTaskChan:
+			if !ok {
+				return
+			}
+			ch <- dinkur.StreamedTask{
+				Task:  convTask(ev.dbTask),
+				Event: ev.event,
+			}
+		case <-done:
+			return
+		}
+	}
 }
 
 func reverseTaskSlice(slice []Task) {
