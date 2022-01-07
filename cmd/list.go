@@ -107,16 +107,22 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 			case "json":
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")
-				enc.Encode(tasks)
+				if err := enc.Encode(tasks); err != nil {
+					console.PrintFatal("Error encoding tasks as JSON:", err)
+				}
 			case "json-line":
 				enc := json.NewEncoder(os.Stdout)
 				for _, t := range tasks {
-					enc.Encode(t)
+					if err := enc.Encode(t); err != nil {
+						console.PrintFatal(fmt.Sprintf("Error encoding task #%d as JSON:", t.ID), err)
+					}
 				}
 			case "yaml":
 				enc := yaml.NewEncoder(os.Stdout)
 				enc.SetIndent(2)
-				enc.Encode(tasks)
+				if err := enc.Encode(tasks); err != nil {
+					console.PrintFatal("Error encoding tasks as YAML:", err)
+				}
 			default:
 				console.PrintFatal("Error parsing --output:", fmt.Errorf("invalid output format: %q", flagOutput))
 			}
