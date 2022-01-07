@@ -27,6 +27,7 @@ deps:
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 	go install github.com/mgechev/revive@latest
 	go install golang.org/x/tools/cmd/goimports@latest
+	go install github.com/yoheimuta/protolint/cmd/protolint@latest
 
 docs:
 	go run internal/cmd/docgen/docgen.go docs/cmd

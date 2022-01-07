@@ -20,8 +20,8 @@
 
 syntax = "proto3";
 
-import "api/dinkurapi/v1/tasker.proto";
 import "api/dinkurapi/v1/event.proto";
+import "api/dinkurapi/v1/tasker.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/dinkur/dinkur/api/dinkurapi/v1";
