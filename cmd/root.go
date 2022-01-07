@@ -201,6 +201,7 @@ func checkAlerts(c dinkur.Client) {
 
 func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, formerlyAFK dinkur.AlertFormerlyAFK) {
 	res, err := console.PromptAFKResolution(formerlyAFK)
+	fmt.Println()
 	if err != nil {
 		console.PrintFatal("Prompt error:", err)
 	}
@@ -223,6 +224,8 @@ func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, formerlyAFK dinkur
 	if _, err := c.DeleteAlert(context.Background(), alert.ID); err != nil {
 		console.PrintFatal("Error removing alert:", err)
 	}
+	fmt.Println("Continuing with command...")
+	fmt.Println()
 }
 
 func connectToDBClient(skipMigrate bool) (dinkur.Client, error) {
