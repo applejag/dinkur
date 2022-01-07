@@ -104,7 +104,7 @@ func PromptAFKResolution(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
 		promptWarnIconColor.Fprint(&sb, promptWarnIconText)
 		sb.WriteString(` Assuming option "1. Leave the active task as-is and continue with the invoked command."`)
 		fmt.Fprintln(stderr, sb.String())
-		taskEditNoneColor.Fprint(stdout, taskEditPrefix, taskEditNoChange)
+		taskEditNoneColor.Fprintln(stdout, taskEditPrefix, taskEditNoChange)
 		return AFKResolution{}, nil
 	}
 
@@ -138,7 +138,7 @@ func PromptAFKResolution(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
 	switch answerInt {
 	case 1:
 		// Leave the active task as-is.
-		taskEditNoneColor.Fprint(stdout, taskEditPrefix, taskEditNoChange)
+		taskEditNoneColor.Fprintln(stdout, taskEditPrefix, taskEditNoChange)
 		return AFKResolution{}, nil
 
 	case 2:
