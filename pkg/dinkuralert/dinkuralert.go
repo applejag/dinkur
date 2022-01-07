@@ -57,15 +57,17 @@ func (s *Store) Delete(id uint) (dinkur.Alert, error) {
 			Alert: *s.afkAlert,
 			Event: dinkur.EventDeleted,
 		})
+		alert := *s.afkAlert
 		s.afkAlert = nil
-		return *s.afkAlert, nil
+		return alert, nil
 	} else if s.formerlyAFKAlert != nil && s.formerlyAFKAlert.ID == id {
 		s.PubAlertWait(AlertEvent{
 			Alert: *s.formerlyAFKAlert,
 			Event: dinkur.EventDeleted,
 		})
+		alert := *s.formerlyAFKAlert
 		s.formerlyAFKAlert = nil
-		return *s.formerlyAFKAlert, nil
+		return alert, nil
 	}
 	return dinkur.Alert{}, dinkur.ErrNotFound
 }
