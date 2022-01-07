@@ -183,11 +183,11 @@ func connectToGRPCClient() (dinkur.Client, error) {
 	if err := c.Ping(context.Background()); err != nil {
 		return nil, fmt.Errorf("attempting ping: %w", err)
 	}
-	checkAlerts()
+	checkAlerts(c)
 	return c, nil
 }
 
-func checkAlerts() {
+func checkAlerts(c dinkur.Client) {
 	alerts, err := c.GetAlertList(context.Background())
 	if err != nil {
 		console.PrintFatal("Error getting alerts list:", err)
