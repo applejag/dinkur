@@ -51,21 +51,23 @@ func (s *Store) Alerts() []dinkur.Alert {
 }
 
 // Delete removes an alert by ID.
-func (s *Store) Delete(id uint) error {
+func (s *Store) Delete(id uint) (dinkur.Alert, error) {
 	if s.afkAlert != nil && s.afkAlert.ID == id {
 		s.PubAlertWait(AlertEvent{
 			Alert: *s.afkAlert,
 			Event: dinkur.EventDeleted,
 		})
 		s.afkAlert = nil
+		return *s.afkAlert, nil
 	} else if s.formerlyAFKAlert != nil && s.formerlyAFKAlert.ID == id {
 		s.PubAlertWait(AlertEvent{
 			Alert: *s.formerlyAFKAlert,
 			Event: dinkur.EventDeleted,
 		})
 		s.formerlyAFKAlert = nil
+		return *s.formerlyAFKAlert, nil
 	}
-	return nil
+	return dinkur.Alert{}, dinkur.ErrNotFound
 }
 
 // SetAFK marks the user as AFK and creates the AFK alert if it doesn't exist,

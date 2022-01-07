@@ -61,10 +61,7 @@ func (d *daemon) GetAlertList(ctx context.Context, req *dinkurapiv1.GetAlertList
 	if req == nil {
 		return nil, convError(ErrRequestIsNil)
 	}
-	alerts, err := d.client.GetAlertList(ctx)
-	if err != nil {
-		return nil, convError(err)
-	}
+	alerts := d.alertStore.Alerts()
 	return &dinkurapiv1.GetAlertListResponse{
 		Alerts: convAlertSlice(alerts),
 	}, nil
@@ -77,11 +74,11 @@ func (d *daemon) DeleteAlert(ctx context.Context, req *dinkurapiv1.DeleteAlertRe
 	if req == nil {
 		return nil, convError(ErrRequestIsNil)
 	}
-	id, err := uint64ToUint(req.Id)
+	id, err := convUint64(req.Id)
 	if err != nil {
 		return nil, convError(err)
 	}
-	deleted, err := d.client.DeleteAlert(ctx, id)
+	deleted, err := d.alertStore.Delete(id)
 	if err != nil {
 		return nil, convError(err)
 	}
