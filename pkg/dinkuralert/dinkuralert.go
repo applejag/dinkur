@@ -41,7 +41,12 @@ type Store struct {
 // Alerts returns a slice of all alerts.
 func (s *Store) Alerts() []dinkur.Alert {
 	var alerts []dinkur.Alert
-	// TODO
+	if s.afkAlert != nil {
+		alerts = append(alerts, *s.afkAlert)
+	}
+	if s.formerlyAFKAlert != nil {
+		alerts = append(alerts, *s.formerlyAFKAlert)
+	}
 	return alerts
 }
 
