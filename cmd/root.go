@@ -22,6 +22,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -180,7 +181,34 @@ func connectToGRPCClient() (dinkur.Client, error) {
 	if err := c.Ping(context.Background()); err != nil {
 		return nil, fmt.Errorf("attempting ping: %w", err)
 	}
+	checkAlerts()
 	return c, nil
+}
+
+func checkAlerts() {
+	alerts, err := c.GetAlertList(context.Background())
+	if err != nil {
+		console.PrintFatal("Error getting alerts list:", err)
+	}
+	for _, alert := range alerts {
+		if formerlyAFK, ok := alert.Type.(dinkur.AlertFormerlyAFK); ok {
+			promptAFKResolution(formerlyAFK)
+			break
+		}
+	}
+}
+
+func promptAFKResolution(alert dinkur.AlertFormerlyAFK) {
+	res, err := console.PromptAFKResolution(alert)
+	if err != nil {
+		console.PrintFatal("Prompt error:", err)
+	}
+	fmt.Println()
+	fmt.Println("Resolution:")
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	enc.Encode(res)
+	os.Exit(1)
 }
 
 func connectToDBClient(skipMigrate bool) (dinkur.Client, error) {
