@@ -61,27 +61,33 @@ linting for its formatting.
 
 ### Linting
 
-- Go linting is performed via [Revive](https://revive.sh) and can be installed
-  via `make deps`
+- Go linting is performed via [Revive](https://revive.sh)
+
+- Protobuf linting is performed via [protolint](https://github.com/yoheimuta/protolint)
+  and requires Go.
 
 - Markdown linting is performed via [remarklint](https://github.com/remarkjs/remark-lint)
-  and can be installed via `npm install`
+  and requires NPM.
 
-- Licensing linting is performed via [REUSE](https://reuse.software/), and can
-  be installed via `pip3 install --user reuse`
+- Licensing linting is performed via [REUSE](https://reuse.software/) and
+  requires Python v3.
+
+You can install all the above linting rules by running `make deps`
 
 ```sh
-# Lint .go & .md:
-npm run lint
+# Lint .go, .md, & .proto files, and REUSE compliance:
+make lint
 
-# Apply fixes, where possible, to .md files:
-npm run lint-fix
+# Apply fixes, where possible, to .md & .proto files:
+make lint-fix
 
-# Only lint/fix some:
-npm run lint-md
-npm run lint-go
-npm run lint-md-fix
+# Only lint some:
+make lint-md
+make lint-go
+make lint-proto
+make lint-license
 
-# Lint licensing:
-reuse lint
+# Only lint & fix some:
+make lint-md-fix
+make lint-proto-fix
 ```

@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 .PHONY: install clean tidy deps grpc docs \
-	lint lint-md lint-go lint-proto \
+	lint lint-md lint-go lint-proto lint-license \
 	lint-fix lint-md-fix lint-proto-fix
 
 ifeq ($(OS),Windows_NT)
@@ -30,6 +30,7 @@ deps:
 	go install github.com/mgechev/revive@latest
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/yoheimuta/protolint/cmd/protolint@latest
+	python3 -m pip install --upgrade --user reuse
 	npm install
 
 docs:
@@ -42,7 +43,7 @@ grpc:
 		api/dinkurapi/v1/tasker.proto \
 		api/dinkurapi/v1/alerter.proto
 
-lint: lint-md lint-go lint-proto
+lint: lint-md lint-go lint-license lint-proto
 lint-fix: lint-md-fix lint-proto-fix
 
 lint-md:
@@ -59,3 +60,6 @@ lint-proto:
 
 lint-proto-fix:
 	protolint lint -fix api/dinkurapi/v1
+
+lint-license:
+	reuse lint
