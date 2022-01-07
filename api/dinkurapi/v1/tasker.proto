@@ -20,120 +20,261 @@
 
 syntax = "proto3";
 
+package dinkurapi.v1;
+
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/dinkur/dinkur/api/dinkurapi/v1";
 
-package dinkurapi.v1;
-
+// Tasker is a service for Dinkur tasks.
 service Tasker {
+  // Ping pongs.
   rpc Ping (PingRequest) returns (PingResponse);
+  // GetTask returns a specific task by ID. Status 5 "NOT_FOUND" is
+  // reported if no task was found by that ID.
   rpc GetTask (GetTaskRequest) returns (GetTaskResponse);
+  // GetActiveTask returns the currently active task (a task with no end time).
+  // If no such task exists, then an empty reposne it returned instead.
   rpc GetActiveTask (GetActiveTaskRequest) returns (GetActiveTaskResponse);
+  // GetTaskList queries for a list of tasks.
   rpc GetTaskList (GetTaskListRequest) returns (GetTaskListResponse);
+  // CreateTask creates a new task and stops any currently active tasks, and
+  // returns the stopped previously active task (if any) and the newly created
+  // task.
   rpc CreateTask (CreateTaskRequest) returns (CreateTaskResponse);
+  // UpdateTask alters a task by ID and returns the task's before and after
+  // state. Status 5 "NOT_FOUND" is reported if no task was found by that ID.
   rpc UpdateTask (UpdateTaskRequest) returns (UpdateTaskResponse);
+  // DeleteTask removes a task by ID. Status 5 "NOT_FOUND" is=
+  // reported if no task was found by that ID.
   rpc DeleteTask (DeleteTaskRequest) returns (DeleteTaskResponse);
+  // StopActiveTask stops the currently active task and returns that task
+  // (if any).
   rpc StopActiveTask (StopActiveTaskRequest) returns (StopActiveTaskResponse);
 }
 
+// PingRequest is an empty message and unused. It is here as a
+// placeholder for potential future use.
 message PingRequest {
 }
 
+// PingResponse is an empty message and unused. It is here as a
+// placeholder for potential future use.
 message PingResponse {
 }
 
+// GetTaskRequest holds the ID of the task to get.
 message GetTaskRequest {
+  // Id is the ID of the task to get.
   uint64 id = 1;
 }
 
+// GetTaskResponse holds the task gotten by ID.
 message GetTaskResponse {
+  // Task is the task gotten by ID.
   Task task = 1;
 }
 
+// GetActiveTaskRequest is an empty message and unused. It is here as a
+// placeholder for potential future use.
 message GetActiveTaskRequest {
 }
 
+// GetActiveTaskResponse holds the currently active task (if any).
 message GetActiveTaskResponse {
+  // ActiveTask is the currently active task (if any).
   Task active_task = 1;
 }
 
+// GetTaskListRequest holds query parameters for listing tasks. All fields
+// adds additional filters, where they combined with the AND operator. An empty
+// request message will return all tasks.
 message GetTaskListRequest {
+  // Start is the starting timestamp bound of tasks to list. Any task that
+  // either starts or ends after this time is included. Will override any start
+  // timestamp (if any) set by the shorthand field.
   google.protobuf.Timestamp start = 1;
+  // End is the ending timestamp bound of tasks to list. Any task that
+  // either starts or ends before this time is included. Will override any end
+  // timestamp (if any) set by the shorthand field.
   google.protobuf.Timestamp end = 2;
+  // Limit is the number of tasks to include in the results. A value of zero
+  // means no limit is applied. The limit is applied at the end of the results,
+  // so a limit of 3 will return the 3 last tasks.
   uint64 limit = 3;
+  // Shorthand is an enumeration of time span shorthands used for easier
+  // queries.
   enum Shorthand {
-    NONE = 0;
-    PAST = 1;
-    FUTURE = 2;
-    THIS_DAY = 3;
-    THIS_MON_TO_SUN = 4;
-    PREV_DAY = 5;
-    PREV_MON_TO_SUN = 6;
-    NEXT_DAY = 7;
-    NEXT_MON_TO_SUN = 8;
+    // UNSPECIFIED means no shorthand filtering is applied.
+    SHORTHAND_UNSPECIFIED = 0;
+    // SHORTHAND_PAST sets the default end timestamp to now, while leaving the
+    // start timestamp unchanged.
+    SHORTHAND_PAST = 1;
+    // SHORTHAND_FUTURE sets the default start timestamp to now, while leaving
+    // the end timestamp unchanged.
+    SHORTHAND_FUTURE = 2;
+    // SHORTHAND_THIS_DAY sets the default start timestamp to 00:00:00 today
+    // and the default end timestamp to 23:59:59 today.
+    SHORTHAND_THIS_DAY = 3;
+    // SHORTHAND_THIS_MON_TO_SUN sets the default start timestamp to 00:00:00
+    // on monday this week and the default end timestamp to 23:59:59 on sunday
+    // this week.
+    SHORTHAND_THIS_MON_TO_SUN = 4;
+    // SHORTHAND_PREV_DAY sets the default start timestamp to 00:00:00 yesterday
+    // and the default end timestamp to 23:59:59 yesterday.
+    SHORTHAND_PREV_DAY = 5;
+    // SHORTHAND_PREV_MON_TO_SUN sets the default start timestamp to 00:00:00
+    // on monday last week and the default end timestamp to 23:59:59 on sunday
+    // last week.
+    SHORTHAND_PREV_MON_TO_SUN = 6;
+    // SHORTHAND_NEXT_DAY sets the default start timestamp to 00:00:00 tomorrow
+    // and the default end timestamp to 23:59:59 tomorrow.
+    SHORTHAND_NEXT_DAY = 7;
+    // SHORTHAND_NEXT_MON_TO_SUN sets the default start timestamp to 00:00:00
+    // on monday next week and the default end timestamp to 23:59:59 on sunday
+    // next week.
+    SHORTHAND_NEXT_MON_TO_SUN = 8;
   }
+  // Shorthand sets the default start and end timestamps to some predefined
+  // time ranges, relative to now. Setting the start or end fields separately
+  // will override the shorthand ranges.
   Shorthand shorthand = 4;
+  // NameFuzzy adds fuzzy name searching. The algorithms used to match the tasks
+  // are left undefined and up to the Dinkur daemon to alter at any time.
+  // By default, a trigram index is used to allow substring matches.
   string name_fuzzy = 5;
+  // NameHighlightStart enables name search result highlighting. It does nothing
+  // if the fuzzy name query is empty. Setting a value of "<b>", while setting
+  // the highlight end field to "</b>" will effectively add HTML-styled bold
+  // styling to the matching search terms.
   string name_highlight_start = 6;
+  // NameHighlightEnd enables name search result highlighting. It does nothing
+  // if the fuzzy name query is empty.
   string name_highlight_end = 7;
 }
 
+// GetTaskListResponse holds the list of tasks that matches the search request.
 message GetTaskListResponse {
+  // Tasks is the list of tasks that matches the search request.
   repeated Task tasks = 1;
 }
 
+// CreateTaskRequest defines a new task to be created.
 message CreateTaskRequest {
+  // Name is the name of the new task to be created. May not be left unset.
   string name = 1;
+  // Start is the timestamp of when the task starts. If left unset, it will
+  // default to now.
   google.protobuf.Timestamp start = 2;
+  // End is the timestamp of when the task ends. If set, the new task will not
+  // be marked as active. If left unset, any currently active task will be
+  // stopped at when this new task starts.
   google.protobuf.Timestamp end = 3;
+  // StartAfterIdOrZero allows automatically setting the start timestamp to the
+  // end timestamp of a task by ID.
   uint64 start_after_id_or_zero = 4;
+  // EndBeforeIdOrZero allows automatically setting the end timestamp to the
+  // start timestamp of a task by ID.
   uint64 end_before_id_or_zero = 5;
+  // StartAfterLast allows automatically setting the start timestamp to the
+  // end timestamp of the latest task. Using this and the
+  // "start after ID or zero" field is considered undefined behavior, and should
+  // be avoided.
   bool start_after_last = 6;
 }
 
+// CreateTaskResponse holds the response data of a successfully created task.
 message CreateTaskResponse {
+  // CreatedTask is the newly created task.
   Task created_task = 1;
+  // PreviouslyActiveTask is the previously active task that was stopped
+  // (if any).
   Task previously_active_task = 2;
 }
 
+// UpdateTaskRequest holds data for updating a task.
 message UpdateTaskRequest {
+  // IdOrZero is either the ID of the task to update, or left as zero to update
+  // the latest or currently active task.
   uint64 id_or_zero = 1;
+  // Name is the new name of the task. If left unset, the name will not be
+  // updated.
   string name = 2;
+  // Start is the new starting timestamp of the task. If left unset, the start
+  // timestamp will not be updated.
   google.protobuf.Timestamp start = 3;
+  // End is the new ending timestamp of the task. If left unset, the end
+  // timestamp will not be updated. If set and the task was previously active
+  // then the task is no longer active.
   google.protobuf.Timestamp end = 4;
+  // AppendName changes the name field in this message to be appended to the
+  // end of the previous name, with a space as delimiter.
   bool append_name = 5;
+  // StartAfterIdOrZero allows automatically setting the start timestamp to the
+  // end timestamp of a task by ID.
   uint64 start_after_id_or_zero = 6;
+  // EndBeforeIdOrZero allows automatically setting the end timestamp to the
+  // start timestamp of a task by ID. If set and the task was previously active
+  // then the task is no longer active.
   uint64 end_before_id_or_zero = 7;
+  // StartAfterLast allows automatically setting the start timestamp to the
+  // end timestamp of the latest task. Using this and the
+  // "start after ID or zero" field is considered undefined behavior, and should
+  // be avoided.
   bool start_after_last = 8;
 }
 
+// UpdateTaskResponse holds the before and after state of the updated task.
 message UpdateTaskResponse {
+  // Before is the state of the task before the update.
   Task before = 1;
+  // After is the up-to-date state of the task now after the update.
   Task after = 2;
 }
 
+// DeleteTaskRequest holds the ID of the task to delete.
 message DeleteTaskRequest {
+  // Id is the ID of the task to delete.
   uint64 id = 1;
 }
 
+// DeleteTaskResponse holds the task that was deleted.
 message DeleteTaskResponse {
+  // DeletedTask is the task that was deleted.
   Task deleted_task = 1;
 }
 
+// StopActiveTaskRequest holds fields used when stopping the currently active
+// task.
 message StopActiveTaskRequest {
+  // End allows changing the end timestamp of the active task to stop. If not
+  // set, the current timestamp is used instead.
   google.protobuf.Timestamp end = 1;
 }
 
+// StopActiveTaskResponse holds the task that was stopped (if any).
 message StopActiveTaskResponse {
+  // StoppedTask is the task that was stopped (if any).
   Task stopped_task = 1;
 }
 
+// Task is a Dinkur task.
 message Task {
+  // Id is the unique identifier of this task, and is used when deleting,
+  // updating, or getting a task via the Tasker service.
   uint64 id = 1;
-  google.protobuf.Timestamp created_at = 2;
-  google.protobuf.Timestamp updated_at = 3;
+  // Created is a timestamp of when the task was initially created. In most
+  // cases, this is the same as the task's start timestamp.
+  google.protobuf.Timestamp created = 2;
+  // Updated is a timestamp of when the task was most recently changed. This
+  // has the same value as when the task was created if it has never been
+  // updated.
+  google.protobuf.Timestamp updated = 3;
+  // Name is the name of this task, as specified by the user.
   string name = 4;
+  // Start is the starting timestamp of this task, as specified by the user.
   google.protobuf.Timestamp start = 5;
+  // End is the ending timestamp of this task, as specified by the user, or
+  // is left unset if the task is currently active.
   google.protobuf.Timestamp end = 6;
 }

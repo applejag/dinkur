@@ -192,23 +192,23 @@ func convTimestampOrZero(ts *timestamppb.Timestamp) time.Time {
 func convShorthand(s timeutil.TimeSpanShorthand) dinkurapiv1.GetTaskListRequest_Shorthand {
 	switch s {
 	case timeutil.TimeSpanPast:
-		return dinkurapiv1.GetTaskListRequest_PAST
+		return dinkurapiv1.GetTaskListRequest_SHORTHAND_PAST
 	case timeutil.TimeSpanFuture:
-		return dinkurapiv1.GetTaskListRequest_FUTURE
+		return dinkurapiv1.GetTaskListRequest_SHORTHAND_FUTURE
 	case timeutil.TimeSpanThisDay:
-		return dinkurapiv1.GetTaskListRequest_THIS_DAY
+		return dinkurapiv1.GetTaskListRequest_SHORTHAND_THIS_DAY
 	case timeutil.TimeSpanThisWeek:
-		return dinkurapiv1.GetTaskListRequest_THIS_MON_TO_SUN
+		return dinkurapiv1.GetTaskListRequest_SHORTHAND_THIS_MON_TO_SUN
 	case timeutil.TimeSpanPrevDay:
-		return dinkurapiv1.GetTaskListRequest_PREV_DAY
+		return dinkurapiv1.GetTaskListRequest_SHORTHAND_PREV_DAY
 	case timeutil.TimeSpanPrevWeek:
-		return dinkurapiv1.GetTaskListRequest_PREV_MON_TO_SUN
+		return dinkurapiv1.GetTaskListRequest_SHORTHAND_PREV_MON_TO_SUN
 	case timeutil.TimeSpanNextDay:
-		return dinkurapiv1.GetTaskListRequest_NEXT_DAY
+		return dinkurapiv1.GetTaskListRequest_SHORTHAND_NEXT_DAY
 	case timeutil.TimeSpanNextWeek:
-		return dinkurapiv1.GetTaskListRequest_NEXT_MON_TO_SUN
+		return dinkurapiv1.GetTaskListRequest_SHORTHAND_NEXT_MON_TO_SUN
 	default:
-		return dinkurapiv1.GetTaskListRequest_NONE
+		return dinkurapiv1.GetTaskListRequest_SHORTHAND_UNSPECIFIED
 	}
 }
 
@@ -223,8 +223,8 @@ func convTaskPtr(task *dinkurapiv1.Task) (*dinkur.Task, error) {
 	return &dinkur.Task{
 		CommonFields: dinkur.CommonFields{
 			ID:        id,
-			CreatedAt: convTimestampOrZero(task.CreatedAt),
-			UpdatedAt: convTimestampOrZero(task.UpdatedAt),
+			CreatedAt: convTimestampOrZero(task.Created),
+			UpdatedAt: convTimestampOrZero(task.Updated),
 		},
 		Name:  task.Name,
 		Start: convTimestampOrZero(task.Start),
@@ -269,8 +269,8 @@ func convAlertPtr(alert *dinkurapiv1.Alert) (*dinkur.Alert, error) {
 	a := dinkur.Alert{
 		CommonFields: dinkur.CommonFields{
 			ID:        id,
-			CreatedAt: convTimestampOrZero(alert.CreatedAt),
-			UpdatedAt: convTimestampOrZero(alert.UpdatedAt),
+			CreatedAt: convTimestampOrZero(alert.Created),
+			UpdatedAt: convTimestampOrZero(alert.Updated),
 		},
 	}
 	switch alertType := alert.Type.(type) {
@@ -345,11 +345,11 @@ func convAlertSlice(slice []*dinkurapiv1.Alert) ([]dinkur.Alert, error) {
 
 func convEvent(ev dinkurapiv1.Event) dinkur.EventType {
 	switch ev {
-	case dinkurapiv1.Event_CREATED:
+	case dinkurapiv1.Event_EVENT_CREATED:
 		return dinkur.EventCreated
-	case dinkurapiv1.Event_UPDATED:
+	case dinkurapiv1.Event_EVENT_UPDATED:
 		return dinkur.EventUpdated
-	case dinkurapiv1.Event_DELETED:
+	case dinkurapiv1.Event_EVENT_DELETED:
 		return dinkur.EventDeleted
 	default:
 		return dinkur.EventUnknown

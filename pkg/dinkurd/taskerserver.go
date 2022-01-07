@@ -72,6 +72,9 @@ func (d *daemon) GetActiveTask(ctx context.Context, req *dinkurapiv1.GetActiveTa
 	}
 	task, err := d.client.ActiveTask(ctx)
 	if err != nil {
+		if errors.Is(err, dinkur.ErrNotFound) {
+			return &dinkurapiv1.GetActiveTaskResponse{}, nil
+		}
 		return nil, convError(err)
 	}
 	return &dinkurapiv1.GetActiveTaskResponse{

@@ -248,12 +248,12 @@ func convTaskPtr(task *dinkur.Task) *dinkurapiv1.Task {
 		return nil
 	}
 	return &dinkurapiv1.Task{
-		Id:        uint64(task.ID),
-		CreatedAt: convTime(task.CreatedAt),
-		UpdatedAt: convTime(task.UpdatedAt),
-		Name:      task.Name,
-		Start:     convTime(task.Start),
-		End:       convTimePtr(task.End),
+		Id:      uint64(task.ID),
+		Created: convTime(task.CreatedAt),
+		Updated: convTime(task.UpdatedAt),
+		Name:    task.Name,
+		Start:   convTime(task.Start),
+		End:     convTimePtr(task.End),
 	}
 }
 
@@ -294,21 +294,21 @@ func convTimestampOrNow(ts *timestamppb.Timestamp) time.Time {
 
 func convShorthand(s dinkurapiv1.GetTaskListRequest_Shorthand) timeutil.TimeSpanShorthand {
 	switch s {
-	case dinkurapiv1.GetTaskListRequest_PAST:
+	case dinkurapiv1.GetTaskListRequest_SHORTHAND_PAST:
 		return timeutil.TimeSpanPast
-	case dinkurapiv1.GetTaskListRequest_FUTURE:
+	case dinkurapiv1.GetTaskListRequest_SHORTHAND_FUTURE:
 		return timeutil.TimeSpanFuture
-	case dinkurapiv1.GetTaskListRequest_THIS_DAY:
+	case dinkurapiv1.GetTaskListRequest_SHORTHAND_THIS_DAY:
 		return timeutil.TimeSpanThisDay
-	case dinkurapiv1.GetTaskListRequest_THIS_MON_TO_SUN:
+	case dinkurapiv1.GetTaskListRequest_SHORTHAND_THIS_MON_TO_SUN:
 		return timeutil.TimeSpanThisWeek
-	case dinkurapiv1.GetTaskListRequest_PREV_DAY:
+	case dinkurapiv1.GetTaskListRequest_SHORTHAND_PREV_DAY:
 		return timeutil.TimeSpanPrevDay
-	case dinkurapiv1.GetTaskListRequest_PREV_MON_TO_SUN:
+	case dinkurapiv1.GetTaskListRequest_SHORTHAND_PREV_MON_TO_SUN:
 		return timeutil.TimeSpanPrevWeek
-	case dinkurapiv1.GetTaskListRequest_NEXT_DAY:
+	case dinkurapiv1.GetTaskListRequest_SHORTHAND_NEXT_DAY:
 		return timeutil.TimeSpanNextDay
-	case dinkurapiv1.GetTaskListRequest_NEXT_MON_TO_SUN:
+	case dinkurapiv1.GetTaskListRequest_SHORTHAND_NEXT_MON_TO_SUN:
 		return timeutil.TimeSpanNextWeek
 	default:
 		return timeutil.TimeSpanNone
@@ -317,9 +317,9 @@ func convShorthand(s dinkurapiv1.GetTaskListRequest_Shorthand) timeutil.TimeSpan
 
 func convAlert(alert dinkur.Alert) *dinkurapiv1.Alert {
 	a := &dinkurapiv1.Alert{
-		Id:        uint64(alert.ID),
-		CreatedAt: convTimePtr(&alert.CreatedAt),
-		UpdatedAt: convTimePtr(&alert.UpdatedAt),
+		Id:      uint64(alert.ID),
+		Created: convTimePtr(&alert.CreatedAt),
+		Updated: convTimePtr(&alert.UpdatedAt),
 	}
 	switch alertType := alert.Type.(type) {
 	case dinkur.AlertPlainMessage:
@@ -368,12 +368,12 @@ func convAlertSlice(slice []dinkur.Alert) []*dinkurapiv1.Alert {
 func convEvent(ev dinkur.EventType) dinkurapiv1.Event {
 	switch ev {
 	case dinkur.EventCreated:
-		return dinkurapiv1.Event_CREATED
+		return dinkurapiv1.Event_EVENT_CREATED
 	case dinkur.EventUpdated:
-		return dinkurapiv1.Event_UPDATED
+		return dinkurapiv1.Event_EVENT_UPDATED
 	case dinkur.EventDeleted:
-		return dinkurapiv1.Event_DELETED
+		return dinkurapiv1.Event_EVENT_DELETED
 	default:
-		return dinkurapiv1.Event_UNKNOWN
+		return dinkurapiv1.Event_EVENT_UNSPECIFIED
 	}
 }

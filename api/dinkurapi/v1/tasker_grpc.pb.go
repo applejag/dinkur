@@ -18,13 +18,28 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TaskerClient interface {
+	// Ping pongs.
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
+	// GetTask returns a specific task by ID. Status 5 "NOT_FOUND" is
+	// reported if no task was found by that ID.
 	GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*GetTaskResponse, error)
+	// GetActiveTask returns the currently active task (a task with no end time).
+	// If no such task exists, then an empty reposne it returned instead.
 	GetActiveTask(ctx context.Context, in *GetActiveTaskRequest, opts ...grpc.CallOption) (*GetActiveTaskResponse, error)
+	// GetTaskList queries for a list of tasks.
 	GetTaskList(ctx context.Context, in *GetTaskListRequest, opts ...grpc.CallOption) (*GetTaskListResponse, error)
+	// CreateTask creates a new task and stops any currently active tasks, and
+	// returns the stopped previously active task (if any) and the newly created
+	// task.
 	CreateTask(ctx context.Context, in *CreateTaskRequest, opts ...grpc.CallOption) (*CreateTaskResponse, error)
+	// UpdateTask alters a task by ID and returns the task's before and after
+	// state. Status 5 "NOT_FOUND" is reported if no task was found by that ID.
 	UpdateTask(ctx context.Context, in *UpdateTaskRequest, opts ...grpc.CallOption) (*UpdateTaskResponse, error)
+	// DeleteTask removes a task by ID. Status 5 "NOT_FOUND" is=
+	// reported if no task was found by that ID.
 	DeleteTask(ctx context.Context, in *DeleteTaskRequest, opts ...grpc.CallOption) (*DeleteTaskResponse, error)
+	// StopActiveTask stops the currently active task and returns that task
+	// (if any).
 	StopActiveTask(ctx context.Context, in *StopActiveTaskRequest, opts ...grpc.CallOption) (*StopActiveTaskResponse, error)
 }
 
@@ -112,13 +127,28 @@ func (c *taskerClient) StopActiveTask(ctx context.Context, in *StopActiveTaskReq
 // All implementations must embed UnimplementedTaskerServer
 // for forward compatibility
 type TaskerServer interface {
+	// Ping pongs.
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
+	// GetTask returns a specific task by ID. Status 5 "NOT_FOUND" is
+	// reported if no task was found by that ID.
 	GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error)
+	// GetActiveTask returns the currently active task (a task with no end time).
+	// If no such task exists, then an empty reposne it returned instead.
 	GetActiveTask(context.Context, *GetActiveTaskRequest) (*GetActiveTaskResponse, error)
+	// GetTaskList queries for a list of tasks.
 	GetTaskList(context.Context, *GetTaskListRequest) (*GetTaskListResponse, error)
+	// CreateTask creates a new task and stops any currently active tasks, and
+	// returns the stopped previously active task (if any) and the newly created
+	// task.
 	CreateTask(context.Context, *CreateTaskRequest) (*CreateTaskResponse, error)
+	// UpdateTask alters a task by ID and returns the task's before and after
+	// state. Status 5 "NOT_FOUND" is reported if no task was found by that ID.
 	UpdateTask(context.Context, *UpdateTaskRequest) (*UpdateTaskResponse, error)
+	// DeleteTask removes a task by ID. Status 5 "NOT_FOUND" is=
+	// reported if no task was found by that ID.
 	DeleteTask(context.Context, *DeleteTaskRequest) (*DeleteTaskResponse, error)
+	// StopActiveTask stops the currently active task and returns that task
+	// (if any).
 	StopActiveTask(context.Context, *StopActiveTaskRequest) (*StopActiveTaskResponse, error)
 	mustEmbedUnimplementedTaskerServer()
 }

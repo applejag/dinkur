@@ -20,13 +20,21 @@
 
 syntax = "proto3";
 
-option go_package = "github.com/dinkur/dinkur/api/dinkurapi/v1";
-
 package dinkurapi.v1;
 
+option go_package = "github.com/dinkur/dinkur/api/dinkurapi/v1";
+
+// Event is an enumeration of different change states for a given object.
 enum Event {
-  UNKNOWN = 0;
-  CREATED = 1;
-  UPDATED = 2;
-  DELETED = 3;
+  // EVENT_UNSPECIFIED means the event is not properly initialized, and is
+  // considered undefined behavior. Consumers should throw errors on this value
+  // instead of trying to interpret it.
+  EVENT_UNSPECIFIED = 0;
+  // EVENT_CREATED means the object was just created.
+  EVENT_CREATED = 1;
+  // EVENT_CREATED means the object that previosuly existed and some field of
+  // it has been changed.
+  EVENT_UPDATED = 2;
+  // EVENT_DELETED means the object has been removed.
+  EVENT_DELETED = 3;
 }

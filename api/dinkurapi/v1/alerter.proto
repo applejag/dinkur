@@ -20,63 +20,124 @@
 
 syntax = "proto3";
 
+package dinkurapi.v1;
+
 import "api/dinkurapi/v1/event.proto";
 import "api/dinkurapi/v1/tasker.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/dinkur/dinkur/api/dinkurapi/v1";
 
-package dinkurapi.v1;
-
+// Alerter is a service for Dinkur alerts, such as the AFK alerts.
 service Alerter {
+  // StreamAlert streams alert change events: created, updated, deleted.
   rpc StreamAlert (StreamAlertRequest) returns (stream StreamAlertResponse);
+  // GetAlertList gets a specific alert by its ID. Status 5 "NOT_FOUND" is
+  // reported if no alert was found by that ID.
   rpc GetAlertList (GetAlertListRequest) returns (GetAlertListResponse);
+  // DeleteAlert removes a specific alert by its ID. Status 5 "NOT_FOUND" is
+  // reported if no alert was found by that ID.
   rpc DeleteAlert (DeleteAlertRequest) returns (DeleteAlertResponse);
 }
 
+// StreamAlertRequest is an empty message and unused. It is here as a
+// placeholder for potential future use.
 message StreamAlertRequest {
 }
 
+// StreamAlertResponse is an alert event. An alert has been created, updated,
+// or deleted.
 message StreamAlertResponse {
+  // Alert is the created, updated, or deleted alert.
   Alert alert = 1;
+  // Event is the type of event.
   Event event = 2;
 }
 
+// GetAlertListRequest is an empty message and unused. It is here as a
+// placeholder for potential future use.
 message GetAlertListRequest {
 }
 
+// GetAlertListResponse holds a list of alerts.
 message GetAlertListResponse {
+  // Alerts is the list of alerts.
   repeated Alert alerts = 1;
 }
 
+// DeleteAlertRequest holds the ID of the alert to delete.
 message DeleteAlertRequest {
+  // ID of the alert to delete.
   uint64 id = 1;
 }
 
+// DeleteAlertResponse holds the alert that was just deleted.
 message DeleteAlertResponse {
+  // DeletedAlert is the alert that was just deleted.
   Alert deleted_alert = 1;
 }
 
+// Alert is a sort of notification issued by the Dinkur daemon, and contains a
+// union type of different alert types.
 message Alert {
+  // Id is the unique identifier of this alert, and is used when deleting an
+  // alert via the Alerter service.
   uint64 id = 1;
-  google.protobuf.Timestamp created_at = 2;
-  google.protobuf.Timestamp updated_at = 3;
+  // Created is a timestamp of when the alert was initially issued.
+  google.protobuf.Timestamp created = 2;
+  // Updated is a timestamp of when the alert was most recently changed. This
+  // has the same value as when the alert was created if it has never been
+  // updated.
+  google.protobuf.Timestamp updated = 3;
+
+  // Type holds the inner type of this alert.
   oneof type {
+    // PlainMessage means this alert is a plain string message alert.
     AlertPlainMessage plain_message = 4;
+    // AFK means this alert is an AFK alert, where the user has been away from
+    // their keyboard for too long, and any clients can start idling.
     AlertAfk afk = 5;
+    // FormerlyAFK means this alert is a formerly-AFK alert, where the user has
+    // been away from their keyboard for too long and have now returned, and
+    // any clients ought to prompt the user for how to save the away time.
     AlertFormerlyAfk formerly_afk = 6;
   }
 }
 
+// AlertPlainMessage is an alert subtype that only holds a generic message.
+// No user actions are expected. Dinkur clients should show this message and
+// let the user dismiss it by deleting the alert.
 message AlertPlainMessage {
+  // Message is a free text message that can contain any text. No format is
+  // assumed.
   string message = 2;
 }
 
+// AlertAfk is an alert subtype that is issued when the user has been away from
+// their keyboard for too long. Dinkur clients can start idling while this
+// alert exists. This alert is automatically deleted when the user is no longer
+// AFK. The alert is only issued when the user has an active task.
+//
+// Only one instance of this alert may exist at a single time.
 message AlertAfk {
+  // ActiveTask is the Dinkur task that is currently active now that the user
+  // is AFK. This field should always be set, as this alert is only issued when
+  // the user has an active task.
   Task active_task = 1;
 }
 
+// AlertFormerlyAfk is an alert subtype that is issued when the user has been
+// away from their keyboard for too long and has now returned. Dinkur clients
+// are expected to prompt the user for how to save the away time and then
+// delete this alert once it is resolved. This alert is not automatically
+// deleted. The alert is only issued when the user has an active taks.
+//
+// Only one instance of this alert may exist at a single time.
 message AlertFormerlyAfk {
+  // ActiveTask is the Dinkur task that is currently active when that the user
+  // went AFK. This field should always be set, as this alert is only issued
+  // when the user has an active task.
   Task active_task = 1;
+  // AfkSince is a timestamp of when the user went AFK.
   google.protobuf.Timestamp afk_since = 2;
 }

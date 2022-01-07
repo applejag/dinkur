@@ -18,8 +18,13 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AlerterClient interface {
+	// StreamAlert streams alert change events: created, updated, deleted.
 	StreamAlert(ctx context.Context, in *StreamAlertRequest, opts ...grpc.CallOption) (Alerter_StreamAlertClient, error)
+	// GetAlertList gets a specific alert by its ID. Status 5 "NOT_FOUND" is
+	// reported if no alert was found by that ID.
 	GetAlertList(ctx context.Context, in *GetAlertListRequest, opts ...grpc.CallOption) (*GetAlertListResponse, error)
+	// DeleteAlert removes a specific alert by its ID. Status 5 "NOT_FOUND" is
+	// reported if no alert was found by that ID.
 	DeleteAlert(ctx context.Context, in *DeleteAlertRequest, opts ...grpc.CallOption) (*DeleteAlertResponse, error)
 }
 
@@ -85,8 +90,13 @@ func (c *alerterClient) DeleteAlert(ctx context.Context, in *DeleteAlertRequest,
 // All implementations must embed UnimplementedAlerterServer
 // for forward compatibility
 type AlerterServer interface {
+	// StreamAlert streams alert change events: created, updated, deleted.
 	StreamAlert(*StreamAlertRequest, Alerter_StreamAlertServer) error
+	// GetAlertList gets a specific alert by its ID. Status 5 "NOT_FOUND" is
+	// reported if no alert was found by that ID.
 	GetAlertList(context.Context, *GetAlertListRequest) (*GetAlertListResponse, error)
+	// DeleteAlert removes a specific alert by its ID. Status 5 "NOT_FOUND" is
+	// reported if no alert was found by that ID.
 	DeleteAlert(context.Context, *DeleteAlertRequest) (*DeleteAlertResponse, error)
 	mustEmbedUnimplementedAlerterServer()
 }
