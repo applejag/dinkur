@@ -7,5 +7,8 @@
       "editor.codeActionsOnSave": {
         "source.organizeImports": true
       }
-    }
+    },
+    "go.buildFlags": [
+      "-tags fts5"
+    ]
 }
