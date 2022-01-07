@@ -233,10 +233,12 @@ func (d *daemon) StreamTask(req *dinkurapiv1.StreamTaskRequest, stream dinkurapi
 		return convError(err)
 	}
 	for ev := range ch {
-		stream.Send(&dinkurapiv1.StreamTaskResponse{
+		if err := stream.Send(&dinkurapiv1.StreamTaskResponse{
 			Task:  convTaskPtr(&ev.Task),
 			Event: convEvent(ev.Event),
-		})
+		}); err != nil {
+			return convError(err)
+		}
 	}
 	return nil
 }

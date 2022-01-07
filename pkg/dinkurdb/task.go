@@ -521,30 +521,32 @@ func (c *client) stopActiveDBTaskNoTran(endTime time.Time) (*Task, error) {
 }
 
 func (c *client) StreamTask(ctx context.Context) (<-chan dinkur.StreamedTask, error) {
-	ch := make(chan dinkur.StreamedTask, 4)
-	go c.streamTaskGoroutine(ctx, ch)
-	return ch, nil
-}
-
-func (c *client) streamTaskGoroutine(ctx context.Context, ch chan dinkur.StreamedTask) {
-	done := ctx.Done()
-	dbTaskChan := c.taskObs.subTasks()
-	defer close(ch)
-	defer c.taskObs.unsubTasks(dbTaskChan)
-	for {
-		select {
-		case ev, ok := <-dbTaskChan:
-			if !ok {
+	ch := make(chan dinkur.StreamedTask)
+	go func() {
+		done := ctx.Done()
+		dbTaskChan := c.taskObs.subTasks()
+		defer close(ch)
+		defer func() {
+			if err := c.taskObs.unsubTasks(dbTaskChan); err != nil {
+				log.Warn().WithError(err).Message("Failed to unsub task.")
+			}
+		}()
+		for {
+			select {
+			case ev, ok := <-dbTaskChan:
+				if !ok {
+					return
+				}
+				ch <- dinkur.StreamedTask{
+					Task:  convTask(ev.dbTask),
+					Event: ev.event,
+				}
+			case <-done:
 				return
 			}
-			ch <- dinkur.StreamedTask{
-				Task:  convTask(ev.dbTask),
-				Event: ev.event,
-			}
-		case <-done:
-			return
 		}
-	}
+	}()
+	return ch, nil
 }
 
 func reverseTaskSlice(slice []Task) {

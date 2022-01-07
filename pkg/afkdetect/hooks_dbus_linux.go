@@ -20,6 +20,7 @@
 package afkdetect
 
 import (
+	"errors"
 	"time"
 
 	"github.com/godbus/dbus/v5"
@@ -106,9 +107,19 @@ func (h *dbusHook) Unregister() error {
 }
 
 func (h *dbusHook) Tick() error {
+	if h.idleMon == nil {
+		return nil
+	}
 	var idleDurMs uint64
 	if err := h.idleMon.Call("org.gnome.Mutter.IdleMonitor.GetIdletime", 0).Store(&idleDurMs); err != nil {
-		return err
+		var dbusErr dbus.Error
+		if errors.As(err, &dbusErr) && dbusErr.Name == "org.freedesktop.DBus.Error.ServiceUnknown" {
+			log.Debug().WithError(err).
+				Message("Detected 'unknown service' error. Disabling org.gnome.Mutter integration.")
+			h.idleMon = nil
+		} else {
+			return err
+		}
 	}
 	idleDur := time.Duration(idleDurMs) * time.Millisecond
 	if idleDur > afkThresholdDur {

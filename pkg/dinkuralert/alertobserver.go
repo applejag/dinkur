@@ -90,7 +90,7 @@ func (o *observer) UnsubAlerts(sub <-chan AlertEvent) error {
 	if idx == -1 {
 		return ErrAlreadyUnsubscribed
 	}
-	o.subs = append(o.subs[idx:], o.subs[idx+1:]...)
+	o.subs = append(o.subs[:idx], o.subs[idx+1:]...)
 	return nil
 }
 

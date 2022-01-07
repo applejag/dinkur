@@ -49,8 +49,12 @@ func (o *taskObserver) pubTask(ev taskEvent) {
 		go func(ev taskEvent, sub chan taskEvent) {
 			select {
 			case sub <- ev:
-			case <-time.After(time.Minute):
-				log.Warn().Message("Timed out sending task event.")
+			case <-time.After(10 * time.Second):
+				log.Warn().
+					WithUint("id", ev.dbTask.ID).
+					WithString("name", ev.dbTask.Name).
+					WithStringer("event", ev.event).
+					Message("Timed out sending task event.")
 			}
 		}(ev, sub)
 	}
@@ -75,7 +79,7 @@ func (o *taskObserver) unsubTasks(sub <-chan taskEvent) error {
 	if idx == -1 {
 		return errAlreadyUnsubscribed
 	}
-	o.subs = append(o.subs[idx:], o.subs[idx+1:]...)
+	o.subs = append(o.subs[:idx], o.subs[idx+1:]...)
 	return nil
 }
 
