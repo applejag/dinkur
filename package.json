@@ -1,13 +1,4 @@
 {
-  "scripts": {
-    "lint": "npm run lint-md && npm run lint-go && npm run lint-proto",
-    "lint-fix": "npm run lint-md-fix && npm run lint-proto-fix",
-    "lint-md": "remark . .github",
-    "lint-md-fix": "remark . .github -o",
-    "lint-go": "revive -formatter stylish -config revive.toml ./...",
-    "lint-proto": "protolint lint api/dinkurapi/v1",
-    "lint-proto-fix": "protolint lint -fix api/dinkurapi/v1"
-  },
   "devDependencies": {
     "remark-cli": "^9.0.0",
     "remark-lint": "^8.0.0",
