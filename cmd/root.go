@@ -43,12 +43,13 @@ import (
 )
 
 var (
-	cfgFile       = cfgpath.ConfigPath
-	dataFile      = cfgpath.DataPath
-	flagDataMkdir = true
-	flagColor     = "auto"
-	flagClient    = "db"
-	flagVerbose   = false
+	cfgFile         = cfgpath.ConfigPath
+	dataFile        = cfgpath.DataPath
+	flagDataMkdir   = true
+	flagColor       = "auto"
+	flagClient      = "db"
+	flagVerbose     = false
+	flagGrpcAddress = "localhost:59122"
 
 	flagLicenseWarranty   bool
 	flagLicenseConditions bool
@@ -116,6 +117,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&flagClient, "client", flagClient, `Dinkur client: "db" or "grpc"`)
 	RootCmd.RegisterFlagCompletionFunc("client", clientComplete)
 	RootCmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", flagVerbose, `enables debug logging`)
+	RootCmd.PersistentFlags().StringVar(&flagGrpcAddress, "grpc-address", flagGrpcAddress, `address of Dinkur daemon gRPC API`)
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -174,7 +176,7 @@ func connectClient(skipMigrate bool) (dinkur.Client, error) {
 }
 
 func connectToGRPCClient() (dinkur.Client, error) {
-	c := dinkurclient.NewClient("localhost:59122", dinkurclient.Options{})
+	c := dinkurclient.NewClient(flagGrpcAddress, dinkurclient.Options{})
 	if err := c.Connect(context.Background()); err != nil {
 		return nil, err
 	}
@@ -192,14 +194,14 @@ func checkAlerts() {
 	}
 	for _, alert := range alerts {
 		if formerlyAFK, ok := alert.Type.(dinkur.AlertFormerlyAFK); ok {
-			promptAFKResolution(formerlyAFK)
+			promptAFKResolution(alert, formerlyAFK)
 			break
 		}
 	}
 }
 
-func promptAFKResolution(alert dinkur.AlertFormerlyAFK) {
-	res, err := console.PromptAFKResolution(alert)
+func promptAFKResolution(alert dinkur.Alert, formerlyAFK dinkur.AlertFormerlyAFK) {
+	res, err := console.PromptAFKResolution(formerlyAFK)
 	if err != nil {
 		console.PrintFatal("Prompt error:", err)
 	}
