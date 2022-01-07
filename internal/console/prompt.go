@@ -74,8 +74,8 @@ func PromptTaskRemoval(task dinkur.Task) error {
 // AFKResolution states what should be changed as decided from the human's AFK
 // resolution.
 type AFKResolution struct {
-	Edit     *dinkur.EditTask
-	NewTasks []dinkur.NewTask
+	Edit    *dinkur.EditTask
+	NewTask *dinkur.NewTask
 }
 
 // PromptAFKResolution asks the user for how to resolve an AFK alert.
@@ -110,15 +110,15 @@ func PromptAFKResolution(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
 
 	sb.WriteString("How do you want to save this away time?\n")
 
-	sb.WriteString(" 1. Leave the active task as-is and continue with the invoked command.\n")
+	sb.WriteString("  1. Leave the active task as-is and continue with the invoked command.\n")
 
-	sb.WriteString(" 2. Discard the away time I was away, changing active task to ")
+	sb.WriteString("  2. Discard the away time I was away, changing active task to ")
 	writeTaskTimeSpanNowDuration(&sb, alert.ActiveTask.Start, &alert.AFKSince, alert.AFKSince.Sub(alert.ActiveTask.Start))
 	sb.WriteString(".\n")
 
-	sb.WriteString(" 3. Save the away time as a new task ")
+	sb.WriteString("  3. Save the away time as a new task ")
 	writeTaskTimeSpanNowDuration(&sb, alert.AFKSince, nil, now.Sub(alert.AFKSince))
-	sb.WriteString(" (naming it in a later prompt).\n")
+	sb.WriteString("  (naming it in a later prompt).\n")
 
 	sb.WriteByte(' ')
 	promptCtrlCHelpColor.Fprint(&sb, "(press Ctrl+C to abort)")
@@ -177,12 +177,10 @@ func promptAFKSaveAsNewTask(alert dinkur.AlertFormerlyAFK) (AFKResolution, error
 			IDOrZero: alert.ActiveTask.ID,
 			End:      &alert.AFKSince,
 		},
-		NewTasks: []dinkur.NewTask{
-			{
-				Name:               name,
-				Start:              &alert.AFKSince,
-				StartAfterIDOrZero: alert.ActiveTask.ID,
-			},
+		NewTask: &dinkur.NewTask{
+			Name:               name,
+			Start:              &alert.AFKSince,
+			StartAfterIDOrZero: alert.ActiveTask.ID,
 		},
 	}, nil
 }

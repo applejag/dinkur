@@ -22,7 +22,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -194,23 +193,36 @@ func checkAlerts(c dinkur.Client) {
 	}
 	for _, alert := range alerts {
 		if formerlyAFK, ok := alert.Type.(dinkur.AlertFormerlyAFK); ok {
-			promptAFKResolution(alert, formerlyAFK)
+			promptAFKResolution(c, alert, formerlyAFK)
 			break
 		}
 	}
 }
 
-func promptAFKResolution(alert dinkur.Alert, formerlyAFK dinkur.AlertFormerlyAFK) {
+func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, formerlyAFK dinkur.AlertFormerlyAFK) {
 	res, err := console.PromptAFKResolution(formerlyAFK)
 	if err != nil {
 		console.PrintFatal("Prompt error:", err)
 	}
-	fmt.Println()
-	fmt.Println("Resolution:")
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	enc.Encode(res)
-	os.Exit(1)
+	if res.Edit != nil {
+		update, err := c.EditTask(context.Background(), *res.Edit)
+		if err != nil {
+			console.PrintFatal("Error editing task:", err)
+		}
+		console.PrintTaskEdit(update)
+		fmt.Println()
+	}
+	if res.NewTask != nil {
+		startedTask, err := c.StartTask(context.Background(), *res.NewTask)
+		if err != nil {
+			console.PrintFatal("Error starting task:", err)
+		}
+		printStartedTask(startedTask)
+		fmt.Println()
+	}
+	if _, err := c.DeleteAlert(context.Background(), alert.ID); err != nil {
+		console.PrintFatal("Error removing alert:", err)
+	}
 }
 
 func connectToDBClient(skipMigrate bool) (dinkur.Client, error) {
