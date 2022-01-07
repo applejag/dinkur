@@ -144,6 +144,9 @@ func (c *client) Close() error {
 	if err := c.assertConnected(); err != nil {
 		return err
 	}
+	if err := c.taskObs.unsubAllTasks(); err != nil {
+		log.Warn().WithError(err).Message("Failed to unsub all task subscriptions.")
+	}
 	sql, err := c.db.DB()
 	if err != nil {
 		return err

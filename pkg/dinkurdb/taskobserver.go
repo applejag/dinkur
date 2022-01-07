@@ -22,6 +22,7 @@ package dinkurdb
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
@@ -42,18 +43,18 @@ type taskObserver struct {
 	mutex sync.RWMutex
 }
 
-func (o *taskObserver) pubTaskWait(ev taskEvent) {
-	var wg sync.WaitGroup
+func (o *taskObserver) pubTask(ev taskEvent) {
 	o.mutex.RLock()
-	wg.Add(len(o.subs))
 	for _, sub := range o.subs {
-		go func(ev taskEvent, sub chan taskEvent, wg *sync.WaitGroup) {
-			sub <- ev
-			wg.Done()
-		}(ev, sub, &wg)
+		go func(ev taskEvent, sub chan taskEvent) {
+			select {
+			case sub <- ev:
+			case <-time.After(time.Minute):
+				log.Warn().Message("Timed out sending task event.")
+			}
+		}(ev, sub)
 	}
 	o.mutex.RUnlock()
-	wg.Wait()
 }
 
 func (o *taskObserver) subTasks() <-chan taskEvent {

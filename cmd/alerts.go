@@ -85,5 +85,5 @@ var alertsCmd = &cobra.Command{
 }
 
 func init() {
-	RootCmd.AddCommand(alertsCmd)
+	streamCmd.AddCommand(alertsCmd)
 }

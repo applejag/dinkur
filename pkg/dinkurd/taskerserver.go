@@ -226,7 +226,9 @@ func (d *daemon) StreamTask(req *dinkurapiv1.StreamTaskRequest, stream dinkurapi
 	if req == nil {
 		return convError(ErrRequestIsNil)
 	}
-	ch, err := d.client.StreamTask(stream.Context())
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
+	ch, err := d.client.StreamTask(ctx)
 	if err != nil {
 		return convError(err)
 	}

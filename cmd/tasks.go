@@ -53,12 +53,11 @@ var tasksCmd = &cobra.Command{
 				WithTime("createdAt", ev.Task.CreatedAt).
 				WithTime("updatedAt", ev.Task.UpdatedAt).
 				Message("Received task.")
-			fmt.Println()
 		}
 		cancel()
 	},
 }
 
 func init() {
-	RootCmd.AddCommand(tasksCmd)
+	streamCmd.AddCommand(tasksCmd)
 }

@@ -166,7 +166,7 @@ func (c *client) EditTask(ctx context.Context, edit dinkur.EditTask) (dinkur.Upd
 	if err != nil {
 		return dinkur.UpdatedTask{}, err
 	}
-	c.taskObs.pubTaskWait(taskEvent{
+	c.taskObs.pubTask(taskEvent{
 		dbTask: update.updated,
 		event:  dinkur.EventUpdated,
 	})
@@ -347,7 +347,7 @@ func (c *client) DeleteTask(ctx context.Context, id uint) (dinkur.Task, error) {
 	if err != nil {
 		return dinkur.Task{}, err
 	}
-	c.taskObs.pubTaskWait(taskEvent{
+	c.taskObs.pubTask(taskEvent{
 		dbTask: dbTask,
 		event:  dinkur.EventDeleted,
 	})
@@ -405,12 +405,12 @@ func (c *client) StartTask(ctx context.Context, task dinkur.NewTask) (dinkur.Sta
 		return dinkur.StartedTask{}, err
 	}
 	if startedTask.previous != nil {
-		c.taskObs.pubTaskWait(taskEvent{
+		c.taskObs.pubTask(taskEvent{
 			dbTask: *startedTask.previous,
 			event:  dinkur.EventUpdated,
 		})
 	}
-	c.taskObs.pubTaskWait(taskEvent{
+	c.taskObs.pubTask(taskEvent{
 		dbTask: startedTask.new,
 		event:  dinkur.EventCreated,
 	})
@@ -479,7 +479,7 @@ func (c *client) StopActiveTask(ctx context.Context, endTime time.Time) (*dinkur
 		return nil, err
 	}
 	if err == nil && dbTask != nil {
-		c.taskObs.pubTaskWait(taskEvent{
+		c.taskObs.pubTask(taskEvent{
 			dbTask: *dbTask,
 			event:  dinkur.EventUpdated,
 		})
