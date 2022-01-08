@@ -56,7 +56,7 @@ func init() {
 				EndBeforeIDOrZero:  flagBeforeID,
 				StartAfterLast:     flagAfterLast,
 			}
-			startedTask, err := c.StartTask(context.Background(), newTask)
+			startedTask, err := c.CreateTask(context.Background(), newTask)
 			if err != nil {
 				console.PrintFatal("Error starting task:", err)
 			}
@@ -76,23 +76,23 @@ func init() {
 
 func printStartedTask(startedTask dinkur.StartedTask) {
 	var toPrint []console.LabelledTask
-	if startedTask.Previous != nil {
+	if startedTask.Stopped != nil {
 		toPrint = append(toPrint, console.LabelledTask{
 			Label: "Stopped task:",
-			Task:  *startedTask.Previous,
+			Task:  *startedTask.Stopped,
 		})
 	}
 	noActive := false
-	if startedTask.New.End != nil {
+	if startedTask.Started.End != nil {
 		toPrint = append(toPrint, console.LabelledTask{
 			Label: "Added task:",
-			Task:  startedTask.New,
+			Task:  startedTask.Started,
 		})
 		noActive = true
 	} else {
 		toPrint = append(toPrint, console.LabelledTask{
 			Label:      "Started task:",
-			Task:       startedTask.New,
+			Task:       startedTask.Started,
 			NoDuration: true,
 		})
 	}

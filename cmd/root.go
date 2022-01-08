@@ -206,7 +206,7 @@ func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, formerlyAFK dinkur
 		console.PrintFatal("Prompt error:", err)
 	}
 	if res.Edit != nil {
-		update, err := c.EditTask(context.Background(), *res.Edit)
+		update, err := c.UpdateTask(context.Background(), *res.Edit)
 		if err != nil {
 			console.PrintFatal("Error editing task:", err)
 		}
@@ -214,7 +214,7 @@ func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, formerlyAFK dinkur
 		fmt.Println()
 	}
 	if res.NewTask != nil {
-		startedTask, err := c.StartTask(context.Background(), *res.NewTask)
+		startedTask, err := c.CreateTask(context.Background(), *res.NewTask)
 		if err != nil {
 			console.PrintFatal("Error starting task:", err)
 		}
@@ -257,7 +257,7 @@ func taskIDComplete(*cobra.Command, []string, string) ([]string, cobra.ShellComp
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	tasks, err := client.ListTasks(context.Background(), dinkur.SearchTask{
+	tasks, err := client.GetTaskList(context.Background(), dinkur.SearchTask{
 		Limit: 12,
 	})
 	if err != nil {

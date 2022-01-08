@@ -68,7 +68,7 @@ a specific task using the --id or -i flag.`,
 				name := strings.Join(args, " ")
 				edit.Name = &name
 			}
-			update, err := c.EditTask(context.Background(), edit)
+			update, err := c.UpdateTask(context.Background(), edit)
 			if err != nil {
 				console.PrintFatal("Error editing task:", err)
 			}

@@ -96,7 +96,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				WithStringf("--end", "%v", search.End).
 				WithStringf("--shorthand", "%v", search.Shorthand).
 				Message("Flags")
-			tasks, err := c.ListTasks(context.Background(), search)
+			tasks, err := c.GetTaskList(context.Background(), search)
 			if err != nil {
 				console.PrintFatal("Error getting list of tasks:", err)
 			}

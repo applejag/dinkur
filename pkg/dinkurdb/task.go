@@ -32,7 +32,7 @@ import (
 	"github.com/dinkur/dinkur/pkg/timeutil"
 )
 
-func (c *client) ActiveTask(ctx context.Context) (*dinkur.Task, error) {
+func (c *client) GetActiveTask(ctx context.Context) (*dinkur.Task, error) {
 	dbTask, err := c.withContext(ctx).activeDBTask()
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ var (
 	)
 )
 
-func (c *client) ListTasks(ctx context.Context, search dinkur.SearchTask) ([]dinkur.Task, error) {
+func (c *client) GetTaskList(ctx context.Context, search dinkur.SearchTask) ([]dinkur.Task, error) {
 	dbTasks, err := c.withContext(ctx).listDBTasks(search)
 	if err != nil {
 		return nil, err
@@ -158,7 +158,7 @@ func (c *client) listDBTasks(search dinkur.SearchTask) ([]Task, error) {
 	return dbTasks, nil
 }
 
-func (c *client) EditTask(ctx context.Context, edit dinkur.EditTask) (dinkur.UpdatedTask, error) {
+func (c *client) UpdateTask(ctx context.Context, edit dinkur.EditTask) (dinkur.UpdatedTask, error) {
 	if err := c.assertConnected(); err != nil {
 		return dinkur.UpdatedTask{}, err
 	}
@@ -167,18 +167,18 @@ func (c *client) EditTask(ctx context.Context, edit dinkur.EditTask) (dinkur.Upd
 		return dinkur.UpdatedTask{}, err
 	}
 	c.taskObs.pubTask(taskEvent{
-		dbTask: update.updated,
+		dbTask: update.after,
 		event:  dinkur.EventUpdated,
 	})
 	return dinkur.UpdatedTask{
-		Old:     convTask(update.old),
-		Updated: convTask(update.updated),
+		Before: convTask(update.before),
+		After:  convTask(update.after),
 	}, nil
 }
 
 type updatedDBTask struct {
-	old     Task
-	updated Task
+	before Task
+	after  Task
 }
 
 func (c *client) editDBTask(edit dinkur.EditTask) (updatedDBTask, error) {
@@ -245,8 +245,8 @@ func (c *client) editDBTaskNoTran(edit dinkur.EditTask) (updatedDBTask, error) {
 		}
 	}
 	return updatedDBTask{
-		old:     taskBeforeEdit,
-		updated: dbTask,
+		before: taskBeforeEdit,
+		after:  dbTask,
 	}, nil
 }
 
@@ -374,7 +374,7 @@ func (c *client) deleteDBTaskNoTran(id uint) (Task, error) {
 	return dbTask, nil
 }
 
-func (c *client) StartTask(ctx context.Context, task dinkur.NewTask) (dinkur.StartedTask, error) {
+func (c *client) CreateTask(ctx context.Context, task dinkur.NewTask) (dinkur.StartedTask, error) {
 	if err := c.assertConnected(); err != nil {
 		return dinkur.StartedTask{}, err
 	}
@@ -404,25 +404,25 @@ func (c *client) StartTask(ctx context.Context, task dinkur.NewTask) (dinkur.Sta
 	if err != nil {
 		return dinkur.StartedTask{}, err
 	}
-	if startedTask.previous != nil {
+	if startedTask.stopped != nil {
 		c.taskObs.pubTask(taskEvent{
-			dbTask: *startedTask.previous,
+			dbTask: *startedTask.stopped,
 			event:  dinkur.EventUpdated,
 		})
 	}
 	c.taskObs.pubTask(taskEvent{
-		dbTask: startedTask.new,
+		dbTask: startedTask.started,
 		event:  dinkur.EventCreated,
 	})
 	return dinkur.StartedTask{
-		New:      convTask(startedTask.new),
-		Previous: convTaskPtr(startedTask.previous),
+		Started: convTask(startedTask.started),
+		Stopped: convTaskPtr(startedTask.stopped),
 	}, nil
 }
 
 type startedDBTask struct {
-	previous *Task
-	new      Task
+	started Task
+	stopped *Task
 }
 
 type newTask struct {
@@ -465,8 +465,8 @@ func (c *client) startDBTaskNoTran(newTask newTask) (startedDBTask, error) {
 		return startedDBTask{}, fmt.Errorf("create new active task: %w", err)
 	}
 	return startedDBTask{
-		previous: previousDBTask,
-		new:      newTask.Task,
+		stopped: previousDBTask,
+		started: newTask.Task,
 	}, nil
 }
 

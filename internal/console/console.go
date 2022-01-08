@@ -126,37 +126,37 @@ func PrintFatal(label string, v interface{}) {
 func PrintTaskEdit(update dinkur.UpdatedTask) {
 	var sb strings.Builder
 	taskLabelColor.Fprint(&sb, "Updated task ")
-	taskIDColor.Fprint(&sb, "#", update.Updated.ID)
+	taskIDColor.Fprint(&sb, "#", update.After.ID)
 	sb.WriteByte(' ')
-	writeTaskName(&sb, update.Updated.Name)
+	writeTaskName(&sb, update.After.Name)
 	taskLabelColor.Fprint(&sb, ":")
 	fmt.Fprintln(stdout, sb.String())
 
 	var t table
 	t.SetPrefix(taskEditPrefix)
 	t.SetSpacing(taskEditSpacing)
-	if update.Old.Name != update.Updated.Name {
-		writeCellTaskName(&t, update.Old.Name)
+	if update.Before.Name != update.After.Name {
+		writeCellTaskName(&t, update.Before.Name)
 		t.WriteCellColor(taskEditDelim, taskEditDelimColor)
-		writeCellTaskName(&t, update.Updated.Name)
+		writeCellTaskName(&t, update.After.Name)
 		t.CommitRow()
 	}
 	var (
-		oldStartUnix = update.Old.Start.UnixMilli()
+		oldStartUnix = update.Before.Start.UnixMilli()
 		oldEndUnix   int64
-		newStartUnix = update.Updated.Start.UnixMilli()
+		newStartUnix = update.After.Start.UnixMilli()
 		newEndUnix   int64
 	)
-	if update.Old.End != nil {
-		oldEndUnix = update.Old.End.Unix()
+	if update.Before.End != nil {
+		oldEndUnix = update.Before.End.Unix()
 	}
-	if update.Updated.End != nil {
-		newEndUnix = update.Updated.End.Unix()
+	if update.After.End != nil {
+		newEndUnix = update.After.End.Unix()
 	}
 	if oldStartUnix != newStartUnix || oldEndUnix != newEndUnix {
-		writeCellTaskTimeSpanDuration(&t, update.Old.Start, update.Old.End, update.Old.Elapsed())
+		writeCellTaskTimeSpanDuration(&t, update.Before.Start, update.Before.End, update.Before.Elapsed())
 		t.WriteCellColor(taskEditDelim, taskEditDelimColor)
-		writeCellTaskTimeSpanDuration(&t, update.Updated.Start, update.Updated.End, update.Updated.Elapsed())
+		writeCellTaskTimeSpanDuration(&t, update.After.Start, update.After.End, update.After.Elapsed())
 		t.CommitRow()
 	}
 	if t.Rows() == 0 {

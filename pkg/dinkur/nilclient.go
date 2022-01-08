@@ -52,15 +52,15 @@ func (*NilClient) GetTask(context.Context, uint) (Task, error) {
 	return Task{}, ErrClientIsNil
 }
 
-// ListTasks is a dummy implementation of the dinkur.Client that only returns
+// GetTaskList is a dummy implementation of the dinkur.Client that only returns
 // the "client is nil" error.
-func (*NilClient) ListTasks(context.Context, SearchTask) ([]Task, error) {
+func (*NilClient) GetTaskList(context.Context, SearchTask) ([]Task, error) {
 	return nil, ErrClientIsNil
 }
 
-// EditTask is a dummy implementation of the dinkur.Client that only returns
+// UpdateTask is a dummy implementation of the dinkur.Client that only returns
 // the "client is nil" error.
-func (*NilClient) EditTask(context.Context, EditTask) (UpdatedTask, error) {
+func (*NilClient) UpdateTask(context.Context, EditTask) (UpdatedTask, error) {
 	return UpdatedTask{}, ErrClientIsNil
 }
 
@@ -70,15 +70,15 @@ func (*NilClient) DeleteTask(context.Context, uint) (Task, error) {
 	return Task{}, ErrClientIsNil
 }
 
-// StartTask is a dummy implementation of the dinkur.Client that only returns
+// CreateTask is a dummy implementation of the dinkur.Client that only returns
 // the "client is nil" error.
-func (*NilClient) StartTask(context.Context, NewTask) (StartedTask, error) {
+func (*NilClient) CreateTask(context.Context, NewTask) (StartedTask, error) {
 	return StartedTask{}, ErrClientIsNil
 }
 
-// ActiveTask is a dummy implementation of the dinkur.Client that only returns
+// GetActiveTask is a dummy implementation of the dinkur.Client that only returns
 // the "client is nil" error.
-func (*NilClient) ActiveTask(context.Context) (*Task, error) {
+func (*NilClient) GetActiveTask(context.Context) (*Task, error) {
 	return nil, ErrClientIsNil
 }
 

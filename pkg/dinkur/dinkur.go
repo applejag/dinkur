@@ -60,11 +60,11 @@ type Client interface {
 // updating tasks.
 type Tasker interface {
 	GetTask(ctx context.Context, id uint) (Task, error)
-	ListTasks(ctx context.Context, search SearchTask) ([]Task, error)
-	EditTask(ctx context.Context, edit EditTask) (UpdatedTask, error)
+	GetTaskList(ctx context.Context, search SearchTask) ([]Task, error)
+	GetActiveTask(ctx context.Context) (*Task, error)
+	UpdateTask(ctx context.Context, edit EditTask) (UpdatedTask, error)
 	DeleteTask(ctx context.Context, id uint) (Task, error)
-	StartTask(ctx context.Context, task NewTask) (StartedTask, error)
-	ActiveTask(ctx context.Context) (*Task, error)
+	CreateTask(ctx context.Context, task NewTask) (StartedTask, error)
 	StopActiveTask(ctx context.Context, endTime time.Time) (*Task, error)
 	StreamTask(ctx context.Context) (<-chan StreamedTask, error)
 }
@@ -124,8 +124,8 @@ type EditTask struct {
 // UpdatedTask is the response from an edited task, with values for before the
 // edits were applied and after they were applied.
 type UpdatedTask struct {
-	Old     Task
-	Updated Task
+	Before Task
+	After  Task
 }
 
 // NewTask holds parameters used when creating a new task.
@@ -142,8 +142,8 @@ type NewTask struct {
 // task object as well as the task that was stopped when creating the task,
 // if any task was previously active.
 type StartedTask struct {
-	New      Task
-	Previous *Task
+	Started Task
+	Stopped *Task
 }
 
 // StreamedTask holds a task and its event type.

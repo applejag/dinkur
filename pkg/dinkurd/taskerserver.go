@@ -70,7 +70,7 @@ func (d *daemon) GetActiveTask(ctx context.Context, req *dinkurapiv1.GetActiveTa
 	if req == nil {
 		return nil, convError(ErrRequestIsNil)
 	}
-	task, err := d.client.ActiveTask(ctx)
+	task, err := d.client.GetActiveTask(ctx)
 	if err != nil {
 		if errors.Is(err, dinkur.ErrNotFound) {
 			return &dinkurapiv1.GetActiveTaskResponse{}, nil
@@ -102,7 +102,7 @@ func (d *daemon) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTaskListRe
 	if err != nil {
 		return nil, convError(err)
 	}
-	tasks, err := d.client.ListTasks(ctx, search)
+	tasks, err := d.client.GetTaskList(ctx, search)
 	if err != nil {
 		return nil, convError(err)
 	}
@@ -134,13 +134,13 @@ func (d *daemon) CreateTask(ctx context.Context, req *dinkurapiv1.CreateTaskRequ
 		EndBeforeIDOrZero:  endBeforeID,
 		StartAfterLast:     req.StartAfterLast,
 	}
-	startedTask, err := d.client.StartTask(ctx, newTask)
+	startedTask, err := d.client.CreateTask(ctx, newTask)
 	if err != nil {
 		return nil, convError(err)
 	}
 	return &dinkurapiv1.CreateTaskResponse{
-		PreviouslyActiveTask: convTaskPtr(startedTask.Previous),
-		CreatedTask:          convTaskPtr(&startedTask.New),
+		PreviouslyActiveTask: convTaskPtr(startedTask.Stopped),
+		CreatedTask:          convTaskPtr(&startedTask.Started),
 	}, nil
 }
 
@@ -173,13 +173,13 @@ func (d *daemon) UpdateTask(ctx context.Context, req *dinkurapiv1.UpdateTaskRequ
 		EndBeforeIDOrZero:  endBeforeID,
 		StartAfterLast:     req.StartAfterLast,
 	}
-	update, err := d.client.EditTask(ctx, edit)
+	update, err := d.client.UpdateTask(ctx, edit)
 	if err != nil {
 		return nil, convError(err)
 	}
 	return &dinkurapiv1.UpdateTaskResponse{
-		Before: convTaskPtr(&update.Old),
-		After:  convTaskPtr(&update.Updated),
+		Before: convTaskPtr(&update.Before),
+		After:  convTaskPtr(&update.After),
 	}, nil
 }
 

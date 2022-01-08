@@ -225,7 +225,7 @@ func (d *daemon) listenForAFK(ctx context.Context) {
 	for {
 		select {
 		case <-startedChan:
-			task, err := d.client.ActiveTask(ctx)
+			task, err := d.client.GetActiveTask(ctx)
 			if err != nil {
 				log.Warn().WithError(err).
 					Message("Failed to get active task when issuing AFK alert.")

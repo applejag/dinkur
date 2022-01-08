@@ -50,7 +50,7 @@ func (c *client) GetTask(ctx context.Context, id uint) (dinkur.Task, error) {
 	return task, nil
 }
 
-func (c *client) ListTasks(ctx context.Context, search dinkur.SearchTask) ([]dinkur.Task, error) {
+func (c *client) GetTaskList(ctx context.Context, search dinkur.SearchTask) ([]dinkur.Task, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (c *client) ListTasks(ctx context.Context, search dinkur.SearchTask) ([]din
 	return tasks, nil
 }
 
-func (c *client) EditTask(ctx context.Context, edit dinkur.EditTask) (dinkur.UpdatedTask, error) {
+func (c *client) UpdateTask(ctx context.Context, edit dinkur.EditTask) (dinkur.UpdatedTask, error) {
 	if err := c.assertConnected(); err != nil {
 		return dinkur.UpdatedTask{}, err
 	}
@@ -106,8 +106,8 @@ func (c *client) EditTask(ctx context.Context, edit dinkur.EditTask) (dinkur.Upd
 		return dinkur.UpdatedTask{}, fmt.Errorf("task after: %w", convError(err))
 	}
 	return dinkur.UpdatedTask{
-		Old:     taskBefore,
-		Updated: taskAfter,
+		Before: taskBefore,
+		After:  taskAfter,
 	}, nil
 }
 
@@ -131,7 +131,7 @@ func (c *client) DeleteTask(ctx context.Context, id uint) (dinkur.Task, error) {
 	return task, nil
 }
 
-func (c *client) StartTask(ctx context.Context, task dinkur.NewTask) (dinkur.StartedTask, error) {
+func (c *client) CreateTask(ctx context.Context, task dinkur.NewTask) (dinkur.StartedTask, error) {
 	if err := c.assertConnected(); err != nil {
 		return dinkur.StartedTask{}, err
 	}
@@ -158,12 +158,12 @@ func (c *client) StartTask(ctx context.Context, task dinkur.NewTask) (dinkur.Sta
 		return dinkur.StartedTask{}, fmt.Errorf("created task: %w", convError(err))
 	}
 	return dinkur.StartedTask{
-		Previous: prevTask,
-		New:      newTask,
+		Stopped: prevTask,
+		Started: newTask,
 	}, nil
 }
 
-func (c *client) ActiveTask(ctx context.Context) (*dinkur.Task, error) {
+func (c *client) GetActiveTask(ctx context.Context) (*dinkur.Task, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
