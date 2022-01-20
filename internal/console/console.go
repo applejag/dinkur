@@ -37,28 +37,28 @@ var (
 	timeFormatLong  = "Jan 02 15:04"
 	timeFormatShort = "15:04"
 
-	taskIDColor              = color.New(color.FgHiBlack)
-	taskLabelColor           = color.New(color.FgWhite, color.Italic)
-	taskNameColor            = color.New(color.FgYellow)
-	taskNameHighlightColor   = color.New(color.FgHiYellow, color.Underline)
-	taskNameHighlightReplace = taskNameHighlightColor.Sprint("$1")
-	taskNameQuote            = "`"
-	taskNameFormat           = taskNameQuote + "%s" + taskNameQuote
-	taskTimeDelimColor       = color.New(color.FgHiBlack)
-	taskDateColor            = color.New(color.FgGreen)
-	taskStartColor           = color.New(color.FgGreen)
-	taskEndColor             = color.New(color.FgGreen)
-	taskEndNilColor          = color.New(color.FgHiBlack, color.Italic)
-	taskEndNilTextNow        = "now…"
-	taskEndNilTextActive     = "active…"
-	taskDurationColor        = color.New(color.FgCyan)
-	taskEditDelimColor       = color.New(color.FgHiMagenta)
-	taskEditNoneColor        = color.New(color.FgHiBlack, color.Italic)
+	entryIDColor              = color.New(color.FgHiBlack)
+	entryLabelColor           = color.New(color.FgWhite, color.Italic)
+	entryNameColor            = color.New(color.FgYellow)
+	entryNameHighlightColor   = color.New(color.FgHiYellow, color.Underline)
+	entryNameHighlightReplace = entryNameHighlightColor.Sprint("$1")
+	entryNameQuote            = "`"
+	entryNameFormat           = entryNameQuote + "%s" + entryNameQuote
+	entryTimeDelimColor       = color.New(color.FgHiBlack)
+	entryDateColor            = color.New(color.FgGreen)
+	entryStartColor           = color.New(color.FgGreen)
+	entryEndColor             = color.New(color.FgGreen)
+	entryEndNilColor          = color.New(color.FgHiBlack, color.Italic)
+	entryEndNilTextNow        = "now…"
+	entryEndNilTextActive     = "active…"
+	entryDurationColor        = color.New(color.FgCyan)
+	entryEditDelimColor       = color.New(color.FgHiMagenta)
+	entryEditNoneColor        = color.New(color.FgHiBlack, color.Italic)
 
-	taskEditPrefix   = "  "
-	taskEditNoChange = "No changes were applied."
-	taskEditSpacing  = "   "
-	taskEditDelim    = "=>"
+	entryEditPrefix   = "  "
+	entryEditNoChange = "No changes were applied."
+	entryEditSpacing  = "   "
+	entryEditDelim    = "=>"
 
 	fatalLabelColor = color.New(color.FgHiRed, color.Bold)
 	fatalValueColor = color.New(color.FgRed)
@@ -79,32 +79,32 @@ var (
 	promptCtrlCHelpColor = color.New(color.FgHiBlack, color.Italic)
 )
 
-// LabelledTask holds a string label and a task. Used when printing multiple
-// labelled tasks together.
-type LabelledTask struct {
+// LabelledEntry holds a string label and a entry. Used when printing multiple
+// labelled entries together.
+type LabelledEntry struct {
 	Label      string
-	Task       dinkur.Task
+	Entry       dinkur.Entry
 	NoDuration bool
 }
 
-// PrintTaskLabel writes a label string followed by a formatted task to STDOUT.
-func PrintTaskLabel(labelled LabelledTask) {
+// PrintEntryLabel writes a label string followed by a formatted entry to STDOUT.
+func PrintEntryLabel(labelled LabelledEntry) {
 	var t table
 	t.SetSpacing("  ")
 	t.WriteColoredRow(tableHeaderColor, "", "ID", "NAME", "START", "END", "DURATION")
-	writeCellsLabelledTask(&t, labelled)
+	writeCellsLabelledEntry(&t, labelled)
 	t.CommitRow()
 	t.Fprintln(stdout)
 }
 
-// PrintTaskLabelSlice writes a table of label strings followed by a formatted
-// task to STDOUT.
-func PrintTaskLabelSlice(slice []LabelledTask) {
+// PrintEntryLabelSlice writes a table of label strings followed by a formatted
+// entry to STDOUT.
+func PrintEntryLabelSlice(slice []LabelledEntry) {
 	var t table
 	t.SetSpacing("  ")
 	t.WriteColoredRow(tableHeaderColor, "", "ID", "NAME", "START", "END", "DURATION")
 	for _, lbl := range slice {
-		writeCellsLabelledTask(&t, lbl)
+		writeCellsLabelledEntry(&t, lbl)
 		t.CommitRow()
 	}
 	t.Fprintln(stdout)
@@ -121,24 +121,24 @@ func PrintFatal(label string, v interface{}) {
 	os.Exit(1)
 }
 
-// PrintTaskEdit writes a formatted task and highlights any edits made to it,
-// by diffing the before and after tasks, to STDOUT.
-func PrintTaskEdit(update dinkur.UpdatedTask) {
+// PrintEntryEdit writes a formatted entry and highlights any edits made to it,
+// by diffing the before and after entries, to STDOUT.
+func PrintEntryEdit(update dinkur.UpdatedEntry) {
 	var sb strings.Builder
-	taskLabelColor.Fprint(&sb, "Updated task ")
-	taskIDColor.Fprint(&sb, "#", update.After.ID)
+	entryLabelColor.Fprint(&sb, "Updated entry ")
+	entryIDColor.Fprint(&sb, "#", update.After.ID)
 	sb.WriteByte(' ')
-	writeTaskName(&sb, update.After.Name)
-	taskLabelColor.Fprint(&sb, ":")
+	writeEntryName(&sb, update.After.Name)
+	entryLabelColor.Fprint(&sb, ":")
 	fmt.Fprintln(stdout, sb.String())
 
 	var t table
-	t.SetPrefix(taskEditPrefix)
-	t.SetSpacing(taskEditSpacing)
+	t.SetPrefix(entryEditPrefix)
+	t.SetSpacing(entryEditSpacing)
 	if update.Before.Name != update.After.Name {
-		writeCellTaskName(&t, update.Before.Name)
-		t.WriteCellColor(taskEditDelim, taskEditDelimColor)
-		writeCellTaskName(&t, update.After.Name)
+		writeCellEntryName(&t, update.Before.Name)
+		t.WriteCellColor(entryEditDelim, entryEditDelimColor)
+		writeCellEntryName(&t, update.After.Name)
 		t.CommitRow()
 	}
 	var (
@@ -154,29 +154,29 @@ func PrintTaskEdit(update dinkur.UpdatedTask) {
 		newEndUnix = update.After.End.Unix()
 	}
 	if oldStartUnix != newStartUnix || oldEndUnix != newEndUnix {
-		writeCellTaskTimeSpanDuration(&t, update.Before.Start, update.Before.End, update.Before.Elapsed())
-		t.WriteCellColor(taskEditDelim, taskEditDelimColor)
-		writeCellTaskTimeSpanDuration(&t, update.After.Start, update.After.End, update.After.Elapsed())
+		writeCellEntryTimeSpanDuration(&t, update.Before.Start, update.Before.End, update.Before.Elapsed())
+		t.WriteCellColor(entryEditDelim, entryEditDelimColor)
+		writeCellEntryTimeSpanDuration(&t, update.After.Start, update.After.End, update.After.Elapsed())
 		t.CommitRow()
 	}
 	if t.Rows() == 0 {
-		taskEditNoneColor.Fprint(stdout, taskEditPrefix, taskEditNoChange)
+		entryEditNoneColor.Fprint(stdout, entryEditPrefix, entryEditNoChange)
 		fmt.Fprintln(&sb)
 	} else {
 		t.Fprintln(stdout)
 	}
 }
 
-// PrintTaskList writes a table for a list of tasks, grouped by the date
+// PrintEntryList writes a table for a list of entries, grouped by the date
 // (year, month, day), to STDOUT.
-func PrintTaskList(tasks []dinkur.Task) {
-	PrintTaskListSearched(tasks, "", "")
+func PrintEntryList(entries []dinkur.Entry) {
+	PrintEntryListSearched(entries, "", "")
 }
 
-// PrintTaskListSearched writes a table for a list of tasks, grouped by the date
+// PrintEntryListSearched writes a table for a list of entries, grouped by the date
 // (year, month, day), to STDOUT, as well as highlighting search terms (if any).
-func PrintTaskListSearched(tasks []dinkur.Task, searchStart, searchEnd string) {
-	if len(tasks) == 0 {
+func PrintEntryListSearched(entries []dinkur.Entry, searchStart, searchEnd string) {
+	if len(entries) == 0 {
 		tableEmptyColor.Fprintln(stdout, tableEmptyText)
 		return
 	}
@@ -193,40 +193,40 @@ func PrintTaskListSearched(tasks []dinkur.Task, searchStart, searchEnd string) {
 	t.SetSpacing("  ")
 	t.SetPrefix("  ")
 	t.WriteColoredRow(tableHeaderColor, "ID", "NAME", "DAY", "START", "END", "DURATION")
-	for i, group := range groupTasksByDate(tasks) {
+	for i, group := range groupEntriesByDate(entries) {
 		if i > 0 {
 			t.CommitRow() // commit empty delimiting row
 		}
-		for i, task := range group.tasks {
-			writeCellTaskID(&t, task.ID)
+		for i, entry := range group.entries {
+			writeCellEntryID(&t, entry.ID)
 			if reg != nil {
-				writeCellTaskNameSearched(&t, task.Name, reg)
+				writeCellEntryNameSearched(&t, entry.Name, reg)
 			} else {
-				writeCellTaskName(&t, task.Name)
+				writeCellEntryName(&t, entry.Name)
 			}
 			if i == 0 {
 				writeCellDate(&t, group.date)
 			} else {
 				t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
 			}
-			writeCellTaskStartEnd(&t, task.Start, task.End)
-			writeCellDuration(&t, task.Elapsed())
+			writeCellEntryStartEnd(&t, entry.Start, entry.End)
+			writeCellDuration(&t, entry.Elapsed())
 			t.CommitRow()
 		}
 	}
-	sum := sumTasks(tasks)
+	sum := sumEntries(entries)
 	t.CommitRow() // commit empty delimiting row
-	endStr := taskEndNilTextActive
+	endStr := entryEndNilTextActive
 	if sum.end != nil {
 		endStr = sum.end.Format(timeFormatShort)
 	}
 	t.WriteColoredRow(tableSummaryColor,
-		tableCellEmptyText,                         // ID
-		fmt.Sprintf("TOTAL: %d tasks", len(tasks)), // NAME
-		tableCellEmptyText,                         // DAY
-		sum.start.Format(timeFormatShort),          // START
-		endStr,                                     // END
-		FormatDuration(sum.duration),               // DURATION
+		tableCellEmptyText, // ID
+		fmt.Sprintf("TOTAL: %d entries", len(entries)), // NAME
+		tableCellEmptyText,                // DAY
+		sum.start.Format(timeFormatShort), // START
+		endStr,                            // END
+		FormatDuration(sum.duration),      // DURATION
 	)
 	t.Fprintln(stdout)
 }

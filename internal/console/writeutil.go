@@ -34,17 +34,17 @@ func writeTimeColor(w io.Writer, t time.Time, layout string, c *color.Color) int
 	return len(formatted)
 }
 
-func writeTaskID(w io.Writer, id uint) int {
-	taskIDColor.Fprintf(w, "#%d", id)
+func writeEntryID(w io.Writer, id uint) int {
+	entryIDColor.Fprintf(w, "#%d", id)
 	return uintWidth(id) + 1
 }
 
-func writeTaskName(w io.Writer, name string) int {
-	taskNameColor.Fprintf(w, taskNameFormat, name)
+func writeEntryName(w io.Writer, name string) int {
+	entryNameColor.Fprintf(w, entryNameFormat, name)
 	return 2 + utf8.RuneCountInString(name)
 }
 
-func writeTaskNameSearched(w io.Writer, name string, reg *regexp.Regexp) int {
+func writeEntryNameSearched(w io.Writer, name string, reg *regexp.Regexp) int {
 	matches := reg.FindAllStringSubmatchIndex(name, -1)
 	const (
 		g0Start = 0 // group 0 = full match
@@ -54,36 +54,36 @@ func writeTaskNameSearched(w io.Writer, name string, reg *regexp.Regexp) int {
 	)
 	var width int
 	width++
-	taskNameColor.Fprint(w, taskNameQuote)
+	entryNameColor.Fprint(w, entryNameQuote)
 	var lastIdx int
 	for _, match := range matches {
 		nameUntilMatch := name[lastIdx:match[g0Start]]
 		width += utf8.RuneCountInString(nameUntilMatch)
-		taskNameColor.Fprint(w, nameUntilMatch)
+		entryNameColor.Fprint(w, nameUntilMatch)
 
 		matchGroup1 := name[match[g1Start]:match[g1End]]
 		width += utf8.RuneCountInString(matchGroup1)
-		taskNameHighlightColor.Fprint(w, matchGroup1)
+		entryNameHighlightColor.Fprint(w, matchGroup1)
 
 		lastIdx = match[g0End]
 	}
 	nameUntilEnd := name[lastIdx:]
 	width += utf8.RuneCountInString(nameUntilEnd)
-	taskNameColor.Fprint(w, nameUntilEnd)
+	entryNameColor.Fprint(w, nameUntilEnd)
 	width++
-	taskNameColor.Fprint(w, taskNameQuote)
+	entryNameColor.Fprint(w, entryNameQuote)
 	return width
 }
 
-func writeTaskTimeSpanActive(w io.Writer, start time.Time, end *time.Time) int {
-	return writeTaskTimeSpan(w, start, end, taskEndNilTextActive)
+func writeEntryTimeSpanActive(w io.Writer, start time.Time, end *time.Time) int {
+	return writeEntryTimeSpan(w, start, end, entryEndNilTextActive)
 }
 
-func writeTaskTimeSpanNow(w io.Writer, start time.Time, end *time.Time) int {
-	return writeTaskTimeSpan(w, start, end, taskEndNilTextNow)
+func writeEntryTimeSpanNow(w io.Writer, start time.Time, end *time.Time) int {
+	return writeEntryTimeSpan(w, start, end, entryEndNilTextNow)
 }
 
-func writeTaskTimeSpan(w io.Writer, start time.Time, end *time.Time, nowStr string) int {
+func writeEntryTimeSpan(w io.Writer, start time.Time, end *time.Time, nowStr string) int {
 	today := newDate(time.Now().Date())
 	layout := timeFormatShort
 	if today != newDate(start.Date()) ||
@@ -93,8 +93,8 @@ func writeTaskTimeSpan(w io.Writer, start time.Time, end *time.Time, nowStr stri
 		layout = timeFormatLong
 	}
 	startStr := start.Format(layout)
-	taskStartColor.Fprintf(w, startStr)
-	taskTimeDelimColor.Fprint(w, " - ")
+	entryStartColor.Fprintf(w, startStr)
+	entryTimeDelimColor.Fprint(w, " - ")
 	var (
 		endStr   string
 		endLen   int
@@ -102,42 +102,42 @@ func writeTaskTimeSpan(w io.Writer, start time.Time, end *time.Time, nowStr stri
 	)
 	if end != nil {
 		endStr = end.Format(layout)
-		endColor = taskEndColor
+		endColor = entryEndColor
 		endLen = len(endStr)
 	} else {
 		endStr = nowStr
-		endColor = taskEndNilColor
+		endColor = entryEndNilColor
 		endLen = utf8.RuneCountInString(nowStr)
 	}
 	endColor.Fprintf(w, endStr)
 	return len(startStr) + 3 + endLen
 }
 
-func writeTaskTimeSpanNowDuration(w io.Writer, start time.Time, end *time.Time, dur time.Duration) int {
-	return writeTaskTimeSpanDuration(w, start, end, taskEndNilTextNow, dur)
+func writeEntryTimeSpanNowDuration(w io.Writer, start time.Time, end *time.Time, dur time.Duration) int {
+	return writeEntryTimeSpanDuration(w, start, end, entryEndNilTextNow, dur)
 }
 
-func writeTaskTimeSpanActiveDuration(w io.Writer, start time.Time, end *time.Time, dur time.Duration) int {
-	return writeTaskTimeSpanDuration(w, start, end, taskEndNilTextActive, dur)
+func writeEntryTimeSpanActiveDuration(w io.Writer, start time.Time, end *time.Time, dur time.Duration) int {
+	return writeEntryTimeSpanDuration(w, start, end, entryEndNilTextActive, dur)
 }
 
-func writeTaskTimeSpanDuration(w io.Writer, start time.Time, end *time.Time, nowStr string, dur time.Duration) int {
-	width := writeTaskTimeSpan(w, start, end, nowStr)
+func writeEntryTimeSpanDuration(w io.Writer, start time.Time, end *time.Time, nowStr string, dur time.Duration) int {
+	width := writeEntryTimeSpan(w, start, end, nowStr)
 	w.Write([]byte{' '})
 	width++
-	width += writeTaskDurationWithDelim(w, dur)
+	width += writeEntryDurationWithDelim(w, dur)
 	return width
 }
 
-func writeTaskDurationWithDelim(w io.Writer, dur time.Duration) int {
-	taskTimeDelimColor.Fprint(w, "(")
-	width := writeTaskDuration(w, dur)
-	taskTimeDelimColor.Fprint(w, ")")
+func writeEntryDurationWithDelim(w io.Writer, dur time.Duration) int {
+	entryTimeDelimColor.Fprint(w, "(")
+	width := writeEntryDuration(w, dur)
+	entryTimeDelimColor.Fprint(w, ")")
 	return width + 2
 }
 
-func writeTaskDuration(w io.Writer, dur time.Duration) int {
+func writeEntryDuration(w io.Writer, dur time.Duration) int {
 	str := FormatDuration(dur)
-	taskDurationColor.Fprint(w, str)
+	entryDurationColor.Fprint(w, str)
 	return len(str)
 }

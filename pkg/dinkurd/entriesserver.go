@@ -40,7 +40,7 @@ func (d *daemon) Ping(ctx context.Context, req *dinkurapiv1.PingRequest) (*dinku
 	return &dinkurapiv1.PingResponse{}, nil
 }
 
-func (d *daemon) GetTask(ctx context.Context, req *dinkurapiv1.GetTaskRequest) (*dinkurapiv1.GetTaskResponse, error) {
+func (d *daemon) GetEntry(ctx context.Context, req *dinkurapiv1.GetEntryRequest) (*dinkurapiv1.GetEntryResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
@@ -51,45 +51,45 @@ func (d *daemon) GetTask(ctx context.Context, req *dinkurapiv1.GetTaskRequest) (
 	if err != nil {
 		return nil, convError(err)
 	}
-	task, err := d.client.GetTask(ctx, id)
+	entry, err := d.client.GetEntry(ctx, id)
 	if err != nil {
 		if errors.Is(err, dinkur.ErrNotFound) {
-			return &dinkurapiv1.GetTaskResponse{}, nil
+			return &dinkurapiv1.GetEntryResponse{}, nil
 		}
 		return nil, convError(err)
 	}
-	return &dinkurapiv1.GetTaskResponse{
-		Task: convTaskPtr(&task),
+	return &dinkurapiv1.GetEntryResponse{
+		Entry: convEntryPtr(&entry),
 	}, nil
 }
 
-func (d *daemon) GetActiveTask(ctx context.Context, req *dinkurapiv1.GetActiveTaskRequest) (*dinkurapiv1.GetActiveTaskResponse, error) {
+func (d *daemon) GetActiveEntry(ctx context.Context, req *dinkurapiv1.GetActiveEntryRequest) (*dinkurapiv1.GetActiveEntryResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
 	if req == nil {
 		return nil, convError(ErrRequestIsNil)
 	}
-	task, err := d.client.GetActiveTask(ctx)
+	entry, err := d.client.GetActiveEntry(ctx)
 	if err != nil {
 		if errors.Is(err, dinkur.ErrNotFound) {
-			return &dinkurapiv1.GetActiveTaskResponse{}, nil
+			return &dinkurapiv1.GetActiveEntryResponse{}, nil
 		}
 		return nil, convError(err)
 	}
-	return &dinkurapiv1.GetActiveTaskResponse{
-		ActiveTask: convTaskPtr(task),
+	return &dinkurapiv1.GetActiveEntryResponse{
+		ActiveEntry: convEntryPtr(entry),
 	}, nil
 }
 
-func (d *daemon) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTaskListRequest) (*dinkurapiv1.GetTaskListResponse, error) {
+func (d *daemon) GetEntryList(ctx context.Context, req *dinkurapiv1.GetEntryListRequest) (*dinkurapiv1.GetEntryListResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
 	if req == nil {
 		return nil, convError(ErrRequestIsNil)
 	}
-	search := dinkur.SearchTask{
+	search := dinkur.SearchEntry{
 		Start:              convTimestampPtr(req.Start),
 		End:                convTimestampPtr(req.End),
 		Shorthand:          convShorthand(req.Shorthand),
@@ -102,16 +102,16 @@ func (d *daemon) GetTaskList(ctx context.Context, req *dinkurapiv1.GetTaskListRe
 	if err != nil {
 		return nil, convError(err)
 	}
-	tasks, err := d.client.GetTaskList(ctx, search)
+	entries, err := d.client.GetEntryList(ctx, search)
 	if err != nil {
 		return nil, convError(err)
 	}
-	return &dinkurapiv1.GetTaskListResponse{
-		Tasks: convTaskSlice(tasks),
+	return &dinkurapiv1.GetEntryListResponse{
+		Entries: convEntrySlice(entries),
 	}, nil
 }
 
-func (d *daemon) CreateTask(ctx context.Context, req *dinkurapiv1.CreateTaskRequest) (*dinkurapiv1.CreateTaskResponse, error) {
+func (d *daemon) CreateEntry(ctx context.Context, req *dinkurapiv1.CreateEntryRequest) (*dinkurapiv1.CreateEntryResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
@@ -126,7 +126,7 @@ func (d *daemon) CreateTask(ctx context.Context, req *dinkurapiv1.CreateTaskRequ
 	if err != nil {
 		return nil, convError(err)
 	}
-	newTask := dinkur.NewTask{
+	newEntry := dinkur.NewEntry{
 		Name:               req.Name,
 		Start:              convTimestampPtr(req.Start),
 		End:                convTimestampPtr(req.End),
@@ -134,17 +134,17 @@ func (d *daemon) CreateTask(ctx context.Context, req *dinkurapiv1.CreateTaskRequ
 		EndBeforeIDOrZero:  endBeforeID,
 		StartAfterLast:     req.StartAfterLast,
 	}
-	startedTask, err := d.client.CreateTask(ctx, newTask)
+	startedEntry, err := d.client.CreateEntry(ctx, newEntry)
 	if err != nil {
 		return nil, convError(err)
 	}
-	return &dinkurapiv1.CreateTaskResponse{
-		PreviouslyActiveTask: convTaskPtr(startedTask.Stopped),
-		CreatedTask:          convTaskPtr(&startedTask.Started),
+	return &dinkurapiv1.CreateEntryResponse{
+		PreviouslyActiveEntry: convEntryPtr(startedEntry.Stopped),
+		CreatedEntry:          convEntryPtr(&startedEntry.Started),
 	}, nil
 }
 
-func (d *daemon) UpdateTask(ctx context.Context, req *dinkurapiv1.UpdateTaskRequest) (*dinkurapiv1.UpdateTaskResponse, error) {
+func (d *daemon) UpdateEntry(ctx context.Context, req *dinkurapiv1.UpdateEntryRequest) (*dinkurapiv1.UpdateEntryResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
@@ -163,7 +163,7 @@ func (d *daemon) UpdateTask(ctx context.Context, req *dinkurapiv1.UpdateTaskRequ
 	if err != nil {
 		return nil, convError(err)
 	}
-	edit := dinkur.EditTask{
+	edit := dinkur.EditEntry{
 		Name:               convString(req.Name),
 		Start:              convTimestampPtr(req.Start),
 		End:                convTimestampPtr(req.End),
@@ -173,17 +173,17 @@ func (d *daemon) UpdateTask(ctx context.Context, req *dinkurapiv1.UpdateTaskRequ
 		EndBeforeIDOrZero:  endBeforeID,
 		StartAfterLast:     req.StartAfterLast,
 	}
-	update, err := d.client.UpdateTask(ctx, edit)
+	update, err := d.client.UpdateEntry(ctx, edit)
 	if err != nil {
 		return nil, convError(err)
 	}
-	return &dinkurapiv1.UpdateTaskResponse{
-		Before: convTaskPtr(&update.Before),
-		After:  convTaskPtr(&update.After),
+	return &dinkurapiv1.UpdateEntryResponse{
+		Before: convEntryPtr(&update.Before),
+		After:  convEntryPtr(&update.After),
 	}, nil
 }
 
-func (d *daemon) DeleteTask(ctx context.Context, req *dinkurapiv1.DeleteTaskRequest) (*dinkurapiv1.DeleteTaskResponse, error) {
+func (d *daemon) DeleteEntry(ctx context.Context, req *dinkurapiv1.DeleteEntryRequest) (*dinkurapiv1.DeleteEntryResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
@@ -194,32 +194,32 @@ func (d *daemon) DeleteTask(ctx context.Context, req *dinkurapiv1.DeleteTaskRequ
 	if err != nil {
 		return nil, convError(err)
 	}
-	deletedTask, err := d.client.DeleteTask(ctx, id)
+	deletedEntry, err := d.client.DeleteEntry(ctx, id)
 	if err != nil {
 		return nil, convError(err)
 	}
-	return &dinkurapiv1.DeleteTaskResponse{
-		DeletedTask: convTaskPtr(&deletedTask),
+	return &dinkurapiv1.DeleteEntryResponse{
+		DeletedEntry: convEntryPtr(&deletedEntry),
 	}, nil
 }
 
-func (d *daemon) StopActiveTask(ctx context.Context, req *dinkurapiv1.StopActiveTaskRequest) (*dinkurapiv1.StopActiveTaskResponse, error) {
+func (d *daemon) StopActiveEntry(ctx context.Context, req *dinkurapiv1.StopActiveEntryRequest) (*dinkurapiv1.StopActiveEntryResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
 	if req == nil {
 		return nil, convError(ErrRequestIsNil)
 	}
-	stoppedTask, err := d.client.StopActiveTask(ctx, convTimestampOrNow(req.End))
+	stoppedEntry, err := d.client.StopActiveEntry(ctx, convTimestampOrNow(req.End))
 	if err != nil {
 		return nil, convError(err)
 	}
-	return &dinkurapiv1.StopActiveTaskResponse{
-		StoppedTask: convTaskPtr(stoppedTask),
+	return &dinkurapiv1.StopActiveEntryResponse{
+		StoppedEntry: convEntryPtr(stoppedEntry),
 	}, nil
 }
 
-func (d *daemon) StreamTask(req *dinkurapiv1.StreamTaskRequest, stream dinkurapiv1.Tasker_StreamTaskServer) error {
+func (d *daemon) StreamEntry(req *dinkurapiv1.StreamEntryRequest, stream dinkurapiv1.Entries_StreamEntryServer) error {
 	if err := d.assertConnected(); err != nil {
 		return convError(err)
 	}
@@ -228,13 +228,13 @@ func (d *daemon) StreamTask(req *dinkurapiv1.StreamTaskRequest, stream dinkurapi
 	}
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
-	ch, err := d.client.StreamTask(ctx)
+	ch, err := d.client.StreamEntry(ctx)
 	if err != nil {
 		return convError(err)
 	}
 	for ev := range ch {
-		if err := stream.Send(&dinkurapiv1.StreamTaskResponse{
-			Task:  convTaskPtr(&ev.Task),
+		if err := stream.Send(&dinkurapiv1.StreamEntryResponse{
+			Entry:  convEntryPtr(&ev.Entry),
 			Event: convEvent(ev.Event),
 		}); err != nil {
 			return convError(err)

@@ -67,16 +67,16 @@ var alertsCmd = &cobra.Command{
 				fmt.Printf("    Message: %q\n", alertType.Message)
 			case dinkur.AlertAFK:
 				fmt.Println("  AFK:")
-				console.PrintTaskLabel(console.LabelledTask{
-					Label: "    Active task:",
-					Task:  alertType.ActiveTask,
+				console.PrintEntryLabel(console.LabelledEntry{
+					Label: "    Active entry:",
+					Entry:  alertType.ActiveEntry,
 				})
 			case dinkur.AlertFormerlyAFK:
 				fmt.Println("  Formerly AFK:")
 				fmt.Println("    AFK since:", alertType.AFKSince)
-				console.PrintTaskLabel(console.LabelledTask{
-					Label: "    Active task:",
-					Task:  alertType.ActiveTask,
+				console.PrintEntryLabel(console.LabelledEntry{
+					Label: "    Active entry:",
+					Entry:  alertType.ActiveEntry,
 				})
 			}
 			fmt.Println()

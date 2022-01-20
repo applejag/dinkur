@@ -32,7 +32,7 @@ var (
 
 // CommonFields contains fields used by multiple other models.
 type CommonFields struct {
-	// ID is a unique identifier for this task. The same ID will never be used
+	// ID is a unique identifier for this entry. The same ID will never be used
 	// twice for a given database.
 	ID uint `gorm:"primaryKey;autoIncrement;type:INTEGER PRIMARY KEY AUTOINCREMENT"`
 	// CreatedAt stores when the database object was added to the database.
@@ -55,27 +55,27 @@ func convCommonFields(f CommonFields) dinkur.CommonFields {
 }
 
 const (
-	taskFieldEnd = "End"
+	entryFieldEnd = "End"
 
-	taskColumnID    = "id"
-	taskColumnStart = "start"
-	taskColumnEnd   = "end"
+	entryColumnID    = "id"
+	entryColumnStart = "start"
+	entryColumnEnd   = "end"
 )
 
-// Task is a time tracked task stored in the database.
-type Task struct {
+// Entry is a time tracked entry stored in the database.
+type Entry struct {
 	CommonFields
-	// Name of the task.
+	// Name of the entry.
 	Name string `gorm:"not null;default:''"`
-	// Start time of the task.
+	// Start time of the entry.
 	Start time.Time `gorm:"not null;default:CURRENT_TIMESTAMP;index"`
-	// End time of the task, or nil if the task is still active.
+	// End time of the entry, or nil if the entry is still active.
 	End *time.Time `gorm:"index"`
 }
 
-// Elapsed returns the duration of the task. If the task is currently active,
+// Elapsed returns the duration of the entry. If the entry is currently active,
 // the duration is calculated from the start to now.
-func (t Task) Elapsed() time.Duration {
+func (t Entry) Elapsed() time.Duration {
 	var end time.Time
 	if t.End != nil {
 		end = *t.End
@@ -86,19 +86,19 @@ func (t Task) Elapsed() time.Duration {
 }
 
 const (
-	taskFTS5ColumnRowID = "tasks_idx.rowid"
-	taskFTS5ColumnName  = "tasks_idx.name"
+	entryFTS5ColumnRowID = "entries_idx.rowid"
+	entryFTS5ColumnName  = "entries_idx.name"
 )
 
-// TaskFTS5 is used for free-text searching tasks.
-type TaskFTS5 struct {
+// EntryFTS5 is used for free-text searching entries.
+type EntryFTS5 struct {
 	RowID uint   `gorm:"primaryKey;column:rowid"`
 	Name  string `gorm:"not null;default:''"`
 }
 
 // TableName overrides the table name used by GORM.
-func (TaskFTS5) TableName() string {
-	return "tasks_idx"
+func (EntryFTS5) TableName() string {
+	return "entries_idx"
 }
 
 func timePtrUTC(t *time.Time) *time.Time {
@@ -117,8 +117,8 @@ func timePtrLocal(t *time.Time) *time.Time {
 	return &utcTime
 }
 
-func convTask(t Task) dinkur.Task {
-	return dinkur.Task{
+func convEntry(t Entry) dinkur.Entry {
+	return dinkur.Entry{
 		CommonFields: convCommonFields(t.CommonFields),
 		Name:         t.Name,
 		Start:        t.Start.Local(),
@@ -126,18 +126,18 @@ func convTask(t Task) dinkur.Task {
 	}
 }
 
-func convTaskPtr(t *Task) *dinkur.Task {
+func convEntryPtr(t *Entry) *dinkur.Entry {
 	if t == nil {
 		return nil
 	}
-	dinkurTask := convTask(*t)
-	return &dinkurTask
+	dinkurEntry := convEntry(*t)
+	return &dinkurEntry
 }
 
-func convTaskSlice(slice []Task) []dinkur.Task {
-	result := make([]dinkur.Task, len(slice))
+func convEntrySlice(slice []Entry) []dinkur.Entry {
+	result := make([]dinkur.Entry, len(slice))
 	for i, t := range slice {
-		result[i] = convTask(t)
+		result[i] = convEntry(t)
 	}
 	return result
 }

@@ -33,43 +33,43 @@ var (
 	errSubscriptionNotInitalized = errors.New("subscription is not initialized")
 )
 
-type taskEvent struct {
-	dbTask Task
+type entryEvent struct {
+	dbEntry Entry
 	event  dinkur.EventType
 }
 
-type taskObserver struct {
-	subs  []chan taskEvent
+type entryObserver struct {
+	subs  []chan entryEvent
 	mutex sync.RWMutex
 }
 
-func (o *taskObserver) pubTask(ev taskEvent) {
+func (o *entryObserver) pubEntry(ev entryEvent) {
 	o.mutex.RLock()
 	for _, sub := range o.subs {
-		go func(ev taskEvent, sub chan taskEvent) {
+		go func(ev entryEvent, sub chan entryEvent) {
 			select {
 			case sub <- ev:
 			case <-time.After(10 * time.Second):
 				log.Warn().
-					WithUint("id", ev.dbTask.ID).
-					WithString("name", ev.dbTask.Name).
+					WithUint("id", ev.dbEntry.ID).
+					WithString("name", ev.dbEntry.Name).
 					WithStringer("event", ev.event).
-					Message("Timed out sending task event.")
+					Message("Timed out sending entry event.")
 			}
 		}(ev, sub)
 	}
 	o.mutex.RUnlock()
 }
 
-func (o *taskObserver) subTasks() <-chan taskEvent {
+func (o *entryObserver) subEntries() <-chan entryEvent {
 	o.mutex.Lock()
-	sub := make(chan taskEvent)
+	sub := make(chan entryEvent)
 	o.subs = append(o.subs, sub)
 	o.mutex.Unlock()
 	return sub
 }
 
-func (o *taskObserver) unsubTasks(sub <-chan taskEvent) error {
+func (o *entryObserver) unsubEntries(sub <-chan entryEvent) error {
 	if sub == nil {
 		return errSubscriptionNotInitalized
 	}
@@ -83,14 +83,14 @@ func (o *taskObserver) unsubTasks(sub <-chan taskEvent) error {
 	return nil
 }
 
-func (o *taskObserver) unsubAllTasks() error {
+func (o *entryObserver) unsubAllEntries() error {
 	o.mutex.Lock()
 	o.subs = nil
 	o.mutex.Unlock()
 	return nil
 }
 
-func (o *taskObserver) subIndex(sub <-chan taskEvent) int {
+func (o *entryObserver) subIndex(sub <-chan entryEvent) int {
 	for i, ch := range o.subs {
 		if ch == sub {
 			return i

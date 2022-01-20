@@ -64,7 +64,7 @@ var RootCmd = &cobra.Command{
 	Version: "0.1.0-preview",
 	Short:   "The Dinkur CLI",
 	Long: license.Header + `
-Track how you spend time on your tasks with Dinkur.
+Track how you spend time on your entries with Dinkur.
 `,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		switch strings.ToLower(flagColor) {
@@ -206,19 +206,19 @@ func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, formerlyAFK dinkur
 		console.PrintFatal("Prompt error:", err)
 	}
 	if res.Edit != nil {
-		update, err := c.UpdateTask(context.Background(), *res.Edit)
+		update, err := c.UpdateEntry(context.Background(), *res.Edit)
 		if err != nil {
-			console.PrintFatal("Error editing task:", err)
+			console.PrintFatal("Error editing entry:", err)
 		}
-		console.PrintTaskEdit(update)
+		console.PrintEntryEdit(update)
 		fmt.Println()
 	}
-	if res.NewTask != nil {
-		startedTask, err := c.CreateTask(context.Background(), *res.NewTask)
+	if res.NewEntry != nil {
+		startedEntry, err := c.CreateEntry(context.Background(), *res.NewEntry)
 		if err != nil {
-			console.PrintFatal("Error starting task:", err)
+			console.PrintFatal("Error starting entry:", err)
 		}
-		printStartedTask(startedTask)
+		printStartedEntry(startedEntry)
 		fmt.Println()
 	}
 	if _, err := c.DeleteAlert(context.Background(), alert.ID); err != nil {
@@ -252,26 +252,26 @@ func clientComplete(*cobra.Command, []string, string) ([]string, cobra.ShellComp
 	}, cobra.ShellCompDirectiveDefault
 }
 
-func taskIDComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+func entryIDComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	client, err := connectClient(true)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	tasks, err := client.GetTaskList(context.Background(), dinkur.SearchTask{
+	entries, err := client.GetEntryList(context.Background(), dinkur.SearchEntry{
 		Limit: 12,
 	})
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	completions := make([]string, len(tasks))
+	completions := make([]string, len(entries))
 	var sb strings.Builder
-	for i, task := range tasks {
+	for i, entry := range entries {
 		sb.Reset()
-		sb.Grow(len(task.Name) + 10)
-		if task.End == nil {
-			fmt.Fprintf(&sb, "%[1]d\ttask #%[1]d `%[2]s` (active)", task.ID, task.Name)
+		sb.Grow(len(entry.Name) + 10)
+		if entry.End == nil {
+			fmt.Fprintf(&sb, "%[1]d\tentry #%[1]d `%[2]s` (active)", entry.ID, entry.Name)
 		} else {
-			fmt.Fprintf(&sb, "%[1]d\ttask #%[1]d `%[2]s`", task.ID, task.Name)
+			fmt.Fprintf(&sb, "%[1]d\tentry #%[1]d `%[2]s`", entry.ID, entry.Name)
 		}
 		completions[i] = sb.String()
 	}

@@ -33,21 +33,21 @@ var statusCmd = &cobra.Command{
 	Use:     "status",
 	Args:    cobra.NoArgs,
 	Aliases: []string{"s"},
-	Short:   "Show status of active task",
+	Short:   "Show status of active entry",
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		connectClientOrExit()
-		activeTask, err := c.GetActiveTask(context.Background())
+		activeEntry, err := c.GetActiveEntry(context.Background())
 		if err != nil {
-			console.PrintFatal("Error getting active task:", err)
+			console.PrintFatal("Error getting active entry:", err)
 		}
-		if activeTask != nil {
-			console.PrintTaskLabel(console.LabelledTask{
-				Label: "Current task:",
-				Task:  *activeTask,
+		if activeEntry != nil {
+			console.PrintEntryLabel(console.LabelledEntry{
+				Label: "Current entry:",
+				Entry:  *activeEntry,
 			})
 		} else {
-			fmt.Println("You have no active task.")
+			fmt.Println("You have no active entry.")
 		}
 	},
 }

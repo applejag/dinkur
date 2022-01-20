@@ -60,8 +60,8 @@ func convError(err error) error {
 	case errors.Is(err, ErrRequestIsNil),
 		errors.Is(err, ErrUintTooLarge),
 		errors.Is(err, dinkur.ErrLimitTooLarge),
-		errors.Is(err, dinkur.ErrTaskEndBeforeStart),
-		errors.Is(err, dinkur.ErrTaskNameEmpty):
+		errors.Is(err, dinkur.ErrEntryEndBeforeStart),
+		errors.Is(err, dinkur.ErrEntryNameEmpty):
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, dinkur.ErrNotConnected),
 		errors.Is(err, dinkur.ErrAlreadyConnected),
@@ -143,7 +143,7 @@ func NewDaemon(client dinkur.Client, opt Options) Daemon {
 
 type daemon struct {
 	Options
-	dinkurapiv1.UnimplementedTaskerServer
+	dinkurapiv1.UnimplementedEntriesServer
 	dinkurapiv1.UnimplementedAlerterServer
 
 	client     dinkur.Client
@@ -185,7 +185,7 @@ func (d *daemon) Serve(ctx context.Context) error {
 		<-ctx.Done()
 		d.Close()
 	}(ctx, d)
-	dinkurapiv1.RegisterTaskerServer(grpcServer, d)
+	dinkurapiv1.RegisterEntriesServer(grpcServer, d)
 	dinkurapiv1.RegisterAlerterServer(grpcServer, d)
 	go d.listenForAFK(ctx)
 	if err := d.afkDetector.StartDetecting(); err != nil {
@@ -225,16 +225,16 @@ func (d *daemon) listenForAFK(ctx context.Context) {
 	for {
 		select {
 		case <-startedChan:
-			task, err := d.client.GetActiveTask(ctx)
+			entry, err := d.client.GetActiveEntry(ctx)
 			if err != nil {
 				log.Warn().WithError(err).
-					Message("Failed to get active task when issuing AFK alert.")
+					Message("Failed to get active entry when issuing AFK alert.")
 				continue
 			}
-			if task == nil {
+			if entry == nil {
 				continue
 			}
-			d.alertStore.SetAFK(*task)
+			d.alertStore.SetAFK(*entry)
 		case stopped := <-stoppedChan:
 			d.alertStore.SetFormerlyAFK(stopped.AFKSince)
 		case <-done:
@@ -243,26 +243,26 @@ func (d *daemon) listenForAFK(ctx context.Context) {
 	}
 }
 
-func convTaskPtr(task *dinkur.Task) *dinkurapiv1.Task {
-	if task == nil {
+func convEntryPtr(entry *dinkur.Entry) *dinkurapiv1.Entry {
+	if entry == nil {
 		return nil
 	}
-	return &dinkurapiv1.Task{
-		Id:      uint64(task.ID),
-		Created: convTime(task.CreatedAt),
-		Updated: convTime(task.UpdatedAt),
-		Name:    task.Name,
-		Start:   convTime(task.Start),
-		End:     convTimePtr(task.End),
+	return &dinkurapiv1.Entry{
+		Id:      uint64(entry.ID),
+		Created: convTime(entry.CreatedAt),
+		Updated: convTime(entry.UpdatedAt),
+		Name:    entry.Name,
+		Start:   convTime(entry.Start),
+		End:     convTimePtr(entry.End),
 	}
 }
 
-func convTaskSlice(slice []dinkur.Task) []*dinkurapiv1.Task {
-	tasks := make([]*dinkurapiv1.Task, len(slice))
+func convEntrySlice(slice []dinkur.Entry) []*dinkurapiv1.Entry {
+	entries := make([]*dinkurapiv1.Entry, len(slice))
 	for i, t := range slice {
-		tasks[i] = convTaskPtr(&t)
+		entries[i] = convEntryPtr(&t)
 	}
-	return tasks
+	return entries
 }
 
 func convTime(t time.Time) *timestamppb.Timestamp {
@@ -292,23 +292,23 @@ func convTimestampOrNow(ts *timestamppb.Timestamp) time.Time {
 	return t
 }
 
-func convShorthand(s dinkurapiv1.GetTaskListRequest_Shorthand) timeutil.TimeSpanShorthand {
+func convShorthand(s dinkurapiv1.GetEntryListRequest_Shorthand) timeutil.TimeSpanShorthand {
 	switch s {
-	case dinkurapiv1.GetTaskListRequest_SHORTHAND_PAST:
+	case dinkurapiv1.GetEntryListRequest_SHORTHAND_PAST:
 		return timeutil.TimeSpanPast
-	case dinkurapiv1.GetTaskListRequest_SHORTHAND_FUTURE:
+	case dinkurapiv1.GetEntryListRequest_SHORTHAND_FUTURE:
 		return timeutil.TimeSpanFuture
-	case dinkurapiv1.GetTaskListRequest_SHORTHAND_THIS_DAY:
+	case dinkurapiv1.GetEntryListRequest_SHORTHAND_THIS_DAY:
 		return timeutil.TimeSpanThisDay
-	case dinkurapiv1.GetTaskListRequest_SHORTHAND_THIS_MON_TO_SUN:
+	case dinkurapiv1.GetEntryListRequest_SHORTHAND_THIS_MON_TO_SUN:
 		return timeutil.TimeSpanThisWeek
-	case dinkurapiv1.GetTaskListRequest_SHORTHAND_PREV_DAY:
+	case dinkurapiv1.GetEntryListRequest_SHORTHAND_PREV_DAY:
 		return timeutil.TimeSpanPrevDay
-	case dinkurapiv1.GetTaskListRequest_SHORTHAND_PREV_MON_TO_SUN:
+	case dinkurapiv1.GetEntryListRequest_SHORTHAND_PREV_MON_TO_SUN:
 		return timeutil.TimeSpanPrevWeek
-	case dinkurapiv1.GetTaskListRequest_SHORTHAND_NEXT_DAY:
+	case dinkurapiv1.GetEntryListRequest_SHORTHAND_NEXT_DAY:
 		return timeutil.TimeSpanNextDay
-	case dinkurapiv1.GetTaskListRequest_SHORTHAND_NEXT_MON_TO_SUN:
+	case dinkurapiv1.GetEntryListRequest_SHORTHAND_NEXT_MON_TO_SUN:
 		return timeutil.TimeSpanNextWeek
 	default:
 		return timeutil.TimeSpanNone
@@ -346,13 +346,13 @@ func convAlertPlainMessage(alert dinkur.AlertPlainMessage) *dinkurapiv1.AlertPla
 
 func convAlertAFK(alert dinkur.AlertAFK) *dinkurapiv1.AlertAfk {
 	return &dinkurapiv1.AlertAfk{
-		ActiveTask: convTaskPtr(&alert.ActiveTask),
+		ActiveEntry: convEntryPtr(&alert.ActiveEntry),
 	}
 }
 
 func convAlertFormerlyAFK(alert dinkur.AlertFormerlyAFK) *dinkurapiv1.AlertFormerlyAfk {
 	return &dinkurapiv1.AlertFormerlyAfk{
-		ActiveTask: convTaskPtr(&alert.ActiveTask),
+		ActiveEntry: convEntryPtr(&alert.ActiveEntry),
 		AfkSince:   convTime(alert.AFKSince),
 	}
 }

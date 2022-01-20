@@ -23,7 +23,7 @@ import "time"
 
 // CommonFields contains fields used by multiple other models.
 type CommonFields struct {
-	// ID is a unique identifier for this task. The same ID will never be used
+	// ID is a unique identifier for this entry. The same ID will never be used
 	// twice for a given database.
 	ID uint `json:"id" yaml:"id" xml:"Id"`
 	// CreatedAt is when the object was created.
@@ -32,20 +32,20 @@ type CommonFields struct {
 	UpdatedAt time.Time `json:"updatedAt" yaml:"updatedAt" xml:"UpdatedAt"`
 }
 
-// Task is a time tracked task.
-type Task struct {
+// Entry is a time tracked entry.
+type Entry struct {
 	CommonFields `yaml:",inline"`
-	// Name of the task.
+	// Name of the entry.
 	Name string `json:"name" yaml:"name" xml:"Name"`
-	// Start time of the task.
+	// Start time of the entry.
 	Start time.Time `json:"start" yaml:"start" xml:"Start"`
-	// End time of the task, or nil if the task is still active.
+	// End time of the entry, or nil if the entry is still active.
 	End *time.Time `json:"end" yaml:"end" xml:"End"`
 }
 
-// Elapsed returns the duration of the task. If the task is currently active,
+// Elapsed returns the duration of the entry. If the entry is currently active,
 // the duration is calculated from the start to now.
-func (t Task) Elapsed() time.Duration {
+func (t Entry) Elapsed() time.Duration {
 	var end time.Time
 	if t.End != nil {
 		end = *t.End
@@ -131,11 +131,11 @@ type AlertPlainMessage struct {
 func (AlertPlainMessage) isAlertUnion() {}
 
 // AlertAFK is a type of alert that's issued when the user has just become AFK
-// (away from keyboard) when also having an active task. I.e. no AFK alert is
-// issued when not tracking any task.
+// (away from keyboard) when also having an active entry. I.e. no AFK alert is
+// issued when not tracking any entry.
 type AlertAFK struct {
 	AlertType
-	ActiveTask Task
+	ActiveEntry Entry
 }
 
 func (AlertAFK) isAlertUnion() {}
@@ -145,7 +145,7 @@ func (AlertAFK) isAlertUnion() {}
 // (and only if) the AFK alert is active.
 type AlertFormerlyAFK struct {
 	AlertType
-	ActiveTask Task
+	ActiveEntry Entry
 	AFKSince   time.Time
 }
 

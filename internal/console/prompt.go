@@ -45,16 +45,16 @@ func convPromptErr(err error) error {
 	return err
 }
 
-// PromptTaskRemoval asks the user for confirmation about removing a task.
+// PromptEntryRemoval asks the user for confirmation about removing a entry.
 // Will return an io.EOF error if the current TTY is not an interactive session.
-func PromptTaskRemoval(task dinkur.Task) error {
+func PromptEntryRemoval(entry dinkur.Entry) error {
 	var sb strings.Builder
 	promptWarnIconColor.Fprint(&sb, promptWarnIconText)
 	sb.WriteByte(' ')
-	sb.WriteString("Warning: You are about to permanently remove task ")
-	writeTaskID(&sb, task.ID)
+	sb.WriteString("Warning: You are about to permanently remove entry ")
+	writeEntryID(&sb, entry.ID)
 	sb.WriteByte(' ')
-	writeTaskName(&sb, task.Name)
+	writeEntryName(&sb, entry.Name)
 	sb.WriteByte('.')
 	fmt.Fprintln(stderr, sb.String())
 	var ok bool
@@ -74,8 +74,8 @@ func PromptTaskRemoval(task dinkur.Task) error {
 // AFKResolution states what should be changed as decided from the human's AFK
 // resolution.
 type AFKResolution struct {
-	Edit    *dinkur.EditTask
-	NewTask *dinkur.NewTask
+	Edit    *dinkur.EditEntry
+	NewEntry *dinkur.NewEntry
 }
 
 // PromptAFKResolution asks the user for how to resolve an AFK alert.
@@ -85,39 +85,39 @@ func PromptAFKResolution(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
 
 	promptWarnIconColor.Fprint(&sb, promptWarnIconText)
 	sb.WriteString(" Note: You were away since ")
-	writeTaskTimeSpanNow(&sb, alert.AFKSince, nil)
+	writeEntryTimeSpanNow(&sb, alert.AFKSince, nil)
 	sb.WriteByte(' ')
-	writeTaskDurationWithDelim(&sb, now.Sub(alert.AFKSince))
+	writeEntryDurationWithDelim(&sb, now.Sub(alert.AFKSince))
 	sb.WriteByte('\n')
 	promptWarnIconColor.Fprint(&sb, promptWarnIconText)
-	sb.WriteString(" while having an active task ")
-	writeTaskID(&sb, alert.ActiveTask.ID)
+	sb.WriteString(" while having an active entry ")
+	writeEntryID(&sb, alert.ActiveEntry.ID)
 	sb.WriteByte(' ')
-	writeTaskName(&sb, alert.ActiveTask.Name)
+	writeEntryName(&sb, alert.ActiveEntry.Name)
 	sb.WriteByte(' ')
-	writeTaskTimeSpanActiveDuration(&sb, alert.ActiveTask.Start, alert.ActiveTask.End, alert.ActiveTask.Elapsed())
+	writeEntryTimeSpanActiveDuration(&sb, alert.ActiveEntry.Start, alert.ActiveEntry.End, alert.ActiveEntry.Elapsed())
 	sb.WriteString("\n\n")
 
 	if checkIfNonInteractiveTTY() {
 		promptWarnIconColor.Fprint(&sb, promptWarnIconText)
 		sb.WriteString(" The terminal seems to be non-interactive. Skipping prompt.\n")
 		promptWarnIconColor.Fprint(&sb, promptWarnIconText)
-		sb.WriteString(` Assuming option "1. Leave the active task as-is and continue with the invoked command."`)
+		sb.WriteString(` Assuming option "1. Leave the active entry as-is and continue with the invoked command."`)
 		fmt.Fprintln(stderr, sb.String())
-		taskEditNoneColor.Fprintln(stdout, taskEditPrefix, taskEditNoChange)
+		entryEditNoneColor.Fprintln(stdout, entryEditPrefix, entryEditNoChange)
 		return AFKResolution{}, nil
 	}
 
 	sb.WriteString("How do you want to save this away time?\n")
 
-	sb.WriteString("  1. Leave the active task as-is and continue with the invoked command.\n")
+	sb.WriteString("  1. Leave the active entry as-is and continue with the invoked command.\n")
 
-	sb.WriteString("  2. Discard the away time I was away, changing active task to ")
-	writeTaskTimeSpanNowDuration(&sb, alert.ActiveTask.Start, &alert.AFKSince, alert.AFKSince.Sub(alert.ActiveTask.Start))
+	sb.WriteString("  2. Discard the away time I was away, changing active entry to ")
+	writeEntryTimeSpanNowDuration(&sb, alert.ActiveEntry.Start, &alert.AFKSince, alert.AFKSince.Sub(alert.ActiveEntry.Start))
 	sb.WriteString(".\n")
 
-	sb.WriteString("  3. Save the away time as a new task ")
-	writeTaskTimeSpanNowDuration(&sb, alert.AFKSince, nil, now.Sub(alert.AFKSince))
+	sb.WriteString("  3. Save the away time as a new entry ")
+	writeEntryTimeSpanNowDuration(&sb, alert.AFKSince, nil, now.Sub(alert.AFKSince))
 	sb.WriteString("  (naming it in a later prompt).\n")
 
 	sb.WriteByte(' ')
@@ -137,50 +137,50 @@ func PromptAFKResolution(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
 
 	switch answerInt {
 	case 1:
-		// Leave the active task as-is.
-		taskEditNoneColor.Fprintln(stdout, taskEditPrefix, taskEditNoChange)
+		// Leave the active entry as-is.
+		entryEditNoneColor.Fprintln(stdout, entryEditPrefix, entryEditNoChange)
 		return AFKResolution{}, nil
 
 	case 2:
 		// Discard the time
-		fmt.Fprintln(stderr, "Discarding the away time from the currently active task.")
+		fmt.Fprintln(stderr, "Discarding the away time from the currently active entry.")
 		return AFKResolution{
-			Edit: &dinkur.EditTask{
-				IDOrZero: alert.ActiveTask.ID,
+			Edit: &dinkur.EditEntry{
+				IDOrZero: alert.ActiveEntry.ID,
 				End:      &alert.AFKSince,
 			},
 		}, nil
 
 	case 3:
-		// Save the time as a new task
-		return promptAFKSaveAsNewTask(alert)
+		// Save the time as a new entry
+		return promptAFKSaveAsNewEntry(alert)
 
 	default:
 		return AFKResolution{}, errors.New("no answer chosen")
 	}
 }
 
-func promptAFKSaveAsNewTask(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
+func promptAFKSaveAsNewEntry(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
 	name, err := promptNonEmptyString(&survey.Input{
-		Message: "Enter name of new task:",
+		Message: "Enter name of new entry:",
 	})
 	if err != nil {
 		return AFKResolution{}, err
 	}
 	var sb strings.Builder
-	sb.WriteString("Saving the away time as a new task with name ")
-	writeTaskName(&sb, name)
+	sb.WriteString("Saving the away time as a new entry with name ")
+	writeEntryName(&sb, name)
 	sb.WriteString(".\n")
 	fmt.Fprint(stderr, sb.String())
 	return AFKResolution{
-		Edit: &dinkur.EditTask{
-			IDOrZero: alert.ActiveTask.ID,
+		Edit: &dinkur.EditEntry{
+			IDOrZero: alert.ActiveEntry.ID,
 			End:      &alert.AFKSince,
 		},
-		NewTask: &dinkur.NewTask{
+		NewEntry: &dinkur.NewEntry{
 			Name:               name,
 			Start:              &alert.AFKSince,
-			StartAfterIDOrZero: alert.ActiveTask.ID,
+			StartAfterIDOrZero: alert.ActiveEntry.ID,
 		},
 	}, nil
 }

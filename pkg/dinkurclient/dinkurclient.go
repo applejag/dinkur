@@ -43,7 +43,7 @@ import (
 var (
 	ErrUintTooLarge       = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
 	ErrResponseIsNil      = errors.New("grpc response was nil")
-	ErrUnexpectedNilTask  = errors.New("unexpected nil task")
+	ErrUnexpectedNilEntry  = errors.New("unexpected nil entry")
 	ErrUnexpectedNilAlert = errors.New("unexpected nil alert")
 )
 
@@ -53,7 +53,7 @@ var log = logger.NewScoped("client")
 type Options struct{}
 
 // NewClient returns a new dinkur.Client-compatible implementation that uses
-// gRPC towards a remote Dinkur daemon to perform all dinkur.Client tasks.
+// gRPC towards a remote Dinkur daemon to perform all dinkur.Client entries.
 func NewClient(serverAddr string, opt Options) dinkur.Client {
 	return &client{
 		Options:    opt,
@@ -65,7 +65,7 @@ type client struct {
 	Options
 	serverAddr string
 	conn       *grpc.ClientConn
-	tasker     dinkurapiv1.TaskerClient
+	entryer    dinkurapiv1.EntriesClient
 	alerter    dinkurapiv1.AlerterClient
 }
 
@@ -73,7 +73,7 @@ func (c *client) assertConnected() error {
 	if c == nil {
 		return dinkur.ErrClientIsNil
 	}
-	if c.conn == nil || c.tasker == nil || c.alerter == nil {
+	if c.conn == nil || c.entryer == nil || c.alerter == nil {
 		return dinkur.ErrNotConnected
 	}
 	return nil
@@ -83,7 +83,7 @@ func (c *client) Connect(ctx context.Context) error {
 	if c == nil {
 		return dinkur.ErrClientIsNil
 	}
-	if c.conn != nil || c.tasker != nil || c.alerter != nil {
+	if c.conn != nil || c.entryer != nil || c.alerter != nil {
 		return dinkur.ErrAlreadyConnected
 	}
 	// TODO: add credentials via opts args
@@ -92,7 +92,7 @@ func (c *client) Connect(ctx context.Context) error {
 		return convError(err)
 	}
 	c.conn = conn
-	c.tasker = dinkurapiv1.NewTaskerClient(conn)
+	c.entryer = dinkurapiv1.NewEntriesClient(conn)
 	c.alerter = dinkurapiv1.NewAlerterClient(conn)
 	return nil
 }
@@ -102,7 +102,7 @@ func (c *client) Close() (err error) {
 		err = conn.Close()
 		c.conn = nil
 	}
-	c.tasker = nil
+	c.entryer = nil
 	return
 }
 
@@ -110,7 +110,7 @@ func (c *client) Ping(ctx context.Context) error {
 	if err := c.assertConnected(); err != nil {
 		return err
 	}
-	res, err := c.tasker.Ping(ctx, &dinkurapiv1.PingRequest{})
+	res, err := c.entryer.Ping(ctx, &dinkurapiv1.PingRequest{})
 	if err != nil {
 		return convError(err)
 	}
@@ -189,73 +189,73 @@ func convTimestampOrZero(ts *timestamppb.Timestamp) time.Time {
 	return ts.AsTime().Local()
 }
 
-func convShorthand(s timeutil.TimeSpanShorthand) dinkurapiv1.GetTaskListRequest_Shorthand {
+func convShorthand(s timeutil.TimeSpanShorthand) dinkurapiv1.GetEntryListRequest_Shorthand {
 	switch s {
 	case timeutil.TimeSpanPast:
-		return dinkurapiv1.GetTaskListRequest_SHORTHAND_PAST
+		return dinkurapiv1.GetEntryListRequest_SHORTHAND_PAST
 	case timeutil.TimeSpanFuture:
-		return dinkurapiv1.GetTaskListRequest_SHORTHAND_FUTURE
+		return dinkurapiv1.GetEntryListRequest_SHORTHAND_FUTURE
 	case timeutil.TimeSpanThisDay:
-		return dinkurapiv1.GetTaskListRequest_SHORTHAND_THIS_DAY
+		return dinkurapiv1.GetEntryListRequest_SHORTHAND_THIS_DAY
 	case timeutil.TimeSpanThisWeek:
-		return dinkurapiv1.GetTaskListRequest_SHORTHAND_THIS_MON_TO_SUN
+		return dinkurapiv1.GetEntryListRequest_SHORTHAND_THIS_MON_TO_SUN
 	case timeutil.TimeSpanPrevDay:
-		return dinkurapiv1.GetTaskListRequest_SHORTHAND_PREV_DAY
+		return dinkurapiv1.GetEntryListRequest_SHORTHAND_PREV_DAY
 	case timeutil.TimeSpanPrevWeek:
-		return dinkurapiv1.GetTaskListRequest_SHORTHAND_PREV_MON_TO_SUN
+		return dinkurapiv1.GetEntryListRequest_SHORTHAND_PREV_MON_TO_SUN
 	case timeutil.TimeSpanNextDay:
-		return dinkurapiv1.GetTaskListRequest_SHORTHAND_NEXT_DAY
+		return dinkurapiv1.GetEntryListRequest_SHORTHAND_NEXT_DAY
 	case timeutil.TimeSpanNextWeek:
-		return dinkurapiv1.GetTaskListRequest_SHORTHAND_NEXT_MON_TO_SUN
+		return dinkurapiv1.GetEntryListRequest_SHORTHAND_NEXT_MON_TO_SUN
 	default:
-		return dinkurapiv1.GetTaskListRequest_SHORTHAND_UNSPECIFIED
+		return dinkurapiv1.GetEntryListRequest_SHORTHAND_UNSPECIFIED
 	}
 }
 
-func convTaskPtr(task *dinkurapiv1.Task) (*dinkur.Task, error) {
-	if task == nil {
+func convEntryPtr(entry *dinkurapiv1.Entry) (*dinkur.Entry, error) {
+	if entry == nil {
 		return nil, nil
 	}
-	id, err := uint64ToUint(task.Id)
+	id, err := uint64ToUint(entry.Id)
 	if err != nil {
-		return nil, fmt.Errorf("convert task ID: %w", err)
+		return nil, fmt.Errorf("convert entry ID: %w", err)
 	}
-	return &dinkur.Task{
+	return &dinkur.Entry{
 		CommonFields: dinkur.CommonFields{
 			ID:        id,
-			CreatedAt: convTimestampOrZero(task.Created),
-			UpdatedAt: convTimestampOrZero(task.Updated),
+			CreatedAt: convTimestampOrZero(entry.Created),
+			UpdatedAt: convTimestampOrZero(entry.Updated),
 		},
-		Name:  task.Name,
-		Start: convTimestampOrZero(task.Start),
-		End:   convTimestampPtr(task.End),
+		Name:  entry.Name,
+		Start: convTimestampOrZero(entry.Start),
+		End:   convTimestampPtr(entry.End),
 	}, nil
 }
 
-func convTaskPtrNoNil(task *dinkurapiv1.Task) (dinkur.Task, error) {
-	t, err := convTaskPtr(task)
+func convEntryPtrNoNil(entry *dinkurapiv1.Entry) (dinkur.Entry, error) {
+	t, err := convEntryPtr(entry)
 	if err != nil {
-		return dinkur.Task{}, err
+		return dinkur.Entry{}, err
 	}
 	if t == nil {
-		return dinkur.Task{}, ErrUnexpectedNilTask
+		return dinkur.Entry{}, ErrUnexpectedNilEntry
 	}
 	return *t, nil
 }
 
-func convTaskSlice(slice []*dinkurapiv1.Task) ([]dinkur.Task, error) {
-	tasks := make([]dinkur.Task, 0, len(slice))
+func convEntrySlice(slice []*dinkurapiv1.Entry) ([]dinkur.Entry, error) {
+	entries := make([]dinkur.Entry, 0, len(slice))
 	for _, t := range slice {
-		t2, err := convTaskPtr(t)
+		t2, err := convEntryPtr(t)
 		if t2 == nil {
 			continue
 		}
 		if err != nil {
-			return nil, fmt.Errorf("task #%d %q: %w", t.Id, t.Name, err)
+			return nil, fmt.Errorf("entry #%d %q: %w", t.Id, t.Name, err)
 		}
-		tasks = append(tasks, *t2)
+		entries = append(entries, *t2)
 	}
-	return tasks, nil
+	return entries, nil
 }
 
 func convAlertPtr(alert *dinkurapiv1.Alert) (*dinkur.Alert, error) {
@@ -305,12 +305,12 @@ func convAlertAFK(alert *dinkurapiv1.AlertAfk) (dinkur.AlertType, error) {
 	if alert == nil {
 		return nil, nil
 	}
-	task, err := convTaskPtrNoNil(alert.ActiveTask)
+	entry, err := convEntryPtrNoNil(alert.ActiveEntry)
 	if err != nil {
 		return nil, err
 	}
 	return dinkur.AlertAFK{
-		ActiveTask: task,
+		ActiveEntry: entry,
 	}, nil
 }
 
@@ -318,18 +318,18 @@ func convAlertFormerlyAFK(alert *dinkurapiv1.AlertFormerlyAfk) (dinkur.AlertType
 	if alert == nil {
 		return nil, nil
 	}
-	task, err := convTaskPtrNoNil(alert.ActiveTask)
+	entry, err := convEntryPtrNoNil(alert.ActiveEntry)
 	if err != nil {
 		return nil, err
 	}
 	return dinkur.AlertFormerlyAFK{
-		ActiveTask: task,
+		ActiveEntry: entry,
 		AFKSince:   convTimestampOrZero(alert.AfkSince),
 	}, nil
 }
 
 func convAlertSlice(slice []*dinkurapiv1.Alert) ([]dinkur.Alert, error) {
-	tasks := make([]dinkur.Alert, 0, len(slice))
+	entries := make([]dinkur.Alert, 0, len(slice))
 	for _, a := range slice {
 		a2, err := convAlertPtr(a)
 		if a2 == nil {
@@ -338,9 +338,9 @@ func convAlertSlice(slice []*dinkurapiv1.Alert) ([]dinkur.Alert, error) {
 		if err != nil {
 			return nil, fmt.Errorf("alert #%d: %w", a.Id, err)
 		}
-		tasks = append(tasks, *a2)
+		entries = append(entries, *a2)
 	}
-	return tasks, nil
+	return entries, nil
 }
 
 func convEvent(ev dinkurapiv1.Event) dinkur.EventType {

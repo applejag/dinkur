@@ -33,7 +33,7 @@ type Store struct {
 	lastID      uint
 	lastIDMutex sync.Mutex
 
-	afkActiveTask    *dinkur.Task
+	afkActiveEntry    *dinkur.Entry
 	afkAlert         *dinkur.Alert
 	formerlyAFKAlert *dinkur.Alert
 }
@@ -74,7 +74,7 @@ func (s *Store) Delete(id uint) (dinkur.Alert, error) {
 
 // SetAFK marks the user as AFK and creates the AFK alert if it doesn't exist,
 // as well as deleting the formerly-AFK alert if it exists.
-func (s *Store) SetAFK(activeTask dinkur.Task) {
+func (s *Store) SetAFK(activeEntry dinkur.Entry) {
 	if s.formerlyAFKAlert != nil {
 		s.Delete(s.formerlyAFKAlert.ID)
 	}
@@ -89,10 +89,10 @@ func (s *Store) SetAFK(activeTask dinkur.Task) {
 			UpdatedAt: now,
 		},
 		Type: dinkur.AlertAFK{
-			ActiveTask: activeTask,
+			ActiveEntry: activeEntry,
 		},
 	}
-	s.afkActiveTask = &activeTask
+	s.afkActiveEntry = &activeEntry
 	s.afkAlert = &alert
 	s.PubAlertWait(AlertEvent{
 		Alert: alert,
@@ -106,7 +106,7 @@ func (s *Store) SetFormerlyAFK(afkSince time.Time) {
 	if s.afkAlert != nil {
 		s.Delete(s.afkAlert.ID)
 	}
-	if s.afkActiveTask == nil || s.formerlyAFKAlert != nil {
+	if s.afkActiveEntry == nil || s.formerlyAFKAlert != nil {
 		return
 	}
 	now := time.Now()
@@ -118,7 +118,7 @@ func (s *Store) SetFormerlyAFK(afkSince time.Time) {
 		},
 		Type: dinkur.AlertFormerlyAFK{
 			AFKSince:   afkSince,
-			ActiveTask: *s.afkActiveTask,
+			ActiveEntry: *s.afkActiveEntry,
 		},
 	}
 	s.formerlyAFKAlert = &alert

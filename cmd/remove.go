@@ -40,51 +40,51 @@ func init() {
 		Use:     "remove",
 		Args:    cobra.NoArgs,
 		Aliases: []string{"rm", "r"},
-		Short:   "Removes a task",
-		Long: `Removes a task from your task data store.
-You must provide the flag --id to specify which task to remove.
+		Short:   "Removes a entry",
+		Long: `Removes a entry from your entry data store.
+You must provide the flag --id to specify which entry to remove.
 No bulk removal is supported.
 
-Warning: Removing a task cannot be undone!`,
+Warning: Removing a entry cannot be undone!`,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
 			if !flagYes {
-				task, err := c.GetTask(context.Background(), flagID)
+				entry, err := c.GetEntry(context.Background(), flagID)
 				if err != nil {
-					console.PrintFatal("Error getting task:", err)
+					console.PrintFatal("Error getting entry:", err)
 				}
-				err = console.PromptTaskRemoval(task)
+				err = console.PromptEntryRemoval(entry)
 				if err != nil {
 					console.PrintFatal("Prompt error:", err)
 				}
 			}
-			removedTask, err := c.DeleteTask(context.Background(), flagID)
+			removedEntry, err := c.DeleteEntry(context.Background(), flagID)
 			if err != nil {
-				console.PrintFatal("Error removing task:", err)
+				console.PrintFatal("Error removing entry:", err)
 			}
-			console.PrintTaskLabel(console.LabelledTask{
-				Label: "Deleted task:",
-				Task:  removedTask,
+			console.PrintEntryLabel(console.LabelledEntry{
+				Label: "Deleted entry:",
+				Entry:  removedEntry,
 			})
 			fmt.Println()
 			fmt.Println("If this was a mistake, you can add it back in with:")
-			if removedTask.End != nil {
+			if removedEntry.End != nil {
 				fmt.Printf("  $ dinkur in --start %q --end %q %q\n",
-					removedTask.Start.Format(time.RFC3339),
-					removedTask.End.Format(time.RFC3339),
-					removedTask.Name)
+					removedEntry.Start.Format(time.RFC3339),
+					removedEntry.End.Format(time.RFC3339),
+					removedEntry.Name)
 			} else {
 				fmt.Printf("  $ dinkur in --start %q %q\n",
-					removedTask.Start.Format(time.RFC3339),
-					removedTask.Name)
+					removedEntry.Start.Format(time.RFC3339),
+					removedEntry.Name)
 			}
 		},
 	}
 
 	RootCmd.AddCommand(removeCmd)
 
-	removeCmd.Flags().UintVarP(&flagID, "id", "i", 0, "ID of task to be removed (required)")
+	removeCmd.Flags().UintVarP(&flagID, "id", "i", 0, "ID of entry to be removed (required)")
 	removeCmd.MarkFlagRequired("id")
-	removeCmd.RegisterFlagCompletionFunc("id", taskIDComplete)
+	removeCmd.RegisterFlagCompletionFunc("id", entryIDComplete)
 	removeCmd.Flags().BoolVarP(&flagYes, "yes", "y", false, "skip confirmation prompt")
 }

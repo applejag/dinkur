@@ -54,25 +54,25 @@ func init() {
 		Use:     `list [name search terms]`,
 		Args:    cobra.ArbitraryArgs,
 		Aliases: []string{"ls", "l"},
-		Short:   "List your tasks",
-		Long: fmt.Sprintf(`Lists all your tasks.
+		Short:   "List your entries",
+		Long: fmt.Sprintf(`Lists all your entries.
 
-Any non-flag arguments are used as task name search terms. Due to technical
+Any non-flag arguments are used as entry name search terms. Due to technical
 limitation, terms shorter than 3 characters are ignored.
 
-By default, this will only list today's tasks. You can supply the --range flag
+By default, this will only list today's entries. You can supply the --range flag
 to declare a different baseline range. The --start and --end flags will always
 take precedence over the baseline range.
 
-	%[1]s list --range all        # list all tasks, i.e. no baseline.
-	%[1]s list --range past       # list all tasks before now.
-	%[1]s list --range future     # list all tasks since now.
-	%[1]s list --range today      # (default) list today's tasks.
-	%[1]s list --range week       # list this week's tasks.
-	%[1]s list --range yesterday  # list yesterday's tasks.
-	%[1]s list --range lastweek   # list last week's tasks.
-	%[1]s list --range tomorrow   # list tomorrow's tasks.
-	%[1]s list --range nextweek   # list next week's tasks.
+	%[1]s list --range all        # list all entries, i.e. no baseline.
+	%[1]s list --range past       # list all entries before now.
+	%[1]s list --range future     # list all entries since now.
+	%[1]s list --range today      # (default) list today's entries.
+	%[1]s list --range week       # list this week's entries.
+	%[1]s list --range yesterday  # list yesterday's entries.
+	%[1]s list --range lastweek   # list last week's entries.
+	%[1]s list --range tomorrow   # list tomorrow's entries.
+	%[1]s list --range nextweek   # list next week's entries.
 
 Day baselines sets the range 00:00:00 - 24:59:59.
 Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
@@ -80,7 +80,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
 			rand.Seed(time.Now().UnixMicro())
-			search := dinkur.SearchTask{
+			search := dinkur.SearchEntry{
 				Limit:     flagLimit,
 				Start:     flagStart.TimePtr(),
 				End:       flagEnd.TimePtr(),
@@ -96,9 +96,9 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				WithStringf("--end", "%v", search.End).
 				WithStringf("--shorthand", "%v", search.Shorthand).
 				Message("Flags")
-			tasks, err := c.GetTaskList(context.Background(), search)
+			entries, err := c.GetEntryList(context.Background(), search)
 			if err != nil {
-				console.PrintFatal("Error getting list of tasks:", err)
+				console.PrintFatal("Error getting list of entries:", err)
 			}
 			switch strings.ToLower(flagOutput) {
 			case "pretty":
@@ -106,59 +106,59 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				if len(args) == 0 {
 					searchStart, searchEnd = "", ""
 				}
-				console.PrintTaskListSearched(tasks, searchStart, searchEnd)
+				console.PrintEntryListSearched(entries, searchStart, searchEnd)
 			case "json":
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")
-				if err := enc.Encode(tasks); err != nil {
-					console.PrintFatal("Error encoding tasks as JSON:", err)
+				if err := enc.Encode(entries); err != nil {
+					console.PrintFatal("Error encoding entries as JSON:", err)
 				}
 			case "json-line":
 				enc := json.NewEncoder(os.Stdout)
-				for _, t := range tasks {
+				for _, t := range entries {
 					if err := enc.Encode(t); err != nil {
-						console.PrintFatal(fmt.Sprintf("Error encoding task #%d as JSON:", t.ID), err)
+						console.PrintFatal(fmt.Sprintf("Error encoding entry #%d as JSON:", t.ID), err)
 					}
 				}
 			case "yaml":
 				enc := yaml.NewEncoder(os.Stdout)
 				enc.SetIndent(2)
-				if err := enc.Encode(tasks); err != nil {
-					console.PrintFatal("Error encoding tasks as YAML:", err)
+				if err := enc.Encode(entries); err != nil {
+					console.PrintFatal("Error encoding entries as YAML:", err)
 				}
 			case "xml":
 				enc := xml.NewEncoder(os.Stdout)
 				enc.Indent("", "    ")
-				if err := enc.Encode(tasks); err != nil {
-					console.PrintFatal("Error encoding tasks as XML:", err)
+				if err := enc.Encode(entries); err != nil {
+					console.PrintFatal("Error encoding entries as XML:", err)
 				}
 				fmt.Println()
 			case "xml-line":
 				enc := xml.NewEncoder(os.Stdout)
-				for _, t := range tasks {
+				for _, t := range entries {
 					if err := enc.Encode(t); err != nil {
 						fmt.Println()
-						console.PrintFatal(fmt.Sprintf("Error encoding task #%d as XML:", t.ID), err)
+						console.PrintFatal(fmt.Sprintf("Error encoding entry #%d as XML:", t.ID), err)
 					}
 					fmt.Println()
 				}
 			case "csv":
 				w := csv.NewWriter(os.Stdout)
 				var records [][]string
-				for _, t := range tasks {
-					records = append(records, convTaskCSVRecord(t))
+				for _, t := range entries {
+					records = append(records, convEntryCSVRecord(t))
 				}
 				if err := w.WriteAll(records); err != nil {
-					console.PrintFatal("Error encoding tasks as CSV:", err)
+					console.PrintFatal("Error encoding entries as CSV:", err)
 				}
 			case "csv-header":
 				w := csv.NewWriter(os.Stdout)
-				records := [][]string{taskCSVHeaderRecord()}
-				for _, t := range tasks {
-					records = append(records, convTaskCSVRecord(t))
+				records := [][]string{entryCSVHeaderRecord()}
+				for _, t := range entries {
+					records = append(records, convEntryCSVRecord(t))
 				}
 				if err := w.WriteAll(records); err != nil {
-					console.PrintFatal("Error encoding tasks as CSV:", err)
+					console.PrintFatal("Error encoding entries as CSV:", err)
 				}
 			default:
 				console.PrintFatal("Error parsing --output:", fmt.Errorf("invalid output format: %q", flagOutput))
@@ -169,8 +169,8 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 	RootCmd.AddCommand(listCmd)
 
 	listCmd.Flags().UintVarP(&flagLimit, "limit", "l", flagLimit, "limit the number of results, relative to the last result; 0 will disable limit")
-	listCmd.Flags().VarP(flagStart, "start", "s", "list tasks starting after or at date time")
-	listCmd.Flags().VarP(flagEnd, "end", "e", "list tasks ending before or at date time")
+	listCmd.Flags().VarP(flagStart, "start", "s", "list entries starting after or at date time")
+	listCmd.Flags().VarP(flagEnd, "end", "e", "list entries ending before or at date time")
 	listCmd.Flags().VarP(flagRange, "range", "r", "baseline time range")
 	listCmd.RegisterFlagCompletionFunc("range", pflagutil.TimeRangeCompletion)
 	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", "json-line", "yaml", "xml", "xml-line", "csv", "csv-header"`)
@@ -181,17 +181,17 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 func outputFormatComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return []string{
 		"pretty\thuman readable and colored table formatting (default)",
-		"json\ta single indented JSON array containing all tasks",
-		"json-line\teach task JSON object on a separate line",
-		"yaml\tYAML array of tasks",
-		"xml\tXML list of tasks",
-		"xml-line\teach task XML element on a separate line",
-		"csv\teach task on a separate line with field as comma-separated-values",
+		"json\ta single indented JSON array containing all entries",
+		"json-line\teach entry JSON object on a separate line",
+		"yaml\tYAML array of entries",
+		"xml\tXML list of entries",
+		"xml-line\teach entry XML element on a separate line",
+		"csv\teach entry on a separate line with field as comma-separated-values",
 		"csv-header\tsame as --output=csv, but with additional header row",
 	}, cobra.ShellCompDirectiveDefault
 }
 
-func taskCSVHeaderRecord() []string {
+func entryCSVHeaderRecord() []string {
 	return []string{
 		"ID",
 		"Created at",
@@ -202,18 +202,18 @@ func taskCSVHeaderRecord() []string {
 	}
 }
 
-func convTaskCSVRecord(task dinkur.Task) []string {
+func convEntryCSVRecord(entry dinkur.Entry) []string {
 	const timeLayout = time.RFC3339Nano
 	endStr := ""
-	if task.End != nil {
-		endStr = task.End.String()
+	if entry.End != nil {
+		endStr = entry.End.String()
 	}
 	return []string{
-		strconv.FormatUint(uint64(task.ID), 10),
-		task.CreatedAt.Format(timeLayout),
-		task.UpdatedAt.Format(timeLayout),
-		task.Name,
-		task.Start.Format(timeLayout),
+		strconv.FormatUint(uint64(entry.ID), 10),
+		entry.CreatedAt.Format(timeLayout),
+		entry.UpdatedAt.Format(timeLayout),
+		entry.Name,
+		entry.Start.Format(timeLayout),
 		endStr,
 	}
 }

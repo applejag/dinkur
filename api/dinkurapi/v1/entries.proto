@@ -1,0 +1,299 @@
+// Dinkur the task time tracking utility.
+// <https://github.com/dinkur/dinkur>
+//
+// Copyright (C) 2021 Kalle Fagerberg
+// SPDX-FileCopyrightText: 2021 Kalle Fagerberg
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// This program is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by the
+// Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+// more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+syntax = "proto3";
+
+package dinkurapi.v1;
+
+import "api/dinkurapi/v1/event.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/dinkur/dinkur/api/dinkurapi/v1";
+
+// Entries is a service for Dinkur entries.
+service Entries {
+  // Ping pongs.
+  rpc Ping (PingRequest) returns (PingResponse);
+  // GetEntry returns a specific entry by ID. Status 5 "NOT_FOUND" is
+  // reported if no entry was found by that ID.
+  rpc GetEntry (GetEntryRequest) returns (GetEntryResponse);
+  // GetActiveEntry returns the currently active entry (a entry with no end
+  // time). If no such entry exists, then an empty reposne it returned instead.
+  rpc GetActiveEntry (GetActiveEntryRequest) returns (GetActiveEntryResponse);
+  // GetEntryList queries for a list of entries.
+  rpc GetEntryList (GetEntryListRequest) returns (GetEntryListResponse);
+  // CreateEntry creates a new entry and stops any currently active entries, and
+  // returns the stopped previously active entry (if any) and the newly created
+  // entry.
+  rpc CreateEntry (CreateEntryRequest) returns (CreateEntryResponse);
+  // UpdateEntry alters a entry by ID and returns the entry's before and after
+  // state. Status 5 "NOT_FOUND" is reported if no entry was found by that ID.
+  rpc UpdateEntry (UpdateEntryRequest) returns (UpdateEntryResponse);
+  // DeleteEntry removes a entry by ID. Status 5 "NOT_FOUND" is=
+  // reported if no entry was found by that ID.
+  rpc DeleteEntry (DeleteEntryRequest) returns (DeleteEntryResponse);
+  // StopActiveEntry stops the currently active entry and returns that entry
+  // (if any).
+  rpc StopActiveEntry (StopActiveEntryRequest)
+    returns (StopActiveEntryResponse);
+  // StreamAlert streams entry change events: created, updated, deleted.
+  rpc StreamEntry(StreamEntryRequest) returns (stream StreamEntryResponse);
+}
+
+// PingRequest is an empty message and unused. It is here as a
+// placeholder for potential future use.
+message PingRequest {
+}
+
+// PingResponse is an empty message and unused. It is here as a
+// placeholder for potential future use.
+message PingResponse {
+}
+
+// GetEntryRequest holds the ID of the entry to get.
+message GetEntryRequest {
+  // Id is the ID of the entry to get.
+  uint64 id = 1;
+}
+
+// GetEntryResponse holds the entry gotten by ID.
+message GetEntryResponse {
+  // Entry is the entry gotten by ID.
+  Entry entry = 1;
+}
+
+// GetActiveEntryRequest is an empty message and unused. It is here as a
+// placeholder for potential future use.
+message GetActiveEntryRequest {
+}
+
+// GetActiveEntryResponse holds the currently active entry (if any).
+message GetActiveEntryResponse {
+  // ActiveEntry is the currently active entry (if any).
+  Entry active_entry = 1;
+}
+
+// GetEntryListRequest holds query parameters for listing entries. All fields
+// adds additional filters, where they combined with the AND operator. An empty
+// request message will return all entries.
+message GetEntryListRequest {
+  // Start is the starting timestamp bound of entries to list. Any entry that
+  // either starts or ends after this time is included. Will override any start
+  // timestamp (if any) set by the shorthand field.
+  google.protobuf.Timestamp start = 1;
+  // End is the ending timestamp bound of entries to list. Any entry that
+  // either starts or ends before this time is included. Will override any end
+  // timestamp (if any) set by the shorthand field.
+  google.protobuf.Timestamp end = 2;
+  // Limit is the number of entries to include in the results. A value of zero
+  // means no limit is applied. The limit is applied at the end of the results,
+  // so a limit of 3 will return the 3 last entries.
+  uint64 limit = 3;
+  // Shorthand is an enumeration of time span shorthands used for easier
+  // queries.
+  enum Shorthand {
+    // UNSPECIFIED means no shorthand filtering is applied.
+    SHORTHAND_UNSPECIFIED = 0;
+    // SHORTHAND_PAST sets the default end timestamp to now, while leaving the
+    // start timestamp unchanged.
+    SHORTHAND_PAST = 1;
+    // SHORTHAND_FUTURE sets the default start timestamp to now, while leaving
+    // the end timestamp unchanged.
+    SHORTHAND_FUTURE = 2;
+    // SHORTHAND_THIS_DAY sets the default start timestamp to 00:00:00 today
+    // and the default end timestamp to 23:59:59 today.
+    SHORTHAND_THIS_DAY = 3;
+    // SHORTHAND_THIS_MON_TO_SUN sets the default start timestamp to 00:00:00
+    // on monday this week and the default end timestamp to 23:59:59 on sunday
+    // this week.
+    SHORTHAND_THIS_MON_TO_SUN = 4;
+    // SHORTHAND_PREV_DAY sets the default start timestamp to 00:00:00 yesterday
+    // and the default end timestamp to 23:59:59 yesterday.
+    SHORTHAND_PREV_DAY = 5;
+    // SHORTHAND_PREV_MON_TO_SUN sets the default start timestamp to 00:00:00
+    // on monday last week and the default end timestamp to 23:59:59 on sunday
+    // last week.
+    SHORTHAND_PREV_MON_TO_SUN = 6;
+    // SHORTHAND_NEXT_DAY sets the default start timestamp to 00:00:00 tomorrow
+    // and the default end timestamp to 23:59:59 tomorrow.
+    SHORTHAND_NEXT_DAY = 7;
+    // SHORTHAND_NEXT_MON_TO_SUN sets the default start timestamp to 00:00:00
+    // on monday next week and the default end timestamp to 23:59:59 on sunday
+    // next week.
+    SHORTHAND_NEXT_MON_TO_SUN = 8;
+  }
+  // Shorthand sets the default start and end timestamps to some predefined
+  // time ranges, relative to now. Setting the start or end fields separately
+  // will override the shorthand ranges.
+  Shorthand shorthand = 4;
+  // NameFuzzy adds fuzzy name searching. The algorithms used to match the
+  // entries are left undefined and up to the Dinkur daemon to alter at any
+  // time. By default, a trigram index is used to allow substring matches.
+  string name_fuzzy = 5;
+  // NameHighlightStart enables name search result highlighting. It does nothing
+  // if the fuzzy name query is empty. Setting a value of "<b>", while setting
+  // the highlight end field to "</b>" will effectively add HTML-styled bold
+  // styling to the matching search terms.
+  string name_highlight_start = 6;
+  // NameHighlightEnd enables name search result highlighting. It does nothing
+  // if the fuzzy name query is empty.
+  string name_highlight_end = 7;
+}
+
+// GetEntryListResponse holds the list of entries that matches the search
+// request.
+message GetEntryListResponse {
+  // Entries is the list of entries that matches the search request.
+  repeated Entry entries = 1;
+}
+
+// CreateEntryRequest defines a new entry to be created.
+message CreateEntryRequest {
+  // Name is the name of the new entry to be created. May not be left unset.
+  string name = 1;
+  // Start is the timestamp of when the entry starts. If left unset, it will
+  // default to now.
+  google.protobuf.Timestamp start = 2;
+  // End is the timestamp of when the entry ends. If set, the new entry will not
+  // be marked as active. If left unset, any currently active entry will be
+  // stopped at when this new entry starts.
+  google.protobuf.Timestamp end = 3;
+  // StartAfterIdOrZero allows automatically setting the start timestamp to the
+  // end timestamp of a entry by ID.
+  uint64 start_after_id_or_zero = 4;
+  // EndBeforeIdOrZero allows automatically setting the end timestamp to the
+  // start timestamp of a entry by ID.
+  uint64 end_before_id_or_zero = 5;
+  // StartAfterLast allows automatically setting the start timestamp to the
+  // end timestamp of the latest entry. Using this and the
+  // "start after ID or zero" field is considered undefined behavior, and should
+  // be avoided.
+  bool start_after_last = 6;
+}
+
+// CreateEntryResponse holds the response data of a successfully created entry.
+message CreateEntryResponse {
+  // CreatedEntry is the newly created entry.
+  Entry created_entry = 1;
+  // PreviouslyActiveEntry is the previously active entry that was stopped
+  // (if any).
+  Entry previously_active_entry = 2;
+}
+
+// UpdateEntryRequest holds data for updating a entry.
+message UpdateEntryRequest {
+  // IdOrZero is either the ID of the entry to update, or left as zero to update
+  // the latest or currently active entry.
+  uint64 id_or_zero = 1;
+  // Name is the new name of the entry. If left unset, the name will not be
+  // updated.
+  string name = 2;
+  // Start is the new starting timestamp of the entry. If left unset, the start
+  // timestamp will not be updated.
+  google.protobuf.Timestamp start = 3;
+  // End is the new ending timestamp of the entry. If left unset, the end
+  // timestamp will not be updated. If set and the entry was previously active
+  // then the entry is no longer active.
+  google.protobuf.Timestamp end = 4;
+  // AppendName changes the name field in this message to be appended to the
+  // end of the previous name, with a space as delimiter.
+  bool append_name = 5;
+  // StartAfterIdOrZero allows automatically setting the start timestamp to the
+  // end timestamp of a entry by ID.
+  uint64 start_after_id_or_zero = 6;
+  // EndBeforeIdOrZero allows automatically setting the end timestamp to the
+  // start timestamp of a entry by ID. If set and the entry was previously
+  // active then the entry is no longer active.
+  uint64 end_before_id_or_zero = 7;
+  // StartAfterLast allows automatically setting the start timestamp to the
+  // end timestamp of the latest entry. Using this and the
+  // "start after ID or zero" field is considered undefined behavior, and should
+  // be avoided.
+  bool start_after_last = 8;
+}
+
+// UpdateEntryResponse holds the before and after state of the updated entry.
+message UpdateEntryResponse {
+  // Before is the state of the entry before the update.
+  Entry before = 1;
+  // After is the up-to-date state of the entry now after the update.
+  Entry after = 2;
+}
+
+// DeleteEntryRequest holds the ID of the entry to delete.
+message DeleteEntryRequest {
+  // Id is the ID of the entry to delete.
+  uint64 id = 1;
+}
+
+// DeleteEntryResponse holds the entry that was deleted.
+message DeleteEntryResponse {
+  // DeletedEntry is the entry that was deleted.
+  Entry deleted_entry = 1;
+}
+
+// StopActiveEntryRequest holds fields used when stopping the currently active
+// entry.
+message StopActiveEntryRequest {
+  // End allows changing the end timestamp of the active entry to stop. If not
+  // set, the current timestamp is used instead.
+  google.protobuf.Timestamp end = 1;
+}
+
+// StopActiveEntryResponse holds the entry that was stopped (if any).
+message StopActiveEntryResponse {
+  // StoppedEntry is the entry that was stopped (if any).
+  Entry stopped_entry = 1;
+}
+
+// StreamEntryRequest is an empty message and unused. It is here as a
+// placeholder for potential future use.
+message StreamEntryRequest {
+}
+
+// StreamEntryResponse is a entry event. A entry has been created, updated,
+// or deleted.
+message StreamEntryResponse {
+  // Entry is the created, updated, or deleted entry.
+  Entry entry = 1;
+  // Event is the type of event.
+  Event event = 2;
+}
+
+// Entry is a Dinkur entry.
+message Entry {
+  // Id is the unique identifier of this entry, and is used when deleting,
+  // updating, or getting a entry via the Entryer service.
+  uint64 id = 1;
+  // Created is a timestamp of when the entry was initially created. In most
+  // cases, this is the same as the entry's start timestamp.
+  google.protobuf.Timestamp created = 2;
+  // Updated is a timestamp of when the entry was most recently changed. This
+  // has the same value as when the entry was created if it has never been
+  // updated.
+  google.protobuf.Timestamp updated = 3;
+  // Name is the name of this entry, as specified by the user.
+  string name = 4;
+  // Start is the starting timestamp of this entry, as specified by the user.
+  google.protobuf.Timestamp start = 5;
+  // End is the ending timestamp of this entry, as specified by the user, or
+  // is left unset if the entry is currently active.
+  google.protobuf.Timestamp end = 6;
+}

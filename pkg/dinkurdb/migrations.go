@@ -103,8 +103,8 @@ func (c *client) migrateNoTran() error {
 	}
 	tables := []interface{}{
 		&Migration{},
-		&Task{},
-		// Note: Do not add TaskFTS5 to auto migration! It is created separately
+		&Entry{},
+		// Note: Do not add EntryFTS5 to auto migration! It is created separately
 		// through manual SQL queries down below.
 	}
 	for _, tbl := range tables {
@@ -115,22 +115,22 @@ func (c *client) migrateNoTran() error {
 	if oldVersion < 4 {
 		// Creates FTS5 (Sqlite free-text search) virtual table
 		// and triggers to keep it up-to-date.
-		// Lastly it feeds it data from existing tasks table in case of old data.
+		// Lastly it feeds it data from existing entries table in case of old data.
 		err = c.db.Exec(`
-CREATE VIRTUAL TABLE tasks_idx USING fts5(name, content='tasks',
+CREATE VIRTUAL TABLE entries_idx USING fts5(name, content='entries',
 	tokenize="porter trigram"
 );
-CREATE TRIGGER tasks_idx_insert AFTER INSERT ON tasks BEGIN
-	INSERT INTO tasks_idx(rowid, name) VALUES (new.id, new.name);
+CREATE TRIGGER entries_idx_insert AFTER INSERT ON entries BEGIN
+	INSERT INTO entries_idx(rowid, name) VALUES (new.id, new.name);
 END;
-CREATE TRIGGER tasks_idx_delete AFTER DELETE ON tasks BEGIN
-	INSERT INTO tasks_idx(tasks_idx, rowid, name) VALUES ('delete', old.id, old.name);
+CREATE TRIGGER entries_idx_delete AFTER DELETE ON entries BEGIN
+	INSERT INTO entries_idx(entries_idx, rowid, name) VALUES ('delete', old.id, old.name);
 END;
-CREATE TRIGGER tasks_idx_update AFTER UPDATE ON tasks BEGIN
-	INSERT INTO tasks_idx(tasks_idx, rowid, name) VALUES ('delete', old.id, old.name);
-	INSERT INTO tasks_idx(rowid, name) VALUES (new.id, new.name);
+CREATE TRIGGER entries_idx_update AFTER UPDATE ON entries BEGIN
+	INSERT INTO entries_idx(entries_idx, rowid, name) VALUES ('delete', old.id, old.name);
+	INSERT INTO entries_idx(rowid, name) VALUES (new.id, new.name);
 END;
-INSERT INTO tasks_idx (rowid, name) SELECT id, name FROM tasks;
+INSERT INTO entries_idx (rowid, name) SELECT id, name FROM entries;
 `).Error
 		if err != nil {
 			return err

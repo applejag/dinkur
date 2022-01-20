@@ -42,12 +42,12 @@ func init() {
 	)
 
 	var editCmd = &cobra.Command{
-		Use:     "edit [new name of task]",
+		Use:     "edit [new name of entry]",
 		Args:    cobra.ArbitraryArgs,
 		Aliases: []string{"e"},
-		Short:   "Edit the latest or a specific task",
-		Long: `Applies changes to the currently active task, or the latest task, or
-a specific task using the --id or -i flag.`,
+		Short:   "Edit the latest or a specific entry",
+		Long: `Applies changes to the currently active entry, or the latest entry, or
+a specific entry using the --id or -i flag.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
 			log.Debug().
@@ -55,7 +55,7 @@ a specific task using the --id or -i flag.`,
 				WithStringer("end", flagEnd).
 				WithBool("append", flagAppend).
 				Message("Flags")
-			edit := dinkur.EditTask{
+			edit := dinkur.EditEntry{
 				IDOrZero:           flagID,
 				Start:              flagStart.TimePtr(),
 				End:                flagEnd.TimePtr(),
@@ -68,24 +68,24 @@ a specific task using the --id or -i flag.`,
 				name := strings.Join(args, " ")
 				edit.Name = &name
 			}
-			update, err := c.UpdateTask(context.Background(), edit)
+			update, err := c.UpdateEntry(context.Background(), edit)
 			if err != nil {
-				console.PrintFatal("Error editing task:", err)
+				console.PrintFatal("Error editing entry:", err)
 			}
-			console.PrintTaskEdit(update)
+			console.PrintEntryEdit(update)
 		},
 	}
 
 	RootCmd.AddCommand(editCmd)
 
-	editCmd.Flags().VarP(flagStart, "start", "s", `start time of task`)
-	editCmd.Flags().VarP(flagEnd, "end", "e", `end time of task; task will be unmarked as active if set`)
+	editCmd.Flags().VarP(flagStart, "start", "s", `start time of entry`)
+	editCmd.Flags().VarP(flagEnd, "end", "e", `end time of entry; entry will be unmarked as active if set`)
 	editCmd.Flags().BoolVarP(&flagAppend, "append", "z", flagAppend, `add name to the end of the existing name, instead of replacing it`)
-	editCmd.Flags().UintVarP(&flagID, "id", "i", 0, `ID of task (default is active or latest task)`)
-	editCmd.RegisterFlagCompletionFunc("id", taskIDComplete)
-	editCmd.Flags().UintVarP(&flagAfterID, "after-id", "a", 0, `sets --start time to the end time of task with ID`)
-	editCmd.RegisterFlagCompletionFunc("after-id", taskIDComplete)
-	editCmd.Flags().BoolVarP(&flagAfterLast, "after-last", "L", false, `sets --start time to the end time of latest task`)
-	editCmd.Flags().UintVarP(&flagBeforeID, "before-id", "b", 0, `sets --end time to the start time of task with ID`)
-	editCmd.RegisterFlagCompletionFunc("before-id", taskIDComplete)
+	editCmd.Flags().UintVarP(&flagID, "id", "i", 0, `ID of entry (default is active or latest entry)`)
+	editCmd.RegisterFlagCompletionFunc("id", entryIDComplete)
+	editCmd.Flags().UintVarP(&flagAfterID, "after-id", "a", 0, `sets --start time to the end time of entry with ID`)
+	editCmd.RegisterFlagCompletionFunc("after-id", entryIDComplete)
+	editCmd.Flags().BoolVarP(&flagAfterLast, "after-last", "L", false, `sets --start time to the end time of latest entry`)
+	editCmd.Flags().UintVarP(&flagBeforeID, "before-id", "b", 0, `sets --end time to the start time of entry with ID`)
+	editCmd.RegisterFlagCompletionFunc("before-id", entryIDComplete)
 }

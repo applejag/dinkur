@@ -41,14 +41,14 @@ func init() {
 	)
 
 	var inCmd = &cobra.Command{
-		Use:     "in <task name>",
+		Use:     "in <entry name>",
 		Args:    cobra.ArbitraryArgs,
 		Aliases: []string{"i", "start", "new"},
-		Short:   "Check in/start tracking a new task",
+		Short:   "Check in/start tracking a new entry",
 		Long:    ``,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
-			newTask := dinkur.NewTask{
+			newEntry := dinkur.NewEntry{
 				Name:               strings.Join(args, " "),
 				Start:              flagStart.TimePtr(),
 				End:                flagEnd.TimePtr(),
@@ -56,48 +56,48 @@ func init() {
 				EndBeforeIDOrZero:  flagBeforeID,
 				StartAfterLast:     flagAfterLast,
 			}
-			startedTask, err := c.CreateTask(context.Background(), newTask)
+			startedEntry, err := c.CreateEntry(context.Background(), newEntry)
 			if err != nil {
-				console.PrintFatal("Error starting task:", err)
+				console.PrintFatal("Error starting entry:", err)
 			}
-			printStartedTask(startedTask)
+			printStartedEntry(startedEntry)
 		},
 	}
 	RootCmd.AddCommand(inCmd)
 
-	inCmd.Flags().VarP(flagStart, "start", "s", `start time of task`)
-	inCmd.Flags().VarP(flagEnd, "end", "e", `end time of task; new task will not be active if set`)
-	inCmd.Flags().UintVarP(&flagAfterID, "after-id", "a", 0, `sets --start time to the end time of task with ID`)
-	inCmd.RegisterFlagCompletionFunc("after-id", taskIDComplete)
-	inCmd.Flags().BoolVarP(&flagAfterLast, "after-last", "L", false, `sets --start time to the end time of latest task`)
-	inCmd.Flags().UintVarP(&flagBeforeID, "before-id", "b", 0, `sets --end time to the start time of task with ID`)
-	inCmd.RegisterFlagCompletionFunc("before-id", taskIDComplete)
+	inCmd.Flags().VarP(flagStart, "start", "s", `start time of entry`)
+	inCmd.Flags().VarP(flagEnd, "end", "e", `end time of entry; new entry will not be active if set`)
+	inCmd.Flags().UintVarP(&flagAfterID, "after-id", "a", 0, `sets --start time to the end time of entry with ID`)
+	inCmd.RegisterFlagCompletionFunc("after-id", entryIDComplete)
+	inCmd.Flags().BoolVarP(&flagAfterLast, "after-last", "L", false, `sets --start time to the end time of latest entry`)
+	inCmd.Flags().UintVarP(&flagBeforeID, "before-id", "b", 0, `sets --end time to the start time of entry with ID`)
+	inCmd.RegisterFlagCompletionFunc("before-id", entryIDComplete)
 }
 
-func printStartedTask(startedTask dinkur.StartedTask) {
-	var toPrint []console.LabelledTask
-	if startedTask.Stopped != nil {
-		toPrint = append(toPrint, console.LabelledTask{
-			Label: "Stopped task:",
-			Task:  *startedTask.Stopped,
+func printStartedEntry(startedEntry dinkur.StartedEntry) {
+	var toPrint []console.LabelledEntry
+	if startedEntry.Stopped != nil {
+		toPrint = append(toPrint, console.LabelledEntry{
+			Label: "Stopped entry:",
+			Entry:  *startedEntry.Stopped,
 		})
 	}
 	noActive := false
-	if startedTask.Started.End != nil {
-		toPrint = append(toPrint, console.LabelledTask{
-			Label: "Added task:",
-			Task:  startedTask.Started,
+	if startedEntry.Started.End != nil {
+		toPrint = append(toPrint, console.LabelledEntry{
+			Label: "Added entry:",
+			Entry:  startedEntry.Started,
 		})
 		noActive = true
 	} else {
-		toPrint = append(toPrint, console.LabelledTask{
-			Label:      "Started task:",
-			Task:       startedTask.Started,
+		toPrint = append(toPrint, console.LabelledEntry{
+			Label:      "Started entry:",
+			Entry:       startedEntry.Started,
 			NoDuration: true,
 		})
 	}
-	console.PrintTaskLabelSlice(toPrint)
+	console.PrintEntryLabelSlice(toPrint)
 	if noActive {
-		fmt.Println("You have no active task.")
+		fmt.Println("You have no active entry.")
 	}
 }

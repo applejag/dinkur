@@ -36,8 +36,8 @@ import (
 var (
 	ErrAlreadyConnected   = errors.New("client is already connected to database")
 	ErrNotConnected       = errors.New("client is not connected to database")
-	ErrTaskNameEmpty      = errors.New("task name cannot be empty")
-	ErrTaskEndBeforeStart = errors.New("task end time cannot be before start time")
+	ErrEntryNameEmpty      = errors.New("entry name cannot be empty")
+	ErrEntryEndBeforeStart = errors.New("entry end time cannot be before start time")
 	ErrNotFound           = gorm.ErrRecordNotFound
 	ErrLimitTooLarge      = errors.New("search limit is too large, maximum: " + strconv.Itoa(math.MaxInt))
 	ErrClientIsNil        = errors.New("client is nil")
@@ -52,21 +52,21 @@ type Client interface {
 	Close() error
 	Ping(ctx context.Context) error
 
-	Tasker
+	Entries
 	Alerter
 }
 
-// Tasker is the Dinkur client methods targeted to reading, creating, and
-// updating tasks.
-type Tasker interface {
-	GetTask(ctx context.Context, id uint) (Task, error)
-	GetTaskList(ctx context.Context, search SearchTask) ([]Task, error)
-	GetActiveTask(ctx context.Context) (*Task, error)
-	UpdateTask(ctx context.Context, edit EditTask) (UpdatedTask, error)
-	DeleteTask(ctx context.Context, id uint) (Task, error)
-	CreateTask(ctx context.Context, task NewTask) (StartedTask, error)
-	StopActiveTask(ctx context.Context, endTime time.Time) (*Task, error)
-	StreamTask(ctx context.Context) (<-chan StreamedTask, error)
+// Entries is the Dinkur client methods targeted to reading, creating, and
+// updating entries.
+type Entries interface {
+	GetEntry(ctx context.Context, id uint) (Entry, error)
+	GetEntryList(ctx context.Context, search SearchEntry) ([]Entry, error)
+	GetActiveEntry(ctx context.Context) (*Entry, error)
+	UpdateEntry(ctx context.Context, edit EditEntry) (UpdatedEntry, error)
+	DeleteEntry(ctx context.Context, id uint) (Entry, error)
+	CreateEntry(ctx context.Context, entry NewEntry) (StartedEntry, error)
+	StopActiveEntry(ctx context.Context, endTime time.Time) (*Entry, error)
+	StreamEntry(ctx context.Context) (<-chan StreamedEntry, error)
 }
 
 // Alerter is the Dinkur client methods targeted to reading alerts.
@@ -82,8 +82,8 @@ type StreamedAlert struct {
 	Event EventType
 }
 
-// SearchTask holds parameters used when searching for list of tasks.
-type SearchTask struct {
+// SearchEntry holds parameters used when searching for list of entries.
+type SearchEntry struct {
 	Start *time.Time
 	End   *time.Time
 	Limit uint
@@ -94,26 +94,26 @@ type SearchTask struct {
 	NameHighlightEnd   string
 }
 
-// EditTask holds parameters used when editing a task.
-type EditTask struct {
-	// IDOrZero of the task to edit. If set to nil, then Dinkur will attempt to make
-	// an educated guess on what task to edit by editing the active task or a
-	// recent task.
+// EditEntry holds parameters used when editing a entry.
+type EditEntry struct {
+	// IDOrZero of the entry to edit. If set to nil, then Dinkur will attempt to make
+	// an educated guess on what entry to edit by editing the active entry or a
+	// recent entry.
 	IDOrZero uint
-	// Name is the new task name. If AppendName is enabled, then this value will
+	// Name is the new entry name. If AppendName is enabled, then this value will
 	// append to the existing name, delimited with a space.
 	//
-	// No change to the task name is applied if this is set to nil.
+	// No change to the entry name is applied if this is set to nil.
 	Name *string
-	// Start is the new task start timestamp.
+	// Start is the new entry start timestamp.
 	//
-	// No change to the task start timestamp is applied if this is set to nil.
+	// No change to the entry start timestamp is applied if this is set to nil.
 	Start *time.Time
-	// End is the new task end timestamp.
+	// End is the new entry end timestamp.
 	//
-	// No change to the task end timestamp is applied if this is set to nil.
+	// No change to the entry end timestamp is applied if this is set to nil.
 	End *time.Time
-	// AppendName changes the name field to append the name to the task's
+	// AppendName changes the name field to append the name to the entry's
 	// existing name (delimited with a space) instead of replacing it.
 	AppendName         bool
 	StartAfterIDOrZero uint
@@ -121,15 +121,15 @@ type EditTask struct {
 	StartAfterLast     bool
 }
 
-// UpdatedTask is the response from an edited task, with values for before the
+// UpdatedEntry is the response from an edited entry, with values for before the
 // edits were applied and after they were applied.
-type UpdatedTask struct {
-	Before Task
-	After  Task
+type UpdatedEntry struct {
+	Before Entry
+	After  Entry
 }
 
-// NewTask holds parameters used when creating a new task.
-type NewTask struct {
+// NewEntry holds parameters used when creating a new entry.
+type NewEntry struct {
 	Name               string
 	Start              *time.Time
 	End                *time.Time
@@ -138,16 +138,16 @@ type NewTask struct {
 	StartAfterLast     bool
 }
 
-// StartedTask is the response from creating a new task, with the newly created
-// task object as well as the task that was stopped when creating the task,
-// if any task was previously active.
-type StartedTask struct {
-	Started Task
-	Stopped *Task
+// StartedEntry is the response from creating a new entry, with the newly created
+// entry object as well as the entry that was stopped when creating the entry,
+// if any entry was previously active.
+type StartedEntry struct {
+	Started Entry
+	Stopped *Entry
 }
 
-// StreamedTask holds a task and its event type.
-type StreamedTask struct {
-	Task  Task
+// StreamedEntry holds a entry and its event type.
+type StreamedEntry struct {
+	Entry  Entry
 	Event EventType
 }

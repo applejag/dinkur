@@ -28,36 +28,36 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// tasksCmd represents the test command
-var tasksCmd = &cobra.Command{
-	Use:   "tasks",
+// entriesCmd represents the test command
+var entriesCmd = &cobra.Command{
+	Use:   "entries",
 	Args:  cobra.NoArgs,
-	Short: "Testing task streaming",
+	Short: "Testing entry streaming",
 	Run: func(cmd *cobra.Command, args []string) {
 		if flagClient != "grpc" {
 			console.PrintFatal("Error running test:", `--client must be set to "grpc"`)
 		}
 		connectClientOrExit()
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-		taskChan, err := c.StreamTask(ctx)
+		entryChan, err := c.StreamEntry(ctx)
 		if err != nil {
 			cancel()
 			console.PrintFatal("Error streaming events:", err)
 		}
-		fmt.Println("Streaming tasks...")
-		for ev := range taskChan {
+		fmt.Println("Streaming entries...")
+		for ev := range entryChan {
 			log.Info().
-				WithUint("id", ev.Task.ID).
-				WithString("name", ev.Task.Name).
+				WithUint("id", ev.Entry.ID).
+				WithString("name", ev.Entry.Name).
 				WithStringer("event", ev.Event).
-				WithTime("createdAt", ev.Task.CreatedAt).
-				WithTime("updatedAt", ev.Task.UpdatedAt).
-				Message("Received task.")
+				WithTime("createdAt", ev.Entry.CreatedAt).
+				WithTime("updatedAt", ev.Entry.UpdatedAt).
+				Message("Received entry.")
 		}
 		cancel()
 	},
 }
 
 func init() {
-	streamCmd.AddCommand(tasksCmd)
+	streamCmd.AddCommand(entriesCmd)
 }

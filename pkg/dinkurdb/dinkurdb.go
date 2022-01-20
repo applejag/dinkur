@@ -80,7 +80,7 @@ type client struct {
 	db             *gorm.DB
 	prevMigChecked bool
 	prevMigVersion MigrationVersion
-	taskObs        taskObserver
+	entryObs       entryObserver
 }
 
 func (c *client) assertConnected() error {
@@ -144,8 +144,8 @@ func (c *client) Close() error {
 	if err := c.assertConnected(); err != nil {
 		return err
 	}
-	if err := c.taskObs.unsubAllTasks(); err != nil {
-		log.Warn().WithError(err).Message("Failed to unsub all task subscriptions.")
+	if err := c.entryObs.unsubAllEntries(); err != nil {
+		log.Warn().WithError(err).Message("Failed to unsub all entry subscriptions.")
 	}
 	sql, err := c.db.DB()
 	if err != nil {

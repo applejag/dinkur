@@ -35,21 +35,21 @@ var outCmd = &cobra.Command{
 	Use:     "out",
 	Args:    cobra.NoArgs,
 	Aliases: []string{"o", "end"},
-	Short:   "Check out/end the currently active task",
+	Short:   "Check out/end the currently active entry",
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		connectClientOrExit()
-		stoppedTask, err := c.StopActiveTask(context.Background(), time.Now())
+		stoppedEntry, err := c.StopActiveEntry(context.Background(), time.Now())
 		if err != nil {
-			console.PrintFatal("Error stopping task:", err)
+			console.PrintFatal("Error stopping entry:", err)
 		}
-		if stoppedTask != nil {
-			console.PrintTaskLabel(console.LabelledTask{
-				Label: "Stopped task:",
-				Task:  *stoppedTask,
+		if stoppedEntry != nil {
+			console.PrintEntryLabel(console.LabelledEntry{
+				Label: "Stopped entry:",
+				Entry:  *stoppedEntry,
 			})
 		} else {
-			fmt.Println("No active task to stop.")
+			fmt.Println("No active entry to stop.")
 			os.Exit(1)
 		}
 	},

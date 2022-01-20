@@ -52,48 +52,48 @@ func (d date) String() string {
 	return fmt.Sprintf("%s-%d", d.month.String()[:3], d.day)
 }
 
-type taskDateGroup struct {
-	date  date
-	tasks []dinkur.Task
+type entryDateGroup struct {
+	date    date
+	entries []dinkur.Entry
 }
 
-// groupTasksByDate assumes the slice is already sorted on task.Start
-func groupTasksByDate(tasks []dinkur.Task) []taskDateGroup {
-	if len(tasks) == 0 {
+// groupEntriesByDate assumes the slice is already sorted on entry.Start
+func groupEntriesByDate(entries []dinkur.Entry) []entryDateGroup {
+	if len(entries) == 0 {
 		return nil
 	}
-	var groups []taskDateGroup
-	var group taskDateGroup
-	for _, t := range tasks {
+	var groups []entryDateGroup
+	var group entryDateGroup
+	for _, t := range entries {
 		d := newDate(t.Start.Date())
 		if d != group.date {
-			if len(group.tasks) > 0 {
+			if len(group.entries) > 0 {
 				groups = append(groups, group)
 			}
-			group = taskDateGroup{date: d}
+			group = entryDateGroup{date: d}
 		}
-		group.tasks = append(group.tasks, t)
+		group.entries = append(group.entries, t)
 	}
-	if len(group.tasks) > 0 {
+	if len(group.entries) > 0 {
 		groups = append(groups, group)
 	}
 	return groups
 }
 
-type taskSum struct {
+type entrySum struct {
 	start    time.Time
 	end      *time.Time
 	duration time.Duration
 }
 
-// sumTasks assumes the slice is already sorted on task.Start
-func sumTasks(tasks []dinkur.Task) taskSum {
-	if len(tasks) == 0 {
-		return taskSum{}
+// sumEntries assumes the slice is already sorted on entry.Start
+func sumEntries(entries []dinkur.Entry) entrySum {
+	if len(entries) == 0 {
+		return entrySum{}
 	}
-	sum := taskSum{start: tasks[0].Start}
+	sum := entrySum{start: entries[0].Start}
 	var anyNilEnd bool
-	for _, t := range tasks {
+	for _, t := range entries {
 		sum.duration += t.Elapsed()
 		if t.End == nil {
 			anyNilEnd = true

@@ -27,39 +27,39 @@ import (
 	"github.com/fatih/color"
 )
 
-func writeCellsLabelledTask(t *table, labelled LabelledTask) {
-	t.WriteCellColor(labelled.Label, taskLabelColor)
-	writeCellTaskID(t, labelled.Task.ID)
-	writeCellTaskName(t, labelled.Task.Name)
-	writeCellTaskStartEnd(t, labelled.Task.Start, labelled.Task.End)
+func writeCellsLabelledEntry(t *table, labelled LabelledEntry) {
+	t.WriteCellColor(labelled.Label, entryLabelColor)
+	writeCellEntryID(t, labelled.Entry.ID)
+	writeCellEntryName(t, labelled.Entry.Name)
+	writeCellEntryStartEnd(t, labelled.Entry.Start, labelled.Entry.End)
 	if labelled.NoDuration {
 		t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
 	} else {
-		writeCellDuration(t, labelled.Task.Elapsed())
+		writeCellDuration(t, labelled.Entry.Elapsed())
 	}
 }
 
-func writeCellTaskID(t *table, id uint) {
+func writeCellEntryID(t *table, id uint) {
 	var sb strings.Builder
-	width := writeTaskID(&sb, id)
+	width := writeEntryID(&sb, id)
 	t.WriteCellWidth(sb.String(), width)
 }
 
-func writeCellTaskName(t *table, name string) {
+func writeCellEntryName(t *table, name string) {
 	var sb strings.Builder
-	width := writeTaskName(&sb, name)
+	width := writeEntryName(&sb, name)
 	t.WriteCellWidth(sb.String(), width)
 }
 
-func writeCellTaskNameSearched(t *table, name string, reg *regexp.Regexp) {
+func writeCellEntryNameSearched(t *table, name string, reg *regexp.Regexp) {
 	var sb strings.Builder
-	width := writeTaskNameSearched(&sb, name, reg)
+	width := writeEntryNameSearched(&sb, name, reg)
 	t.WriteCellWidth(sb.String(), width)
 }
 
 func writeCellDate(t *table, d date) {
 	dateStr := d.String()
-	t.WriteCellColor(dateStr, taskDateColor)
+	t.WriteCellColor(dateStr, entryDateColor)
 }
 
 func writeCellTimeColor(t *table, ti time.Time, layout string, c *color.Color) {
@@ -68,33 +68,33 @@ func writeCellTimeColor(t *table, ti time.Time, layout string, c *color.Color) {
 	t.WriteCellWidth(sb.String(), width)
 }
 
-func writeCellTaskTimeSpan(t *table, start time.Time, end *time.Time) {
+func writeCellEntryTimeSpan(t *table, start time.Time, end *time.Time) {
 	var sb strings.Builder
-	width := writeTaskTimeSpanActive(&sb, start, end)
+	width := writeEntryTimeSpanActive(&sb, start, end)
 	t.WriteCellWidth(sb.String(), width)
 }
 
-func writeCellTaskTimeSpanDuration(t *table, start time.Time, end *time.Time, dur time.Duration) {
+func writeCellEntryTimeSpanDuration(t *table, start time.Time, end *time.Time, dur time.Duration) {
 	var sb strings.Builder
-	width := writeTaskTimeSpanActiveDuration(&sb, start, end, dur)
+	width := writeEntryTimeSpanActiveDuration(&sb, start, end, dur)
 	t.WriteCellWidth(sb.String(), width)
 }
 
-func writeCellTaskStartEnd(t *table, start time.Time, end *time.Time) {
-	writeCellTimeColor(t, start, timeFormatShort, taskStartColor)
+func writeCellEntryStartEnd(t *table, start time.Time, end *time.Time) {
+	writeCellTimeColor(t, start, timeFormatShort, entryStartColor)
 	if end != nil {
 		var endLayout = timeFormatShort
 		if newDate(end.Date()) != newDate(start.Date()) {
 			endLayout = timeFormatLong
 		}
-		writeCellTimeColor(t, *end, endLayout, taskEndColor)
+		writeCellTimeColor(t, *end, endLayout, entryEndColor)
 	} else {
-		t.WriteCellColor(taskEndNilTextActive, taskEndNilColor)
+		t.WriteCellColor(entryEndNilTextActive, entryEndNilColor)
 	}
 }
 
 func writeCellDuration(t *table, d time.Duration) {
 	var sb strings.Builder
-	width := writeTaskDuration(&sb, d)
+	width := writeEntryDuration(&sb, d)
 	t.WriteCellWidth(sb.String(), width)
 }
