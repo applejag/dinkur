@@ -28,6 +28,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/dinkur/dinkur/internal/sliceutil"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/timeutil"
 )
@@ -154,7 +155,7 @@ func (c *client) listDBEntries(search dinkur.SearchEntry) ([]Entry, error) {
 	}
 	// we sorted in descending order to get the last entries.
 	// fix this by reversing "again"
-	reverseEntrySlice(dbEntries)
+	sliceutil.Reverse(dbEntries)
 	return dbEntries, nil
 }
 
@@ -547,11 +548,4 @@ func (c *client) StreamEntry(ctx context.Context) (<-chan dinkur.StreamedEntry, 
 		}
 	}()
 	return ch, nil
-}
-
-// TODO: make generic
-func reverseEntrySlice(slice []Entry) {
-	for i, j := 0, len(slice)-1; i < j; i, j = i+1, j-1 {
-		slice[i], slice[j] = slice[j], slice[i]
-	}
 }
