@@ -48,6 +48,30 @@ dinkur completion bash --help
 
 ## Usage
 
+```console
+$ ur in Speedrun Minecraft
+                ID  NAME                  START  END      DURATION
+Started entry:  #1  `Speedrun Minecraft`  18:39  active…  -
+
+$ ur in Boil minute-rice
+                ID  NAME                  START  END      DURATION
+Stopped entry:  #1  `Speedrun Minecraft`  18:39  18:39    0:00:06
+Started entry:  #2  `Boil minute-rice`    18:39  active…  -
+
+$ ur out
+                ID  NAME                START  END    DURATION
+Stopped entry:  #2  `Boil minute-rice`  18:39  18:40  0:01:01
+
+$ ur list
+  ID  NAME                  DAY     START  END    DURATION
+
+
+  #1  `Speedrun Minecraft`  Jan-20  18:39  18:39  0:00:06
+  #2  `Boil minute-rice`    -       18:39  18:40  0:01:01
+
+  -   TOTAL: 2 entries      -       18:39  18:40  0:01:07
+```
+
 Full documentation can be found at [docs/cmd/dinkur.md](docs/cmd/dinkur.md).
 
 ## Contributing
