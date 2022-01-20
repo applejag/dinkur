@@ -101,6 +101,11 @@ func (c *client) migrateNoTran() error {
 			WithInt("new", int(LatestMigrationVersion)).
 			Message("The database is outdated. Migrating...")
 	}
+	if oldVersion != MigrationNeverApplied && oldVersion < 5 {
+		if err := c.db.Migrator().RenameTable("tasks", "entries"); err != nil {
+			return err
+		}
+	}
 	tables := []interface{}{
 		&Migration{},
 		&Entry{},
