@@ -28,7 +28,17 @@ There's multiple ways to contribute:
 
 - To build and run the code:
 
-  - [Go](https://go.dev/) v1.17 (or higher)
+  - [Go](https://go.dev/) v1.18beta1 (or higher)
+
+    Go v1.18beta1 can be installed by a previous version of Go by running:
+
+    ```sh
+    go install golang.org/dl/go1.18beta1@latest
+    go1.18beta1 download
+
+    # Quality of life:
+    alias go=go1.18beta1
+    ```
 
 - To modify the Protocol Buffer definition and regenerate server & client:
 
