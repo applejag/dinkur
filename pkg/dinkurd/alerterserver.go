@@ -34,8 +34,8 @@ func (d *daemon) StreamAlert(req *dinkurapiv1.StreamAlertRequest, stream dinkura
 	}
 	ctx := stream.Context()
 	done := ctx.Done()
-	alertChan := d.alertStore.SubAlerts()
-	defer d.alertStore.UnsubAlerts(alertChan)
+	alertChan := d.alertStore.Sub()
+	defer d.alertStore.Unsub(alertChan)
 	for {
 		select {
 		case ev, ok := <-alertChan:

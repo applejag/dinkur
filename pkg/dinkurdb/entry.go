@@ -166,9 +166,9 @@ func (c *client) UpdateEntry(ctx context.Context, edit dinkur.EditEntry) (dinkur
 	if err != nil {
 		return dinkur.UpdatedEntry{}, err
 	}
-	c.entryObs.pubEntry(entryEvent{
+	c.entryObs.Pub(entryEvent{
 		dbEntry: update.after,
-		event:  dinkur.EventUpdated,
+		event:   dinkur.EventUpdated,
 	})
 	return dinkur.UpdatedEntry{
 		Before: convEntry(update.before),
@@ -347,9 +347,9 @@ func (c *client) DeleteEntry(ctx context.Context, id uint) (dinkur.Entry, error)
 	if err != nil {
 		return dinkur.Entry{}, err
 	}
-	c.entryObs.pubEntry(entryEvent{
+	c.entryObs.Pub(entryEvent{
 		dbEntry: dbEntry,
-		event:  dinkur.EventDeleted,
+		event:   dinkur.EventDeleted,
 	})
 	return convEntry(dbEntry), err
 }
@@ -405,14 +405,14 @@ func (c *client) CreateEntry(ctx context.Context, entry dinkur.NewEntry) (dinkur
 		return dinkur.StartedEntry{}, err
 	}
 	if startedEntry.stopped != nil {
-		c.entryObs.pubEntry(entryEvent{
+		c.entryObs.Pub(entryEvent{
 			dbEntry: *startedEntry.stopped,
-			event:  dinkur.EventUpdated,
+			event:   dinkur.EventUpdated,
 		})
 	}
-	c.entryObs.pubEntry(entryEvent{
+	c.entryObs.Pub(entryEvent{
 		dbEntry: startedEntry.started,
-		event:  dinkur.EventCreated,
+		event:   dinkur.EventCreated,
 	})
 	return dinkur.StartedEntry{
 		Started: convEntry(startedEntry.started),
@@ -479,9 +479,9 @@ func (c *client) StopActiveEntry(ctx context.Context, endTime time.Time) (*dinku
 		return nil, err
 	}
 	if err == nil && dbEntry != nil {
-		c.entryObs.pubEntry(entryEvent{
+		c.entryObs.Pub(entryEvent{
 			dbEntry: *dbEntry,
-			event:  dinkur.EventUpdated,
+			event:   dinkur.EventUpdated,
 		})
 	}
 	return convEntryPtr(dbEntry), nil
@@ -524,10 +524,10 @@ func (c *client) StreamEntry(ctx context.Context) (<-chan dinkur.StreamedEntry, 
 	ch := make(chan dinkur.StreamedEntry)
 	go func() {
 		done := ctx.Done()
-		dbEntryChan := c.entryObs.subEntries()
+		dbEntryChan := c.entryObs.Sub()
 		defer close(ch)
 		defer func() {
-			if err := c.entryObs.unsubEntries(dbEntryChan); err != nil {
+			if err := c.entryObs.Unsub(dbEntryChan); err != nil {
 				log.Warn().WithError(err).Message("Failed to unsub entry.")
 			}
 		}()
@@ -538,7 +538,7 @@ func (c *client) StreamEntry(ctx context.Context) (<-chan dinkur.StreamedEntry, 
 					return
 				}
 				ch <- dinkur.StreamedEntry{
-					Entry:  convEntry(ev.dbEntry),
+					Entry: convEntry(ev.dbEntry),
 					Event: ev.event,
 				}
 			case <-done:
@@ -549,6 +549,7 @@ func (c *client) StreamEntry(ctx context.Context) (<-chan dinkur.StreamedEntry, 
 	return ch, nil
 }
 
+// TODO: make generic
 func reverseEntrySlice(slice []Entry) {
 	for i, j := 0, len(slice)-1; i < j; i, j = i+1, j-1 {
 		slice[i], slice[j] = slice[j], slice[i]
