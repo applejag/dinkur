@@ -72,6 +72,15 @@ func NewClient(dsn string, opt Options) dinkur.Client {
 	return &client{
 		Options:   opt,
 		sqliteDsn: dsn,
+		entryObs: obs.Observer[entryEvent]{
+			OnPubTimedOut: func(ev entryEvent) {
+				log.Warn().
+					WithUint("id", ev.dbEntry.ID).
+					WithString("name", ev.dbEntry.Name).
+					WithStringer("event", ev.event).
+					Message("Timed out sending entry event.")
+			},
+		},
 	}
 }
 

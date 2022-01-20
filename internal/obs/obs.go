@@ -34,9 +34,10 @@ var (
 // Observer is a type that allows publishing an event which will be sent out
 // to all subscribed channels. A sort of "fan-out message queue".
 type Observer[T any] struct {
-	subs      []chan T
-	mutex     sync.RWMutex
-	OnFailPub func(T)
+	OnPubTimedOut func(ev T)
+
+	subs  []chan T
+	mutex sync.RWMutex
 }
 
 func (o *Observer[T]) Pub(ev T) {
@@ -46,7 +47,9 @@ func (o *Observer[T]) Pub(ev T) {
 			select {
 			case sub <- ev:
 			case <-time.After(10 * time.Second):
-				o.OnFailPub(ev)
+				if o.OnPubTimedOut != nil {
+					o.OnPubTimedOut(ev)
+				}
 			}
 		}(ev, sub)
 	}

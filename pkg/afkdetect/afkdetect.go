@@ -76,7 +76,19 @@ var detectorHooks []detectorHookRegisterer
 
 // New creates a new AFK-detector.
 func New() Detector {
-	return &detector{}
+	return &detector{
+		startedObs: obs.Observer[Started]{
+			OnPubTimedOut: func(ev Started) {
+				log.Warn().Message("Timed out sending AFK started event.")
+			},
+		},
+		stoppedObs: obs.Observer[Stopped]{
+			OnPubTimedOut: func(ev Stopped) {
+				log.Warn().WithTime("afkSince", ev.AFKSince).
+					Message("Timed out sending AFK stopped event.")
+			},
+		},
+	}
 }
 
 type detector struct {
