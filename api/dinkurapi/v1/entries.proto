@@ -280,7 +280,7 @@ message StreamEntryResponse {
 // Entry is a Dinkur entry.
 message Entry {
   // Id is the unique identifier of this entry, and is used when deleting,
-  // updating, or getting a entry via the Entryer service.
+  // updating, or getting a entry via the Entries service.
   uint64 id = 1;
   // Created is a timestamp of when the entry was initially created. In most
   // cases, this is the same as the entry's start timestamp.
