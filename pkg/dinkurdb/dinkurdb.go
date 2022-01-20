@@ -28,6 +28,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/dinkur/dinkur/internal/obs"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/iver-wharf/wharf-core/pkg/gormutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
@@ -80,7 +81,12 @@ type client struct {
 	db             *gorm.DB
 	prevMigChecked bool
 	prevMigVersion MigrationVersion
-	entryObs       entryObserver
+	entryObs       obs.Observer[entryEvent]
+}
+
+type entryEvent struct {
+	dbEntry Entry
+	event   dinkur.EventType
 }
 
 func (c *client) assertConnected() error {
@@ -144,7 +150,7 @@ func (c *client) Close() error {
 	if err := c.assertConnected(); err != nil {
 		return err
 	}
-	if err := c.entryObs.unsubAllEntries(); err != nil {
+	if err := c.entryObs.UnsubAll(); err != nil {
 		log.Warn().WithError(err).Message("Failed to unsub all entry subscriptions.")
 	}
 	sql, err := c.db.DB()

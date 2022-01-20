@@ -27,6 +27,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dinkur/dinkur/internal/obs"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 )
 
@@ -50,8 +51,16 @@ type Detector interface {
 	// cleaning up its Goroutines and hooks.
 	StopDetecting() error
 
-	ObserverStarted
-	ObserverStopped
+	StartedObs() obs.Observer[Started]
+	StoppedObs() obs.Observer[Stopped]
+}
+
+// Started contains event data for when user has gone AFK.
+type Started struct{}
+
+// Stopped contains event data for when user is no longer AFK (after being AFK).
+type Stopped struct {
+	AFKSince time.Time
 }
 
 type detectorHookRegisterer interface {
@@ -68,17 +77,16 @@ var detectorHooks []detectorHookRegisterer
 // New creates a new AFK-detector.
 func New() Detector {
 	return &detector{
-		ObserverStarted: NewObserverStarted(),
-		ObserverStopped: NewObserverStopped(),
+		startedObs: obs.New[Started](),
+		stoppedObs: obs.New[Stopped](),
 	}
 }
 
 type detector struct {
-	ObserverStarted
-	ObserverStopped
-
 	isAFKMutex sync.RWMutex
 	afkSince   *time.Time
+	startedObs obs.Observer[Started]
+	stoppedObs obs.Observer[Stopped]
 
 	hooks          []detectorHook
 	startStopMutex sync.Mutex
@@ -115,7 +123,7 @@ func (d *detector) markAsAFK() {
 		return
 	}
 	log.Debug().Message("User is now AFK.")
-	d.ObserverStarted.PubStartedWait(Started{})
+	d.startedObs.Pub(Started{})
 }
 
 func (d *detector) markAsNoLongerAFK() {
@@ -124,7 +132,7 @@ func (d *detector) markAsNoLongerAFK() {
 		return
 	}
 	log.Debug().Message("User is no longer AFK.")
-	d.ObserverStopped.PubStoppedWait(Stopped{
+	d.stoppedObs.Pub(Stopped{
 		AFKSince: t,
 	})
 }
@@ -169,8 +177,8 @@ func (d *detector) StopDetecting() error {
 		d.tickChanStop <- struct{}{}
 		d.tickChanStop = nil
 	}
-	unsubStartErr := d.UnsubAllStarted()
-	unsubStopErr := d.UnsubAllStopped()
+	unsubStartErr := d.startedObs.UnsubAll()
+	unsubStopErr := d.stoppedObs.UnsubAll()
 	if unsubStartErr != nil && unsubStopErr != nil {
 		return fmt.Errorf("unsub all afk-start and stop subs: %w; %v", unsubStartErr, unsubStopErr)
 	} else if unsubStartErr != nil {
@@ -196,4 +204,12 @@ func (d *detector) timerTickListener(ticker *time.Ticker) {
 			}
 		}
 	}
+}
+
+func (d *detector) StartedObs() obs.Observer[Started] {
+	return d.startedObs
+}
+
+func (d *detector) StoppedObs() obs.Observer[Stopped] {
+	return d.stoppedObs
 }

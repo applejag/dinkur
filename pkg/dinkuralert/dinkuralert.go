@@ -23,19 +23,26 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dinkur/dinkur/internal/obs"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
 // Store is a Dinkur alert store, which keeps track of alert IDs and provides
 // an observable channel for alert updates.
 type Store struct {
-	observer
+	obs.Observer[AlertEvent]
 	lastID      uint
 	lastIDMutex sync.Mutex
 
-	afkActiveEntry    *dinkur.Entry
+	afkActiveEntry   *dinkur.Entry
 	afkAlert         *dinkur.Alert
 	formerlyAFKAlert *dinkur.Alert
+}
+
+// AlertEvent is an alert and its event type.
+type AlertEvent struct {
+	Alert dinkur.Alert
+	Event dinkur.EventType
 }
 
 // Alerts returns a slice of all alerts.
@@ -53,7 +60,7 @@ func (s *Store) Alerts() []dinkur.Alert {
 // Delete removes an alert by ID.
 func (s *Store) Delete(id uint) (dinkur.Alert, error) {
 	if s.afkAlert != nil && s.afkAlert.ID == id {
-		s.PubAlertWait(AlertEvent{
+		s.Pub(AlertEvent{
 			Alert: *s.afkAlert,
 			Event: dinkur.EventDeleted,
 		})
@@ -61,7 +68,7 @@ func (s *Store) Delete(id uint) (dinkur.Alert, error) {
 		s.afkAlert = nil
 		return alert, nil
 	} else if s.formerlyAFKAlert != nil && s.formerlyAFKAlert.ID == id {
-		s.PubAlertWait(AlertEvent{
+		s.Pub(AlertEvent{
 			Alert: *s.formerlyAFKAlert,
 			Event: dinkur.EventDeleted,
 		})
@@ -94,7 +101,7 @@ func (s *Store) SetAFK(activeEntry dinkur.Entry) {
 	}
 	s.afkActiveEntry = &activeEntry
 	s.afkAlert = &alert
-	s.PubAlertWait(AlertEvent{
+	s.Pub(AlertEvent{
 		Alert: alert,
 		Event: dinkur.EventCreated,
 	})
@@ -117,12 +124,12 @@ func (s *Store) SetFormerlyAFK(afkSince time.Time) {
 			UpdatedAt: now,
 		},
 		Type: dinkur.AlertFormerlyAFK{
-			AFKSince:   afkSince,
+			AFKSince:    afkSince,
 			ActiveEntry: *s.afkActiveEntry,
 		},
 	}
 	s.formerlyAFKAlert = &alert
-	s.PubAlertWait(AlertEvent{
+	s.Pub(AlertEvent{
 		Alert: alert,
 		Event: dinkur.EventCreated,
 	})

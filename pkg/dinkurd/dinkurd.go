@@ -217,10 +217,10 @@ func (d *daemon) Close() (finalErr error) {
 
 func (d *daemon) listenForAFK(ctx context.Context) {
 	log.Debug().Message("Listen for AFK events...")
-	startedChan := d.afkDetector.SubStarted()
-	stoppedChan := d.afkDetector.SubStopped()
-	defer d.afkDetector.UnsubStarted(startedChan)
-	defer d.afkDetector.UnsubStopped(stoppedChan)
+	startedChan := d.afkDetector.StartedObs().Sub()
+	stoppedChan := d.afkDetector.StoppedObs().Sub()
+	defer d.afkDetector.StartedObs().Unsub(startedChan)
+	defer d.afkDetector.StoppedObs().Unsub(stoppedChan)
 	done := ctx.Done()
 	for {
 		select {
@@ -353,7 +353,7 @@ func convAlertAFK(alert dinkur.AlertAFK) *dinkurapiv1.AlertAfk {
 func convAlertFormerlyAFK(alert dinkur.AlertFormerlyAFK) *dinkurapiv1.AlertFormerlyAfk {
 	return &dinkurapiv1.AlertFormerlyAfk{
 		ActiveEntry: convEntryPtr(&alert.ActiveEntry),
-		AfkSince:   convTime(alert.AFKSince),
+		AfkSince:    convTime(alert.AFKSince),
 	}
 }
 

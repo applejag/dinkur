@@ -83,7 +83,7 @@ var (
 // labelled entries together.
 type LabelledEntry struct {
 	Label      string
-	Entry       dinkur.Entry
+	Entry      dinkur.Entry
 	NoDuration bool
 }
 
@@ -112,7 +112,7 @@ func PrintEntryLabelSlice(slice []LabelledEntry) {
 
 // PrintFatal writes a label and some error value to STDERR and then exits the
 // application with status code 1.
-func PrintFatal(label string, v interface{}) {
+func PrintFatal(label string, v any) {
 	var sb strings.Builder
 	fatalLabelColor.Fprint(&sb, label)
 	sb.WriteByte(' ')

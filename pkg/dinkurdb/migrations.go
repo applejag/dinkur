@@ -106,7 +106,7 @@ func (c *client) migrateNoTran() error {
 			return err
 		}
 	}
-	tables := []interface{}{
+	tables := []any{
 		&Migration{},
 		&Entry{},
 		// Note: Do not add EntryFTS5 to auto migration! It is created separately

@@ -17,13 +17,12 @@
 // You should have received a copy of the GNU General Public License along
 // with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package dinkuralert
+package obs
 
 import (
 	"errors"
 	"sync"
-
-	"github.com/dinkur/dinkur/pkg/dinkur"
+	"time"
 )
 
 // Errors specific for the listener and subscriptions.
@@ -32,55 +31,48 @@ var (
 	ErrSubscriptionNotInitalized = errors.New("subscription is not initialized")
 )
 
-// AlertEvent is an alert and its event type.
-type AlertEvent struct {
-	Alert dinkur.Alert
-	Event dinkur.EventType
+func New[T any]() Observer[T] {
+	return &observer[T]{}
 }
 
-// NewObserver returns a new Dinkur alerts observer.
-func NewObserver() Observer {
-	return &observer{}
+type Observer[T any] interface {
+	Pub(T)
+	Sub() <-chan T
+	Unsub(<-chan T) error
+	UnsubAll() error
 }
 
-// Observer lets you publish and subscribe Dinkur alerts.
-type Observer interface {
-	// PubAlertWait publishes an alert and waits until all
-	// subscriptions has received their events.
-	PubAlertWait(AlertEvent)
-	SubAlerts() <-chan AlertEvent
-	UnsubAlerts(<-chan AlertEvent) error
-	UnsubAllAlerts() error
+type observer[T any] struct {
+	subs      []chan T
+	mutex     sync.RWMutex
+	OnFailPub func(T)
 }
 
-type observer struct {
-	subs  []chan AlertEvent
-	mutex sync.RWMutex
-}
-
-func (o *observer) PubAlertWait(s AlertEvent) {
-	var wg sync.WaitGroup
+func (o *observer[T]) Pub(ev T) {
 	o.mutex.RLock()
-	wg.Add(len(o.subs))
 	for _, sub := range o.subs {
-		go func(s AlertEvent, sub chan AlertEvent, wg *sync.WaitGroup) {
-			sub <- s
-			wg.Done()
-		}(s, sub, &wg)
+		go func(ev T, sub chan T) {
+			select {
+			case sub <- ev:
+			case <-time.After(10 * time.Second):
+				o.OnFailPub(ev)
+			}
+		}(ev, sub)
 	}
 	o.mutex.RUnlock()
-	wg.Wait()
 }
 
-func (o *observer) SubAlerts() <-chan AlertEvent {
+// Sub subscribes to events in a newly created channel.
+func (o *observer[T]) Sub() <-chan T {
 	o.mutex.Lock()
-	sub := make(chan AlertEvent)
+	sub := make(chan T)
 	o.subs = append(o.subs, sub)
 	o.mutex.Unlock()
 	return sub
 }
 
-func (o *observer) UnsubAlerts(sub <-chan AlertEvent) error {
+// Unsub unsubscribes a previously subscribed channel.
+func (o *observer[T]) Unsub(sub <-chan T) error {
 	if sub == nil {
 		return ErrSubscriptionNotInitalized
 	}
@@ -90,18 +82,23 @@ func (o *observer) UnsubAlerts(sub <-chan AlertEvent) error {
 	if idx == -1 {
 		return ErrAlreadyUnsubscribed
 	}
+	close(o.subs[idx])
 	o.subs = append(o.subs[:idx], o.subs[idx+1:]...)
 	return nil
 }
 
-func (o *observer) UnsubAllAlerts() error {
+// UnsubAll unsubscribes all subscription channels, rendering them all useless.
+func (o *observer[T]) UnsubAll() error {
 	o.mutex.Lock()
+	for _, ch := range o.subs {
+		close(ch)
+	}
 	o.subs = nil
 	o.mutex.Unlock()
 	return nil
 }
 
-func (o *observer) subIndex(sub <-chan AlertEvent) int {
+func (o *observer[T]) subIndex(sub <-chan T) int {
 	for i, ch := range o.subs {
 		if ch == sub {
 			return i

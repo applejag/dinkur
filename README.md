@@ -15,7 +15,7 @@ Task and time tracking utility.
 
 ## Install
 
-Requires [Go](https://go.dev/) v1.17 (or higher)
+Requires [Go](https://go.dev/) v1.18beta1 (or higher)
 
 ```console
 $ go install -tags='fts5' -ldflags='-s -w' github.com/dinkur/dinkur@latest
