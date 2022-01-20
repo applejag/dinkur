@@ -51,8 +51,8 @@ type Detector interface {
 	// cleaning up its Goroutines and hooks.
 	StopDetecting() error
 
-	StartedObs() obs.Observer[Started]
-	StoppedObs() obs.Observer[Stopped]
+	StartedObs() *obs.Observer[Started]
+	StoppedObs() *obs.Observer[Stopped]
 }
 
 // Started contains event data for when user has gone AFK.
@@ -76,10 +76,7 @@ var detectorHooks []detectorHookRegisterer
 
 // New creates a new AFK-detector.
 func New() Detector {
-	return &detector{
-		startedObs: obs.New[Started](),
-		stoppedObs: obs.New[Stopped](),
-	}
+	return &detector{}
 }
 
 type detector struct {
@@ -206,10 +203,10 @@ func (d *detector) timerTickListener(ticker *time.Ticker) {
 	}
 }
 
-func (d *detector) StartedObs() obs.Observer[Started] {
-	return d.startedObs
+func (d *detector) StartedObs() *obs.Observer[Started] {
+	return &d.startedObs
 }
 
-func (d *detector) StoppedObs() obs.Observer[Stopped] {
-	return d.stoppedObs
+func (d *detector) StoppedObs() *obs.Observer[Stopped] {
+	return &d.stoppedObs
 }

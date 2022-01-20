@@ -31,24 +31,15 @@ var (
 	ErrSubscriptionNotInitalized = errors.New("subscription is not initialized")
 )
 
-func New[T any]() Observer[T] {
-	return &observer[T]{}
-}
-
-type Observer[T any] interface {
-	Pub(T)
-	Sub() <-chan T
-	Unsub(<-chan T) error
-	UnsubAll() error
-}
-
-type observer[T any] struct {
+// Observer is a type that allows publishing an event which will be sent out
+// to all subscribed channels. A sort of "fan-out message queue".
+type Observer[T any] struct {
 	subs      []chan T
 	mutex     sync.RWMutex
 	OnFailPub func(T)
 }
 
-func (o *observer[T]) Pub(ev T) {
+func (o *Observer[T]) Pub(ev T) {
 	o.mutex.RLock()
 	for _, sub := range o.subs {
 		go func(ev T, sub chan T) {
@@ -63,7 +54,7 @@ func (o *observer[T]) Pub(ev T) {
 }
 
 // Sub subscribes to events in a newly created channel.
-func (o *observer[T]) Sub() <-chan T {
+func (o *Observer[T]) Sub() <-chan T {
 	o.mutex.Lock()
 	sub := make(chan T)
 	o.subs = append(o.subs, sub)
@@ -72,7 +63,7 @@ func (o *observer[T]) Sub() <-chan T {
 }
 
 // Unsub unsubscribes a previously subscribed channel.
-func (o *observer[T]) Unsub(sub <-chan T) error {
+func (o *Observer[T]) Unsub(sub <-chan T) error {
 	if sub == nil {
 		return ErrSubscriptionNotInitalized
 	}
@@ -88,7 +79,7 @@ func (o *observer[T]) Unsub(sub <-chan T) error {
 }
 
 // UnsubAll unsubscribes all subscription channels, rendering them all useless.
-func (o *observer[T]) UnsubAll() error {
+func (o *Observer[T]) UnsubAll() error {
 	o.mutex.Lock()
 	for _, ch := range o.subs {
 		close(ch)
@@ -98,7 +89,7 @@ func (o *observer[T]) UnsubAll() error {
 	return nil
 }
 
-func (o *observer[T]) subIndex(sub <-chan T) int {
+func (o *Observer[T]) subIndex(sub <-chan T) int {
 	for i, ch := range o.subs {
 		if ch == sub {
 			return i
