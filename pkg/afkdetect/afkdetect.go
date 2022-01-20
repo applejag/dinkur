@@ -132,7 +132,7 @@ func (d *detector) markAsAFK() {
 		return
 	}
 	log.Debug().Message("User is now AFK.")
-	d.startedObs.Pub(Started{})
+	d.startedObs.PubWait(Started{})
 }
 
 func (d *detector) markAsNoLongerAFK() {
@@ -141,7 +141,7 @@ func (d *detector) markAsNoLongerAFK() {
 		return
 	}
 	log.Debug().Message("User is no longer AFK.")
-	d.stoppedObs.Pub(Stopped{
+	d.stoppedObs.PubWait(Stopped{
 		AFKSince: t,
 	})
 }

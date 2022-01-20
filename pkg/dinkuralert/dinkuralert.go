@@ -60,7 +60,7 @@ func (s *Store) Alerts() []dinkur.Alert {
 // Delete removes an alert by ID.
 func (s *Store) Delete(id uint) (dinkur.Alert, error) {
 	if s.afkAlert != nil && s.afkAlert.ID == id {
-		s.Pub(AlertEvent{
+		s.PubWait(AlertEvent{
 			Alert: *s.afkAlert,
 			Event: dinkur.EventDeleted,
 		})
@@ -68,7 +68,7 @@ func (s *Store) Delete(id uint) (dinkur.Alert, error) {
 		s.afkAlert = nil
 		return alert, nil
 	} else if s.formerlyAFKAlert != nil && s.formerlyAFKAlert.ID == id {
-		s.Pub(AlertEvent{
+		s.PubWait(AlertEvent{
 			Alert: *s.formerlyAFKAlert,
 			Event: dinkur.EventDeleted,
 		})
@@ -101,7 +101,7 @@ func (s *Store) SetAFK(activeEntry dinkur.Entry) {
 	}
 	s.afkActiveEntry = &activeEntry
 	s.afkAlert = &alert
-	s.Pub(AlertEvent{
+	s.PubWait(AlertEvent{
 		Alert: alert,
 		Event: dinkur.EventCreated,
 	})
@@ -129,7 +129,7 @@ func (s *Store) SetFormerlyAFK(afkSince time.Time) {
 		},
 	}
 	s.formerlyAFKAlert = &alert
-	s.Pub(AlertEvent{
+	s.PubWait(AlertEvent{
 		Alert: alert,
 		Event: dinkur.EventCreated,
 	})

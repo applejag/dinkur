@@ -40,7 +40,9 @@ type Observer[T any] struct {
 	mutex sync.RWMutex
 }
 
-func (o *Observer[T]) Pub(ev T) {
+// PubWait sends the event to all subscriptions, and waits until all have
+// received the message or timed out.
+func (o *Observer[T]) PubWait(ev T) {
 	o.mutex.RLock()
 	for _, sub := range o.subs {
 		go func(ev T, sub chan T) {

@@ -167,7 +167,7 @@ func (c *client) UpdateEntry(ctx context.Context, edit dinkur.EditEntry) (dinkur
 	if err != nil {
 		return dinkur.UpdatedEntry{}, err
 	}
-	c.entryObs.Pub(entryEvent{
+	c.entryObs.PubWait(entryEvent{
 		dbEntry: update.after,
 		event:   dinkur.EventUpdated,
 	})
@@ -348,7 +348,7 @@ func (c *client) DeleteEntry(ctx context.Context, id uint) (dinkur.Entry, error)
 	if err != nil {
 		return dinkur.Entry{}, err
 	}
-	c.entryObs.Pub(entryEvent{
+	c.entryObs.PubWait(entryEvent{
 		dbEntry: dbEntry,
 		event:   dinkur.EventDeleted,
 	})
@@ -406,12 +406,12 @@ func (c *client) CreateEntry(ctx context.Context, entry dinkur.NewEntry) (dinkur
 		return dinkur.StartedEntry{}, err
 	}
 	if startedEntry.stopped != nil {
-		c.entryObs.Pub(entryEvent{
+		c.entryObs.PubWait(entryEvent{
 			dbEntry: *startedEntry.stopped,
 			event:   dinkur.EventUpdated,
 		})
 	}
-	c.entryObs.Pub(entryEvent{
+	c.entryObs.PubWait(entryEvent{
 		dbEntry: startedEntry.started,
 		event:   dinkur.EventCreated,
 	})
@@ -480,7 +480,7 @@ func (c *client) StopActiveEntry(ctx context.Context, endTime time.Time) (*dinku
 		return nil, err
 	}
 	if err == nil && dbEntry != nil {
-		c.entryObs.Pub(entryEvent{
+		c.entryObs.PubWait(entryEvent{
 			dbEntry: *dbEntry,
 			event:   dinkur.EventUpdated,
 		})
