@@ -100,7 +100,7 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig, initLogger)
+	cobra.OnInitialize(initLogger, initConfig)
 
 	RootCmd.SetOut(colorable.NewColorableStdout())
 	RootCmd.SetErr(colorable.NewColorableStderr())
@@ -117,6 +117,13 @@ func init() {
 	RootCmd.RegisterFlagCompletionFunc("client", clientComplete)
 	RootCmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", flagVerbose, `enables debug logging`)
 	RootCmd.PersistentFlags().StringVar(&flagGrpcAddress, "grpc-address", flagGrpcAddress, `address of Dinkur daemon gRPC API`)
+
+	//viper.BindPFlag("data", RootCmd.PersistentFlags().Lookup("data"))
+	//viper.BindPFlag("data-mkdir", RootCmd.PersistentFlags().Lookup("data-mkdir"))
+	viper.BindPFlag("client", RootCmd.PersistentFlags().Lookup("client"))
+	//viper.SetDefault("data", dataFile)
+	//viper.SetDefault("data-mkdir", flagDataMkdir)
+	viper.SetDefault("client", flagClient)
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -154,7 +161,7 @@ func connectClientOrExit() {
 }
 
 func connectClient(skipMigrate bool) (dinkur.Client, error) {
-	switch strings.ToLower(flagClient) {
+	switch strings.ToLower(viper.GetString("client")) {
 	case "db":
 		log.Debug().Message("Using DB client.")
 		dbClient, err := connectToDBClient(skipMigrate)
