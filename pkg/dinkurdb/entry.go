@@ -28,9 +28,9 @@ import (
 	"math"
 	"time"
 
-	"github.com/dinkur/dinkur/internal/sliceutil"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/timeutil"
+	"gopkg.in/typ.v0"
 )
 
 func (c *client) GetActiveEntry(ctx context.Context) (*dinkur.Entry, error) {
@@ -155,7 +155,7 @@ func (c *client) listDBEntries(search dinkur.SearchEntry) ([]Entry, error) {
 	}
 	// we sorted in descending order to get the last entries.
 	// fix this by reversing "again"
-	sliceutil.Reverse(dbEntries)
+	typ.Reverse(dbEntries)
 	return dbEntries, nil
 }
 
