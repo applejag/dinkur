@@ -21,6 +21,7 @@ require (
 	github.com/spf13/viper v1.10.1
 	google.golang.org/grpc v1.43.0
 	google.golang.org/protobuf v1.27.1
+	gopkg.in/typ.v0 v0.1.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gorm.io/driver/sqlite v1.2.6
 	gorm.io/gorm v1.22.4

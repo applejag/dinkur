@@ -27,11 +27,12 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"time"
 
-	"github.com/dinkur/dinkur/internal/obs"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/iver-wharf/wharf-core/pkg/gormutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
+	"gopkg.in/typ.v0"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -72,8 +73,9 @@ func NewClient(dsn string, opt Options) dinkur.Client {
 	return &client{
 		Options:   opt,
 		sqliteDsn: dsn,
-		entryObs: obs.Observer[entryEvent]{
-			OnPubTimedOut: func(ev entryEvent) {
+		entryObs: typ.Publisher[entryEvent]{
+			PubTimeoutAfter: 10 * time.Second,
+			OnPubTimeout: func(ev entryEvent) {
 				log.Warn().
 					WithUint("id", ev.dbEntry.ID).
 					WithString("name", ev.dbEntry.Name).
@@ -90,7 +92,7 @@ type client struct {
 	db             *gorm.DB
 	prevMigChecked bool
 	prevMigVersion MigrationVersion
-	entryObs       obs.Observer[entryEvent]
+	entryObs       typ.Publisher[entryEvent]
 }
 
 type entryEvent struct {

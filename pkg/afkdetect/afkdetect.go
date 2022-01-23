@@ -27,8 +27,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dinkur/dinkur/internal/obs"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
+	"gopkg.in/typ.v0"
 )
 
 // Errors specific to AFK-detectors.
@@ -51,8 +51,8 @@ type Detector interface {
 	// cleaning up its Goroutines and hooks.
 	StopDetecting() error
 
-	StartedObs() *obs.Observer[Started]
-	StoppedObs() *obs.Observer[Stopped]
+	StartedObs() *typ.Publisher[Started]
+	StoppedObs() *typ.Publisher[Stopped]
 }
 
 // Started contains event data for when user has gone AFK.
@@ -77,13 +77,15 @@ var detectorHooks []detectorHookRegisterer
 // New creates a new AFK-detector.
 func New() Detector {
 	return &detector{
-		startedObs: obs.Observer[Started]{
-			OnPubTimedOut: func(ev Started) {
+		startedObs: typ.Publisher[Started]{
+			PubTimeoutAfter: 10 * time.Second,
+			OnPubTimeout: func(ev Started) {
 				log.Warn().Message("Timed out sending AFK started event.")
 			},
 		},
-		stoppedObs: obs.Observer[Stopped]{
-			OnPubTimedOut: func(ev Stopped) {
+		stoppedObs: typ.Publisher[Stopped]{
+			PubTimeoutAfter: 10 * time.Second,
+			OnPubTimeout: func(ev Stopped) {
 				log.Warn().WithTime("afkSince", ev.AFKSince).
 					Message("Timed out sending AFK stopped event.")
 			},
@@ -94,8 +96,8 @@ func New() Detector {
 type detector struct {
 	isAFKMutex sync.RWMutex
 	afkSince   *time.Time
-	startedObs obs.Observer[Started]
-	stoppedObs obs.Observer[Stopped]
+	startedObs typ.Publisher[Started]
+	stoppedObs typ.Publisher[Stopped]
 
 	hooks          []detectorHook
 	startStopMutex sync.Mutex
@@ -215,10 +217,10 @@ func (d *detector) timerTickListener(ticker *time.Ticker) {
 	}
 }
 
-func (d *detector) StartedObs() *obs.Observer[Started] {
+func (d *detector) StartedObs() *typ.Publisher[Started] {
 	return &d.startedObs
 }
 
-func (d *detector) StoppedObs() *obs.Observer[Stopped] {
+func (d *detector) StoppedObs() *typ.Publisher[Stopped] {
 	return &d.stoppedObs
 }

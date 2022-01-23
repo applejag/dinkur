@@ -23,14 +23,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dinkur/dinkur/internal/obs"
 	"github.com/dinkur/dinkur/pkg/dinkur"
+	"gopkg.in/typ.v0"
 )
 
 // Store is a Dinkur alert store, which keeps track of alert IDs and provides
 // an observable channel for alert updates.
 type Store struct {
-	obs.Observer[AlertEvent]
+	typ.Publisher[AlertEvent]
 	lastID      uint
 	lastIDMutex sync.Mutex
 
