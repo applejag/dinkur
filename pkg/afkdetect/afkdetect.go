@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"github.com/iver-wharf/wharf-core/pkg/logger"
-	"gopkg.in/typ.v0"
+	"gopkg.in/typ.v1"
 )
 
 // Errors specific to AFK-detectors.

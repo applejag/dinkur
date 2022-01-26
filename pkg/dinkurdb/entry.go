@@ -30,7 +30,7 @@ import (
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/timeutil"
-	"gopkg.in/typ.v0"
+	"gopkg.in/typ.v1"
 )
 
 func (c *client) GetActiveEntry(ctx context.Context) (*dinkur.Entry, error) {

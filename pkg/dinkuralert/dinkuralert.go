@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"gopkg.in/typ.v0"
+	"gopkg.in/typ.v1"
 )
 
 // Store is a Dinkur alert store, which keeps track of alert IDs and provides
