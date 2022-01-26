@@ -117,7 +117,12 @@ func (c *client) migrateNoTran() error {
 			return err
 		}
 	}
-	if oldVersion < 4 {
+	if oldVersion < 6 && c.db.Migrator().HasTable("tasks_idx") {
+		if err := c.db.Migrator().DropTable("tasks_idx"); err != nil {
+			return err
+		}
+	}
+	if oldVersion < 4 || !c.db.Migrator().HasTable("entries_idx") {
 		// Creates FTS5 (Sqlite free-text search) virtual table
 		// and triggers to keep it up-to-date.
 		// Lastly it feeds it data from existing entries table in case of old data.

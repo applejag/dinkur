@@ -155,7 +155,7 @@ type MigrationVersion int
 // LatestMigrationVersion is an integer revision identifier for what migration
 // was last applied to the database. This is stored in the database to quickly
 // figure out if new migrations needs to be applied.
-const LatestMigrationVersion MigrationVersion = 5
+const LatestMigrationVersion MigrationVersion = 6
 
 const (
 	// MigrationUnknown means that Dinkur was unable to evaluate the database's
