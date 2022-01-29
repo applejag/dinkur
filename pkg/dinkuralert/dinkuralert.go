@@ -20,7 +20,7 @@
 package dinkuralert
 
 import (
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
@@ -31,8 +31,7 @@ import (
 // an observable channel for alert updates.
 type Store struct {
 	typ.Publisher[AlertEvent]
-	lastID      uint
-	lastIDMutex sync.Mutex
+	lastID uint32
 
 	afkActiveEntry *dinkur.Entry
 	afkAlert       *dinkur.AlertAFK
@@ -135,9 +134,6 @@ func (s *Store) DeleteAFKAlert() {
 }
 
 func (s *Store) nextID() uint {
-	s.lastIDMutex.Lock()
-	s.lastID++
-	id := s.lastID
-	s.lastIDMutex.Unlock()
-	return id
+	id := atomic.AddUint32(&s.lastID, 1)
+	return uint(id)
 }
