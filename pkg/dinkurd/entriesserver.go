@@ -138,6 +138,7 @@ func (d *daemon) CreateEntry(ctx context.Context, req *dinkurapiv1.CreateEntryRe
 	if err != nil {
 		return nil, convError(err)
 	}
+	d.onEntryMutation()
 	return &dinkurapiv1.CreateEntryResponse{
 		PreviouslyActiveEntry: convEntryPtr(startedEntry.Stopped),
 		CreatedEntry:          convEntryPtr(&startedEntry.Started),
@@ -177,6 +178,7 @@ func (d *daemon) UpdateEntry(ctx context.Context, req *dinkurapiv1.UpdateEntryRe
 	if err != nil {
 		return nil, convError(err)
 	}
+	d.onEntryMutation()
 	return &dinkurapiv1.UpdateEntryResponse{
 		Before: convEntryPtr(&update.Before),
 		After:  convEntryPtr(&update.After),
@@ -198,6 +200,7 @@ func (d *daemon) DeleteEntry(ctx context.Context, req *dinkurapiv1.DeleteEntryRe
 	if err != nil {
 		return nil, convError(err)
 	}
+	d.onEntryMutation()
 	return &dinkurapiv1.DeleteEntryResponse{
 		DeletedEntry: convEntryPtr(&deletedEntry),
 	}, nil
@@ -214,6 +217,7 @@ func (d *daemon) StopActiveEntry(ctx context.Context, req *dinkurapiv1.StopActiv
 	if err != nil {
 		return nil, convError(err)
 	}
+	d.onEntryMutation()
 	return &dinkurapiv1.StopActiveEntryResponse{
 		StoppedEntry: convEntryPtr(stoppedEntry),
 	}, nil
@@ -234,7 +238,7 @@ func (d *daemon) StreamEntry(req *dinkurapiv1.StreamEntryRequest, stream dinkura
 	}
 	for ev := range ch {
 		if err := stream.Send(&dinkurapiv1.StreamEntryResponse{
-			Entry:  convEntryPtr(&ev.Entry),
+			Entry: convEntryPtr(&ev.Entry),
 			Event: convEvent(ev.Event),
 		}); err != nil {
 			return convError(err)

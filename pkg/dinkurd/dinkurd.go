@@ -156,6 +156,10 @@ type daemon struct {
 	alertStore dinkuralert.Store
 }
 
+func (d *daemon) onEntryMutation() {
+	d.alertStore.SetNotAFK()
+}
+
 func (d *daemon) assertConnected() error {
 	if d == nil {
 		return ErrDaemonIsNil
