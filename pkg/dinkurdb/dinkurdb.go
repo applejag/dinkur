@@ -73,7 +73,7 @@ func NewClient(dsn string, opt Options) dinkur.Client {
 	return &client{
 		Options:   opt,
 		sqliteDsn: dsn,
-		entryObs: typ.Publisher[entryEvent]{
+		entryObs: &typ.Publisher[entryEvent]{
 			PubTimeoutAfter: 10 * time.Second,
 			OnPubTimeout: func(ev entryEvent) {
 				log.Warn().
@@ -92,7 +92,7 @@ type client struct {
 	db             *gorm.DB
 	prevMigChecked bool
 	prevMigVersion MigrationVersion
-	entryObs       typ.Publisher[entryEvent]
+	entryObs       *typ.Publisher[entryEvent]
 }
 
 type entryEvent struct {
