@@ -216,7 +216,17 @@ func (d *daemon) Close() (finalErr error) {
 		log.Error().WithError(err).Message("Stopping AFK detector in Dinkur daemon.")
 		finalErr = err
 	}
+	d.updateAFKStatusAsWeAreClosing()
 	return
+}
+
+func (d *daemon) updateAFKStatusAsWeAreClosing() {
+	// must use new context as base context from Serve is cancelled by now
+	entry, err := d.client.GetActiveEntry(context.Background())
+	if err != nil || entry == nil {
+		return
+	}
+	d.alertStore.SetAFK(*entry) // TODO: Store this persistently
 }
 
 func (d *daemon) listenForAFK(ctx context.Context) {
