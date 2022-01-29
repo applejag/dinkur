@@ -199,15 +199,15 @@ func checkAlerts(c dinkur.Client) {
 		console.PrintFatal("Error getting alerts list:", err)
 	}
 	for _, alert := range alerts {
-		if formerlyAFK, ok := alert.Type.(dinkur.AlertFormerlyAFK); ok {
-			promptAFKResolution(c, alert, formerlyAFK)
+		if afk, ok := alert.(dinkur.AlertAFK); ok && afk.BackSince != nil {
+			promptAFKResolution(c, alert, afk)
 			break
 		}
 	}
 }
 
-func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, formerlyAFK dinkur.AlertFormerlyAFK) {
-	res, err := console.PromptAFKResolution(formerlyAFK)
+func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, afk dinkur.AlertAFK) {
+	res, err := console.PromptAFKResolution(afk)
 	fmt.Println()
 	if err != nil {
 		console.PrintFatal("Prompt error:", err)
@@ -228,7 +228,7 @@ func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, formerlyAFK dinkur
 		printStartedEntry(startedEntry)
 		fmt.Println()
 	}
-	if _, err := c.DeleteAlert(context.Background(), alert.ID); err != nil {
+	if _, err := c.DeleteAlert(context.Background(), alert.Common().ID); err != nil {
 		console.PrintFatal("Error removing alert:", err)
 	}
 	fmt.Println("Continuing with command...")

@@ -48,35 +48,31 @@ var alertsCmd = &cobra.Command{
 		}
 		fmt.Println("Streaming alerts...")
 		for {
-			alert, ok := <-alertChan
+			ev, ok := <-alertChan
 			if !ok {
 				cancel()
 				fmt.Println("Channel was closed.")
 				os.Exit(0)
 			}
+			common := ev.Alert.Common()
 			log.Info().
-				WithUint("id", alert.Alert.ID).
-				WithStringer("event", alert.Event).
-				WithStringf("type", "%T", alert.Alert.Type).
-				WithTime("createdAt", alert.Alert.CreatedAt).
-				WithTime("updatedAt", alert.Alert.UpdatedAt).
+				WithUint("id", common.ID).
+				WithStringer("event", ev.Event).
+				WithStringf("type", "%T", ev.Alert).
+				WithTime("createdAt", common.CreatedAt).
+				WithTime("updatedAt", common.UpdatedAt).
 				Message("Received alert.")
-			switch alertType := alert.Alert.Type.(type) {
+			switch alert := ev.Alert.(type) {
 			case dinkur.AlertPlainMessage:
 				fmt.Println("  Plain message:")
-				fmt.Printf("    Message: %q\n", alertType.Message)
+				fmt.Printf("    Message: %q\n", alert.Message)
 			case dinkur.AlertAFK:
 				fmt.Println("  AFK:")
+				fmt.Println("    AFK since:", alert.AFKSince)
+				fmt.Println("    Back since:", alert.BackSince)
 				console.PrintEntryLabel(console.LabelledEntry{
 					Label: "    Active entry:",
-					Entry:  alertType.ActiveEntry,
-				})
-			case dinkur.AlertFormerlyAFK:
-				fmt.Println("  Formerly AFK:")
-				fmt.Println("    AFK since:", alertType.AFKSince)
-				console.PrintEntryLabel(console.LabelledEntry{
-					Label: "    Active entry:",
-					Entry:  alertType.ActiveEntry,
+					Entry: alert.ActiveEntry,
 				})
 			}
 			fmt.Println()

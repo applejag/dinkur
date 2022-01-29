@@ -60,7 +60,6 @@ type Started struct{}
 
 // Stopped contains event data for when user is no longer AFK (after being AFK).
 type Stopped struct {
-	AFKSince time.Time
 }
 
 type detectorHookRegisterer interface {
@@ -86,8 +85,7 @@ func New() Detector {
 		stoppedObs: typ.Publisher[Stopped]{
 			PubTimeoutAfter: 10 * time.Second,
 			OnPubTimeout: func(ev Stopped) {
-				log.Warn().WithTime("afkSince", ev.AFKSince).
-					Message("Timed out sending AFK stopped event.")
+				log.Warn().Message("Timed out sending AFK stopped event.")
 			},
 		},
 	}
@@ -95,7 +93,7 @@ func New() Detector {
 
 type detector struct {
 	isAFKMutex sync.RWMutex
-	afkSince   *time.Time
+	isAFK      bool
 	startedObs typ.Publisher[Started]
 	stoppedObs typ.Publisher[Stopped]
 
@@ -105,32 +103,16 @@ type detector struct {
 	tickChanStop   chan struct{}
 }
 
-func (d *detector) isAFK() bool {
-	d.isAFKMutex.RLock()
-	isAFK := d.afkSince != nil
-	d.isAFKMutex.RUnlock()
-	return isAFK
-}
-
-func (d *detector) setIsAFK(isAFK bool) (time.Time, bool) {
-	if d.isAFK() == isAFK {
-		// no update needed
-		return time.Time{}, false
+func (d *detector) setIsAFK(isAFK bool) bool {
+	if d.isAFK == isAFK {
+		return false
 	}
-	d.isAFKMutex.Lock()
-	defer d.isAFKMutex.Unlock()
-	if isAFK {
-		now := time.Now()
-		d.afkSince = &now
-		return now, true
-	}
-	prevTimeSince := *d.afkSince
-	d.afkSince = nil
-	return prevTimeSince, true
+	d.isAFK = isAFK
+	return true
 }
 
 func (d *detector) markAsAFK() {
-	if _, changed := d.setIsAFK(true); !changed {
+	if !d.setIsAFK(true) {
 		return
 	}
 	log.Debug().Message("User is now AFK.")
@@ -138,14 +120,11 @@ func (d *detector) markAsAFK() {
 }
 
 func (d *detector) markAsNoLongerAFK() {
-	t, changed := d.setIsAFK(false)
-	if !changed {
+	if !d.setIsAFK(false) {
 		return
 	}
 	log.Debug().Message("User is no longer AFK.")
-	d.stoppedObs.PubWait(Stopped{
-		AFKSince: t,
-	})
+	d.stoppedObs.PubWait(Stopped{})
 }
 
 func (d *detector) StartDetecting() error {

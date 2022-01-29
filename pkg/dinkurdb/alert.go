@@ -35,5 +35,5 @@ func (*client) GetAlertList(context.Context) ([]dinkur.Alert, error) {
 }
 
 func (*client) DeleteAlert(context.Context, uint) (dinkur.Alert, error) {
-	return dinkur.Alert{}, ErrAlerterNotSupported
+	return nil, ErrAlerterNotSupported
 }

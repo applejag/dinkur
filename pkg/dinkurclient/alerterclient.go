@@ -92,23 +92,23 @@ func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 
 func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error) {
 	if err := c.assertConnected(); err != nil {
-		return dinkur.Alert{}, err
+		return nil, err
 	}
 	res, err := c.alerter.DeleteAlert(ctx, &dinkurapiv1.DeleteAlertRequest{
 		Id: uint64(id),
 	})
 	if err != nil {
-		return dinkur.Alert{}, convError(err)
+		return nil, convError(err)
 	}
 	if res == nil {
-		return dinkur.Alert{}, ErrResponseIsNil
+		return nil, ErrResponseIsNil
 	}
 	alert, err := convAlertPtr(res.DeletedAlert)
 	if err != nil {
-		return dinkur.Alert{}, convError(err)
+		return nil, convError(err)
 	}
 	if alert == nil {
-		return dinkur.Alert{}, ErrUnexpectedNilAlert
+		return nil, ErrUnexpectedNilAlert
 	}
 	return *alert, nil
 }
