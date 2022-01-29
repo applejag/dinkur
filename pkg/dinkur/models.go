@@ -83,70 +83,37 @@ func (ev EventType) String() string {
 	}
 }
 
-// Alert is a notfication provided by Dinkur, such as an alert when the user
-// has gone AFK.
-type Alert struct {
-	CommonFields
-	Type AlertType
-}
-
-// AlertType defines unexported interface used to restrict the alert union types.
-type AlertType interface {
+// Alert defines unexported interface used to restrict the alert union types.
+type Alert interface {
 	isAlertUnion()
-}
-
-// PlainMessage returns the inner plain message alert, or false if the alert
-// is of a different type.
-func (a Alert) PlainMessage() (AlertPlainMessage, bool) {
-	if inner, ok := a.Type.(AlertPlainMessage); ok {
-		return inner, true
-	}
-	return AlertPlainMessage{}, false
-}
-
-// AFK returns the inner AFK alert, or false if the alert is of a different type.
-func (a Alert) AFK() (AlertAFK, bool) {
-	if inner, ok := a.Type.(AlertAFK); ok {
-		return inner, true
-	}
-	return AlertAFK{}, false
-}
-
-// FormerlyAFK returns the inner formerly AFK alert, or false if the alert
-// is of a different type.
-func (a Alert) FormerlyAFK() (AlertFormerlyAFK, bool) {
-	if inner, ok := a.Type.(AlertFormerlyAFK); ok {
-		return inner, true
-	}
-	return AlertFormerlyAFK{}, false
+	Common() CommonFields
 }
 
 // AlertPlainMessage is a type of alert for generic messages that needs to be
 // presented to the user with no need for user action.
 type AlertPlainMessage struct {
-	AlertType
+	CommonFields
+	Alert
 	Message string
 }
 
 func (AlertPlainMessage) isAlertUnion() {}
 
+// Common returns the common model fields: ID, CreatedAt, and UpdatedAt.
+func (a AlertPlainMessage) Common() CommonFields { return a.CommonFields }
+
 // AlertAFK is a type of alert that's issued when the user has just become AFK
-// (away from keyboard) when also having an active entry. I.e. no AFK alert is
-// issued when not tracking any entry.
+// (away from keyboard) and when they have returned, both when also having an
+// active entry. I.e. no AFK alert is issued when not tracking any entry.
 type AlertAFK struct {
-	AlertType
+	CommonFields
+	Alert
 	ActiveEntry Entry
+	AFKSince    time.Time
+	BackSince   *time.Time
 }
 
 func (AlertAFK) isAlertUnion() {}
 
-// AlertFormerlyAFK is a type of alert that's issued when the user is no longer
-// AFK (away from keyboard). This formerly AFK alert is only issued if
-// (and only if) the AFK alert is active.
-type AlertFormerlyAFK struct {
-	AlertType
-	ActiveEntry Entry
-	AFKSince   time.Time
-}
-
-func (AlertFormerlyAFK) isAlertUnion() {}
+// Common returns the common model fields: ID, CreatedAt, and UpdatedAt.
+func (a AlertAFK) Common() CommonFields { return a.CommonFields }

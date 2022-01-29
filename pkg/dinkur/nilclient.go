@@ -109,5 +109,5 @@ func (*NilClient) GetAlertList(context.Context) ([]Alert, error) {
 // DeleteAlert is a dummy implementation of the dinkur.Client that only
 // returns the "client is nil" error.
 func (*NilClient) DeleteAlert(context.Context, uint) (Alert, error) {
-	return Alert{}, ErrClientIsNil
+	return nil, ErrClientIsNil
 }

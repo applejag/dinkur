@@ -43,7 +43,7 @@ import (
 var (
 	ErrUintTooLarge       = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
 	ErrResponseIsNil      = errors.New("grpc response was nil")
-	ErrUnexpectedNilEntry  = errors.New("unexpected nil entry")
+	ErrUnexpectedNilEntry = errors.New("unexpected nil entry")
 	ErrUnexpectedNilAlert = errors.New("unexpected nil alert")
 )
 
@@ -266,65 +266,48 @@ func convAlertPtr(alert *dinkurapiv1.Alert) (*dinkur.Alert, error) {
 	if err != nil {
 		return nil, err
 	}
-	a := dinkur.Alert{
-		CommonFields: dinkur.CommonFields{
-			ID:        id,
-			CreatedAt: convTimestampOrZero(alert.Created),
-			UpdatedAt: convTimestampOrZero(alert.Updated),
-		},
+	common := dinkur.CommonFields{
+		ID:        id,
+		CreatedAt: convTimestampOrZero(alert.Created),
+		UpdatedAt: convTimestampOrZero(alert.Updated),
 	}
+	var a dinkur.Alert
 	switch alertType := alert.Type.(type) {
 	case *dinkurapiv1.Alert_PlainMessage:
-		a.Type = convAlertPlainMessage(alertType.PlainMessage)
+		a = convAlertPlainMessage(common, alertType.PlainMessage)
 	case *dinkurapiv1.Alert_Afk:
-		at, err := convAlertAFK(alertType.Afk)
+		at, err := convAlertAFK(common, alertType.Afk)
 		if err != nil {
 			return nil, err
 		}
-		a.Type = at
-	case *dinkurapiv1.Alert_FormerlyAfk:
-		at, err := convAlertFormerlyAFK(alertType.FormerlyAfk)
-		if err != nil {
-			return nil, err
-		}
-		a.Type = at
+		a = at
 	}
 	return &a, nil
 }
 
-func convAlertPlainMessage(alert *dinkurapiv1.AlertPlainMessage) dinkur.AlertType {
+func convAlertPlainMessage(common dinkur.CommonFields, alert *dinkurapiv1.AlertPlainMessage) dinkur.AlertPlainMessage {
 	if alert == nil {
-		return nil
+		return dinkur.AlertPlainMessage{CommonFields: common}
 	}
 	return dinkur.AlertPlainMessage{
-		Message: alert.Message,
+		CommonFields: common,
+		Message:      alert.Message,
 	}
 }
 
-func convAlertAFK(alert *dinkurapiv1.AlertAfk) (dinkur.AlertType, error) {
+func convAlertAFK(common dinkur.CommonFields, alert *dinkurapiv1.AlertAfk) (dinkur.AlertAFK, error) {
 	if alert == nil {
-		return nil, nil
+		return dinkur.AlertAFK{CommonFields: common}, nil
 	}
 	entry, err := convEntryPtrNoNil(alert.ActiveEntry)
 	if err != nil {
-		return nil, err
+		return dinkur.AlertAFK{}, err
 	}
 	return dinkur.AlertAFK{
-		ActiveEntry: entry,
-	}, nil
-}
-
-func convAlertFormerlyAFK(alert *dinkurapiv1.AlertFormerlyAfk) (dinkur.AlertType, error) {
-	if alert == nil {
-		return nil, nil
-	}
-	entry, err := convEntryPtrNoNil(alert.ActiveEntry)
-	if err != nil {
-		return nil, err
-	}
-	return dinkur.AlertFormerlyAFK{
-		ActiveEntry: entry,
-		AFKSince:   convTimestampOrZero(alert.AfkSince),
+		CommonFields: common,
+		ActiveEntry:  entry,
+		AFKSince:     convTimestampOrZero(alert.AfkSince),
+		BackSince:    convTimestampPtr(alert.BackSince),
 	}, nil
 }
 

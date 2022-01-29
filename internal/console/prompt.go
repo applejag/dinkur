@@ -74,12 +74,12 @@ func PromptEntryRemoval(entry dinkur.Entry) error {
 // AFKResolution states what should be changed as decided from the human's AFK
 // resolution.
 type AFKResolution struct {
-	Edit    *dinkur.EditEntry
+	Edit     *dinkur.EditEntry
 	NewEntry *dinkur.NewEntry
 }
 
 // PromptAFKResolution asks the user for how to resolve an AFK alert.
-func PromptAFKResolution(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
+func PromptAFKResolution(alert dinkur.AlertAFK) (AFKResolution, error) {
 	var sb strings.Builder
 	now := time.Now()
 
@@ -160,7 +160,7 @@ func PromptAFKResolution(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
 	}
 }
 
-func promptAFKSaveAsNewEntry(alert dinkur.AlertFormerlyAFK) (AFKResolution, error) {
+func promptAFKSaveAsNewEntry(alert dinkur.AlertAFK) (AFKResolution, error) {
 	name, err := promptNonEmptyString(&survey.Input{
 		Message: "Enter name of new entry:",
 	})

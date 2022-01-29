@@ -34,9 +34,8 @@ type Store struct {
 	lastID      uint
 	lastIDMutex sync.Mutex
 
-	afkActiveEntry   *dinkur.Entry
-	afkAlert         *dinkur.Alert
-	formerlyAFKAlert *dinkur.Alert
+	afkActiveEntry *dinkur.Entry
+	afkAlert       *dinkur.AlertAFK
 }
 
 // AlertEvent is an alert and its event type.
@@ -51,9 +50,6 @@ func (s *Store) Alerts() []dinkur.Alert {
 	if s.afkAlert != nil {
 		alerts = append(alerts, *s.afkAlert)
 	}
-	if s.formerlyAFKAlert != nil {
-		alerts = append(alerts, *s.formerlyAFKAlert)
-	}
 	return alerts
 }
 
@@ -67,37 +63,36 @@ func (s *Store) Delete(id uint) (dinkur.Alert, error) {
 		alert := *s.afkAlert
 		s.afkAlert = nil
 		return alert, nil
-	} else if s.formerlyAFKAlert != nil && s.formerlyAFKAlert.ID == id {
-		s.PubWait(AlertEvent{
-			Alert: *s.formerlyAFKAlert,
-			Event: dinkur.EventDeleted,
-		})
-		alert := *s.formerlyAFKAlert
-		s.formerlyAFKAlert = nil
-		return alert, nil
 	}
-	return dinkur.Alert{}, dinkur.ErrNotFound
+	return nil, dinkur.ErrNotFound
 }
 
 // SetAFK marks the user as AFK and creates the AFK alert if it doesn't exist,
 // as well as deleting the formerly-AFK alert if it exists.
 func (s *Store) SetAFK(activeEntry dinkur.Entry) {
-	if s.formerlyAFKAlert != nil {
-		s.Delete(s.formerlyAFKAlert.ID)
+	if s.afkAlert != nil && s.afkAlert.BackSince != nil {
+		// Reset to AFK
+		s.afkAlert.UpdatedAt = time.Now()
+		s.afkAlert.BackSince = nil
+		s.PubWait(AlertEvent{
+			Alert: *s.afkAlert,
+			Event: dinkur.EventUpdated,
+		})
+		return
 	}
 	if s.afkAlert != nil {
+		// Already AFK
 		return
 	}
 	now := time.Now()
-	alert := dinkur.Alert{
+	alert := dinkur.AlertAFK{
 		CommonFields: dinkur.CommonFields{
 			ID:        s.nextID(),
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
-		Type: dinkur.AlertAFK{
-			ActiveEntry: activeEntry,
-		},
+		ActiveEntry: activeEntry,
+		AFKSince:    now,
 	}
 	s.afkActiveEntry = &activeEntry
 	s.afkAlert = &alert
@@ -107,31 +102,35 @@ func (s *Store) SetAFK(activeEntry dinkur.Entry) {
 	})
 }
 
-// SetFormerlyAFK marks the user as formerly-AFK and creates the formerly-AFK
-// alert if it doesn't exist, as well as deleting the AFK alert if it exists.
-func (s *Store) SetFormerlyAFK(afkSince time.Time) {
-	if s.afkAlert != nil {
-		s.Delete(s.afkAlert.ID)
+// SetBackFromAFK marks the user as formerly-AFK and updates the AFK alert.
+// If the user was not previously AFK, then nothing happens.
+func (s *Store) SetBackFromAFK(afkSince time.Time) {
+	if s.afkAlert == nil {
+		return
 	}
-	if s.afkActiveEntry == nil || s.formerlyAFKAlert != nil {
+	if s.afkAlert.BackSince == nil {
 		return
 	}
 	now := time.Now()
-	alert := dinkur.Alert{
-		CommonFields: dinkur.CommonFields{
-			ID:        s.nextID(),
-			CreatedAt: now,
-			UpdatedAt: now,
-		},
-		Type: dinkur.AlertFormerlyAFK{
-			AFKSince:    afkSince,
-			ActiveEntry: *s.afkActiveEntry,
-		},
+	s.afkAlert.UpdatedAt = now
+	s.afkAlert.BackSince = &now
+	s.PubWait(AlertEvent{
+		Alert: *s.afkAlert,
+		Event: dinkur.EventUpdated,
+	})
+}
+
+// SetNotAFK unmarks the user as AFK by deleting the AFK alert, if any.
+// If the user was not previously AFK or back from AFK, then nothing happens.
+func (s *Store) SetNotAFK() {
+	if s.afkAlert == nil {
+		return
 	}
-	s.formerlyAFKAlert = &alert
+	alert := *s.afkAlert
+	s.afkAlert = nil
 	s.PubWait(AlertEvent{
 		Alert: alert,
-		Event: dinkur.EventCreated,
+		Event: dinkur.EventDeleted,
 	})
 }
 

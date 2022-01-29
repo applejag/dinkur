@@ -236,7 +236,7 @@ func (d *daemon) listenForAFK(ctx context.Context) {
 			}
 			d.alertStore.SetAFK(*entry)
 		case stopped := <-stoppedChan:
-			d.alertStore.SetFormerlyAFK(stopped.AFKSince)
+			d.alertStore.SetBackFromAFK(stopped.AFKSince)
 		case <-done:
 			return
 		}
@@ -316,12 +316,13 @@ func convShorthand(s dinkurapiv1.GetEntryListRequest_Shorthand) timeutil.TimeSpa
 }
 
 func convAlert(alert dinkur.Alert) *dinkurapiv1.Alert {
+	common := alert.Common()
 	a := &dinkurapiv1.Alert{
-		Id:      uint64(alert.ID),
-		Created: convTimePtr(&alert.CreatedAt),
-		Updated: convTimePtr(&alert.UpdatedAt),
+		Id:      uint64(common.ID),
+		Created: convTime(common.CreatedAt),
+		Updated: convTime(common.UpdatedAt),
 	}
-	switch alertType := alert.Type.(type) {
+	switch alertType := alert.(type) {
 	case dinkur.AlertPlainMessage:
 		a.Type = &dinkurapiv1.Alert_PlainMessage{
 			PlainMessage: convAlertPlainMessage(alertType),
@@ -329,10 +330,6 @@ func convAlert(alert dinkur.Alert) *dinkurapiv1.Alert {
 	case dinkur.AlertAFK:
 		a.Type = &dinkurapiv1.Alert_Afk{
 			Afk: convAlertAFK(alertType),
-		}
-	case dinkur.AlertFormerlyAFK:
-		a.Type = &dinkurapiv1.Alert_FormerlyAfk{
-			FormerlyAfk: convAlertFormerlyAFK(alertType),
 		}
 	}
 	return a
@@ -347,13 +344,8 @@ func convAlertPlainMessage(alert dinkur.AlertPlainMessage) *dinkurapiv1.AlertPla
 func convAlertAFK(alert dinkur.AlertAFK) *dinkurapiv1.AlertAfk {
 	return &dinkurapiv1.AlertAfk{
 		ActiveEntry: convEntryPtr(&alert.ActiveEntry),
-	}
-}
-
-func convAlertFormerlyAFK(alert dinkur.AlertFormerlyAFK) *dinkurapiv1.AlertFormerlyAfk {
-	return &dinkurapiv1.AlertFormerlyAfk{
-		ActiveEntry: convEntryPtr(&alert.ActiveEntry),
 		AfkSince:    convTime(alert.AFKSince),
+		BackSince:   convTimePtr(alert.BackSince),
 	}
 }
 

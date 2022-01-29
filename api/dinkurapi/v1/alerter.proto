@@ -95,12 +95,11 @@ message Alert {
     // PlainMessage means this alert is a plain string message alert.
     AlertPlainMessage plain_message = 4;
     // AFK means this alert is an AFK alert, where the user has been away from
-    // their keyboard for too long, and any clients can start idling.
+    // their keyboard for too long, and any clients can start idling. The alert
+    // also contains information for when the user has returned from being AFK,
+    // for which the Dinkur clients are expected to prompt the user for how to
+    // save the away time.
     AlertAfk afk = 5;
-    // FormerlyAFK means this alert is a formerly-AFK alert, where the user has
-    // been away from their keyboard for too long and have now returned, and
-    // any clients ought to prompt the user for how to save the away time.
-    AlertFormerlyAfk formerly_afk = 6;
   }
 }
 
@@ -124,20 +123,9 @@ message AlertAfk {
   // is AFK. This field should always be set, as this alert is only issued when
   // the user has an active entry.
   Entry active_entry = 1;
-}
-
-// AlertFormerlyAfk is an alert subtype that is issued when the user has been
-// away from their keyboard for too long and has now returned. Dinkur clients
-// are expected to prompt the user for how to save the away time and then
-// delete this alert once it is resolved. This alert is not automatically
-// deleted. The alert is only issued when the user has an active taks.
-//
-// Only one instance of this alert may exist at a single time.
-message AlertFormerlyAfk {
-  // ActiveEntry is the Dinkur entry that is currently active when that the user
-  // went AFK. This field should always be set, as this alert is only issued
-  // when the user has an active entry.
-  Entry active_entry = 1;
   // AfkSince is a timestamp of when the user went AFK.
   google.protobuf.Timestamp afk_since = 2;
+  // BackSince is a timestamp of when the user returned from being AFK.
+  // This value is null/nil when the user has not yet returned.
+  google.protobuf.Timestamp back_since = 3;
 }
