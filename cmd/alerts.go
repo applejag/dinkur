@@ -40,7 +40,7 @@ var alertsCmd = &cobra.Command{
 			console.PrintFatal("Error running test:", `--client must be set to "grpc"`)
 		}
 		connectClientOrExit()
-		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		ctx, cancel := context.WithTimeout(rootCtx, 60*time.Second)
 		alertChan, err := c.StreamAlert(ctx)
 		if err != nil {
 			cancel()

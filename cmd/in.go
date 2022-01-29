@@ -21,7 +21,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -56,7 +55,7 @@ func init() {
 				EndBeforeIDOrZero:  flagBeforeID,
 				StartAfterLast:     flagAfterLast,
 			}
-			startedEntry, err := c.CreateEntry(context.Background(), newEntry)
+			startedEntry, err := c.CreateEntry(rootCtx, newEntry)
 			if err != nil {
 				console.PrintFatal("Error starting entry:", err)
 			}
@@ -79,20 +78,20 @@ func printStartedEntry(startedEntry dinkur.StartedEntry) {
 	if startedEntry.Stopped != nil {
 		toPrint = append(toPrint, console.LabelledEntry{
 			Label: "Stopped entry:",
-			Entry:  *startedEntry.Stopped,
+			Entry: *startedEntry.Stopped,
 		})
 	}
 	noActive := false
 	if startedEntry.Started.End != nil {
 		toPrint = append(toPrint, console.LabelledEntry{
 			Label: "Added entry:",
-			Entry:  startedEntry.Started,
+			Entry: startedEntry.Started,
 		})
 		noActive = true
 	} else {
 		toPrint = append(toPrint, console.LabelledEntry{
 			Label:      "Started entry:",
-			Entry:       startedEntry.Started,
+			Entry:      startedEntry.Started,
 			NoDuration: true,
 		})
 	}

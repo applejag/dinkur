@@ -25,7 +25,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/dinkur/dinkur/internal/cfgpath"
 	"github.com/dinkur/dinkur/internal/console"
@@ -42,6 +44,8 @@ import (
 )
 
 var (
+	rootCtx         = context.Background()
+	rootCtxDone     func()
 	cfgFile         = cfgpath.ConfigPath
 	dataFile        = cfgpath.DataPath
 	flagDataMkdir   = true
@@ -94,13 +98,16 @@ Track how you spend time on your entries with Dinkur.
 func Execute() {
 	defer c.Close()
 	err := RootCmd.Execute()
+	if rootCtxDone != nil {
+		rootCtxDone()
+	}
 	if err != nil {
 		os.Exit(1)
 	}
 }
 
 func init() {
-	cobra.OnInitialize(initLogger, initConfig)
+	cobra.OnInitialize(initLogger, initConfig, initContext)
 
 	RootCmd.SetOut(colorable.NewColorableStdout())
 	RootCmd.SetErr(colorable.NewColorableStderr())
@@ -152,6 +159,10 @@ func initLogger() {
 	logger.AddOutput(level, consolepretty.New(prettyConf))
 }
 
+func initContext() {
+	rootCtx, rootCtxDone = signal.NotifyContext(rootCtx, syscall.SIGTERM, syscall.SIGHUP, os.Interrupt, os.Kill)
+}
+
 func connectClientOrExit() {
 	client, err := connectClient(false)
 	if err != nil {
@@ -183,10 +194,10 @@ func connectClient(skipMigrate bool) (dinkur.Client, error) {
 
 func connectToGRPCClient() (dinkur.Client, error) {
 	c := dinkurclient.NewClient(flagGrpcAddress, dinkurclient.Options{})
-	if err := c.Connect(context.Background()); err != nil {
+	if err := c.Connect(rootCtx); err != nil {
 		return nil, err
 	}
-	if err := c.Ping(context.Background()); err != nil {
+	if err := c.Ping(rootCtx); err != nil {
 		return nil, fmt.Errorf("attempting ping: %w", err)
 	}
 	checkAlerts(c)
@@ -194,7 +205,7 @@ func connectToGRPCClient() (dinkur.Client, error) {
 }
 
 func checkAlerts(c dinkur.Client) {
-	alerts, err := c.GetAlertList(context.Background())
+	alerts, err := c.GetAlertList(rootCtx)
 	if err != nil {
 		console.PrintFatal("Error getting alerts list:", err)
 	}
@@ -213,7 +224,7 @@ func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, afk dinkur.AlertAF
 		console.PrintFatal("Prompt error:", err)
 	}
 	if res.Edit != nil {
-		update, err := c.UpdateEntry(context.Background(), *res.Edit)
+		update, err := c.UpdateEntry(rootCtx, *res.Edit)
 		if err != nil {
 			console.PrintFatal("Error editing entry:", err)
 		}
@@ -221,14 +232,14 @@ func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, afk dinkur.AlertAF
 		fmt.Println()
 	}
 	if res.NewEntry != nil {
-		startedEntry, err := c.CreateEntry(context.Background(), *res.NewEntry)
+		startedEntry, err := c.CreateEntry(rootCtx, *res.NewEntry)
 		if err != nil {
 			console.PrintFatal("Error starting entry:", err)
 		}
 		printStartedEntry(startedEntry)
 		fmt.Println()
 	}
-	if _, err := c.DeleteAlert(context.Background(), alert.Common().ID); err != nil {
+	if _, err := c.DeleteAlert(rootCtx, alert.Common().ID); err != nil {
 		console.PrintFatal("Error removing alert:", err)
 	}
 	fmt.Println("Continuing with command...")
@@ -241,7 +252,7 @@ func connectToDBClient(skipMigrate bool) (dinkur.Client, error) {
 		DebugLogging:         flagVerbose,
 		SkipMigrateOnConnect: skipMigrate,
 	})
-	return c, c.Connect(context.Background())
+	return c, c.Connect(rootCtx)
 }
 
 func colorComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
@@ -264,7 +275,7 @@ func entryIDComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCom
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	entries, err := client.GetEntryList(context.Background(), dinkur.SearchEntry{
+	entries, err := client.GetEntryList(rootCtx, dinkur.SearchEntry{
 		Limit: 12,
 	})
 	if err != nil {

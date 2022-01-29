@@ -59,7 +59,7 @@ authentication token can be used, is outputted to the console.`,
 			Port:      opt.Port,
 			AuthToken: nil,
 		})
-		if err := d.Serve(contextWithOSInterrupt(context.Background())); err != nil {
+		if err := d.Serve(contextWithOSInterrupt(rootCtx)); err != nil {
 			console.PrintFatal("Error starting daemon:", err)
 		}
 	},

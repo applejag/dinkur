@@ -21,7 +21,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/dinkur/dinkur/internal/console"
@@ -37,14 +36,14 @@ var statusCmd = &cobra.Command{
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		connectClientOrExit()
-		activeEntry, err := c.GetActiveEntry(context.Background())
+		activeEntry, err := c.GetActiveEntry(rootCtx)
 		if err != nil {
 			console.PrintFatal("Error getting active entry:", err)
 		}
 		if activeEntry != nil {
 			console.PrintEntryLabel(console.LabelledEntry{
 				Label: "Current entry:",
-				Entry:  *activeEntry,
+				Entry: *activeEntry,
 			})
 		} else {
 			fmt.Println("You have no active entry.")

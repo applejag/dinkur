@@ -21,7 +21,6 @@
 package cmd
 
 import (
-	"context"
 	"strings"
 
 	"github.com/dinkur/dinkur/internal/console"
@@ -68,7 +67,7 @@ a specific entry using the --id or -i flag.`,
 				name := strings.Join(args, " ")
 				edit.Name = &name
 			}
-			update, err := c.UpdateEntry(context.Background(), edit)
+			update, err := c.UpdateEntry(rootCtx, edit)
 			if err != nil {
 				console.PrintFatal("Error editing entry:", err)
 			}

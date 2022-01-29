@@ -21,7 +21,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -39,14 +38,14 @@ var outCmd = &cobra.Command{
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		connectClientOrExit()
-		stoppedEntry, err := c.StopActiveEntry(context.Background(), time.Now())
+		stoppedEntry, err := c.StopActiveEntry(rootCtx, time.Now())
 		if err != nil {
 			console.PrintFatal("Error stopping entry:", err)
 		}
 		if stoppedEntry != nil {
 			console.PrintEntryLabel(console.LabelledEntry{
 				Label: "Stopped entry:",
-				Entry:  *stoppedEntry,
+				Entry: *stoppedEntry,
 			})
 		} else {
 			fmt.Println("No active entry to stop.")

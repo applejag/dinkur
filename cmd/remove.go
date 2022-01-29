@@ -21,7 +21,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -49,7 +48,7 @@ Warning: Removing a entry cannot be undone!`,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
 			if !flagYes {
-				entry, err := c.GetEntry(context.Background(), flagID)
+				entry, err := c.GetEntry(rootCtx, flagID)
 				if err != nil {
 					console.PrintFatal("Error getting entry:", err)
 				}
@@ -58,13 +57,13 @@ Warning: Removing a entry cannot be undone!`,
 					console.PrintFatal("Prompt error:", err)
 				}
 			}
-			removedEntry, err := c.DeleteEntry(context.Background(), flagID)
+			removedEntry, err := c.DeleteEntry(rootCtx, flagID)
 			if err != nil {
 				console.PrintFatal("Error removing entry:", err)
 			}
 			console.PrintEntryLabel(console.LabelledEntry{
 				Label: "Deleted entry:",
-				Entry:  removedEntry,
+				Entry: removedEntry,
 			})
 			fmt.Println()
 			fmt.Println("If this was a mistake, you can add it back in with:")
