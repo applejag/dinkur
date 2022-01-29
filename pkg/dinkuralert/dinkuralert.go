@@ -120,9 +120,9 @@ func (s *Store) SetBackFromAFK() {
 	})
 }
 
-// SetNotAFK unmarks the user as AFK by deleting the AFK alert, if any.
+// DeleteAFKAlert unmarks the user as AFK by deleting the AFK alert, if any.
 // If the user was not previously AFK or back from AFK, then nothing happens.
-func (s *Store) SetNotAFK() {
+func (s *Store) DeleteAFKAlert() {
 	if s.afkAlert == nil {
 		return
 	}

@@ -157,7 +157,7 @@ type daemon struct {
 }
 
 func (d *daemon) onEntryMutation() {
-	d.alertStore.SetNotAFK()
+	d.alertStore.DeleteAFKAlert()
 }
 
 func (d *daemon) assertConnected() error {
