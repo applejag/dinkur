@@ -104,7 +104,7 @@ func (s *Store) SetAFK(activeEntry dinkur.Entry) {
 
 // SetBackFromAFK marks the user as formerly-AFK and updates the AFK alert.
 // If the user was not previously AFK, then nothing happens.
-func (s *Store) SetBackFromAFK(afkSince time.Time) {
+func (s *Store) SetBackFromAFK() {
 	if s.afkAlert == nil {
 		return
 	}

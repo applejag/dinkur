@@ -239,8 +239,8 @@ func (d *daemon) listenForAFK(ctx context.Context) {
 				continue
 			}
 			d.alertStore.SetAFK(*entry)
-		case stopped := <-stoppedChan:
-			d.alertStore.SetBackFromAFK(stopped.AFKSince)
+		case <-stoppedChan:
+			d.alertStore.SetBackFromAFK()
 		case <-done:
 			return
 		}
