@@ -101,6 +101,35 @@ func (EntryFTS5) TableName() string {
 	return "entries_idx"
 }
 
+// Alert is the parent alert type for all alert types. Only one of the inner
+// alert types are expected to be set. It's considered undefined behaviour to
+// assign multiple alert types to an alert, such as assigning both a plain
+// message alert and an AFK alert.
+type Alert struct {
+	CommonFields
+	PlainMessage *AlertPlainMessage `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	AFK          *AlertAFK          `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+}
+
+// AlertPlainMessage is an arbitrary message the user needs to see.
+type AlertPlainMessage struct {
+	ID      uint
+	AlertID uint
+
+	Message string
+}
+
+// AlertAFK is an AFK (Away From Keyboard) alert.
+type AlertAFK struct {
+	ID      uint
+	AlertID uint
+
+	ActiveEntry   Entry `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	ActiveEntryID uint
+	AFKSince      time.Time
+	BackSince     *time.Time
+}
+
 func timePtrUTC(t *time.Time) *time.Time {
 	if t == nil {
 		return nil
@@ -155,7 +184,7 @@ type MigrationVersion int
 // LatestMigrationVersion is an integer revision identifier for what migration
 // was last applied to the database. This is stored in the database to quickly
 // figure out if new migrations needs to be applied.
-const LatestMigrationVersion MigrationVersion = 6
+const LatestMigrationVersion MigrationVersion = 7
 
 const (
 	// MigrationUnknown means that Dinkur was unable to evaluate the database's

@@ -75,7 +75,10 @@ func (c *client) Migrate(ctx context.Context) error {
 	if err := c.assertConnected(); err != nil {
 		return err
 	}
-	return c.withContext(ctx).migrate()
+	if err := c.withContext(ctx).migrate(); err != nil {
+		return fmt.Errorf("migration: %w", err)
+	}
+	return nil
 }
 
 func (c *client) migrate() error {
@@ -107,12 +110,16 @@ func (c *client) migrateNoTran() error {
 		}
 	}
 	tables := []any{
-		&Migration{},
-		&Entry{},
+		Migration{},
+		Entry{},
+		Alert{},
+		AlertAFK{},
+		AlertPlainMessage{},
 		// Note: Do not add EntryFTS5 to auto migration! It is created separately
 		// through manual SQL queries down below.
 	}
 	for _, tbl := range tables {
+		log.Debug().WithStringf("type", "%T", tbl).Message("Applying auto migrations.")
 		if err := c.db.AutoMigrate(tbl); err != nil {
 			return err
 		}
@@ -122,6 +129,7 @@ func (c *client) migrateNoTran() error {
 			return err
 		}
 	}
+	log.Debug().Message("Done with auto migrations.")
 	if oldVersion < 4 || !c.db.Migrator().HasTable("entries_idx") {
 		// Creates FTS5 (Sqlite free-text search) virtual table
 		// and triggers to keep it up-to-date.
