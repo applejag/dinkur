@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
+	"gopkg.in/typ.v1"
 )
 
 var (
@@ -140,16 +141,14 @@ func timePtrUTC(t *time.Time) *time.Time {
 	if t == nil {
 		return nil
 	}
-	utcTime := (*t).UTC()
-	return &utcTime
+	return typ.Ptr((*t).UTC())
 }
 
 func timePtrLocal(t *time.Time) *time.Time {
 	if t == nil {
 		return nil
 	}
-	utcTime := (*t).Local()
-	return &utcTime
+	return typ.Ptr((*t).Local())
 }
 
 func convEntry(t Entry) dinkur.Entry {
@@ -165,8 +164,7 @@ func convEntryPtr(t *Entry) *dinkur.Entry {
 	if t == nil {
 		return nil
 	}
-	dinkurEntry := convEntry(*t)
-	return &dinkurEntry
+	return typ.Ptr(convEntry(*t))
 }
 
 func convAlert(alert Alert) (dinkur.Alert, error) {
@@ -190,8 +188,8 @@ func convAlertAFK(alert Alert, afk AlertAFK) dinkur.Alert {
 	return dinkur.AlertAFK{
 		CommonFields: convCommonFields(alert.CommonFields),
 		ActiveEntry:  convEntry(afk.ActiveEntry),
-		AFKSince:     afk.AFKSince,
-		BackSince:    afk.BackSince,
+		AFKSince:     afk.AFKSince.Local(),
+		BackSince:    timePtrLocal(afk.BackSince),
 	}
 }
 
