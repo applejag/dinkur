@@ -56,6 +56,14 @@ func convCommonFields(f CommonFields) dinkur.CommonFields {
 	}
 }
 
+func convCommonFieldsID(f CommonFields, id uint) dinkur.CommonFields {
+	return dinkur.CommonFields{
+		ID:        id,
+		CreatedAt: f.CreatedAt,
+		UpdatedAt: f.UpdatedAt,
+	}
+}
+
 const (
 	entryFieldEnd = "End"
 
@@ -113,14 +121,14 @@ const (
 // assign multiple alert types to an alert, such as assigning both a plain
 // message alert and an AFK alert.
 type Alert struct {
-	CommonFields
+	ID           uint               `gorm:"primaryKey;autoIncrement;type:INTEGER PRIMARY KEY AUTOINCREMENT"`
 	PlainMessage *AlertPlainMessage `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	AFK          *AlertAFK          `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 // AlertPlainMessage is an arbitrary message the user needs to see.
 type AlertPlainMessage struct {
-	ID      uint
+	CommonFields
 	AlertID uint
 
 	Message string
@@ -128,7 +136,7 @@ type AlertPlainMessage struct {
 
 // AlertAFK is an AFK (Away From Keyboard) alert.
 type AlertAFK struct {
-	ID      uint
+	CommonFields
 	AlertID uint
 
 	ActiveEntry   Entry `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
@@ -169,27 +177,27 @@ func convEntryPtr(t *Entry) *dinkur.Entry {
 
 func convAlert(alert Alert) (dinkur.Alert, error) {
 	if alert.PlainMessage != nil {
-		return convAlertPlainMessage(alert, *alert.PlainMessage), nil
+		return convAlertPlainMessage(alert.ID, *alert.PlainMessage), nil
 	}
 	if alert.AFK != nil {
-		return convAlertAFK(alert, *alert.AFK), nil
+		return convAlertAFK(alert.ID, *alert.AFK), nil
 	}
 	return nil, errors.New("alert does not have an associated alert type")
 }
 
-func convAlertPlainMessage(alert Alert, plain AlertPlainMessage) dinkur.Alert {
+func convAlertPlainMessage(id uint, alert AlertPlainMessage) dinkur.Alert {
 	return dinkur.AlertPlainMessage{
-		CommonFields: convCommonFields(alert.CommonFields),
-		Message:      plain.Message,
+		CommonFields: convCommonFieldsID(alert.CommonFields, id),
+		Message:      alert.Message,
 	}
 }
 
-func convAlertAFK(alert Alert, afk AlertAFK) dinkur.Alert {
+func convAlertAFK(id uint, alert AlertAFK) dinkur.Alert {
 	return dinkur.AlertAFK{
-		CommonFields: convCommonFields(alert.CommonFields),
-		ActiveEntry:  convEntry(afk.ActiveEntry),
-		AFKSince:     afk.AFKSince.Local(),
-		BackSince:    timePtrLocal(afk.BackSince),
+		CommonFields: convCommonFieldsID(alert.CommonFields, id),
+		ActiveEntry:  convEntry(alert.ActiveEntry),
+		AFKSince:     alert.AFKSince.Local(),
+		BackSince:    timePtrLocal(alert.BackSince),
 	}
 }
 
