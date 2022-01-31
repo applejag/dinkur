@@ -39,6 +39,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"gopkg.in/typ.v1"
 )
 
 // Errors that are specific to the Dinkur gRPC server daemon.
@@ -294,16 +295,14 @@ func convTimestampPtr(ts *timestamppb.Timestamp) *time.Time {
 	if ts == nil {
 		return nil
 	}
-	t := ts.AsTime()
-	return &t
+	return typ.Ptr(ts.AsTime())
 }
 
 func convTimestampOrNow(ts *timestamppb.Timestamp) time.Time {
 	if ts == nil {
 		return time.Now()
 	}
-	t := ts.AsTime()
-	return t
+	return ts.AsTime()
 }
 
 func convShorthand(s dinkurapiv1.GetEntryListRequest_Shorthand) timeutil.TimeSpanShorthand {
@@ -364,11 +363,7 @@ func convAlertAFK(alert dinkur.AlertAFK) *dinkurapiv1.AlertAfk {
 }
 
 func convAlertSlice(slice []dinkur.Alert) []*dinkurapiv1.Alert {
-	alerts := make([]*dinkurapiv1.Alert, len(slice))
-	for i, t := range slice {
-		alerts[i] = convAlert(t)
-	}
-	return alerts
+	return typ.Map(slice, convAlert)
 }
 
 func convEvent(ev dinkur.EventType) dinkurapiv1.Event {
