@@ -128,6 +128,9 @@ func (c *client) Connect(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if err := c.db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
+		return err
+	}
 	sqlDB, err := c.db.DB()
 	if err != nil {
 		return err
