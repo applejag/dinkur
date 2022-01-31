@@ -93,7 +93,6 @@ type Alert interface {
 // presented to the user with no need for user action.
 type AlertPlainMessage struct {
 	CommonFields
-	Alert
 	Message string
 }
 
@@ -107,7 +106,6 @@ func (a AlertPlainMessage) Common() CommonFields { return a.CommonFields }
 // active entry. I.e. no AFK alert is issued when not tracking any entry.
 type AlertAFK struct {
 	CommonFields
-	Alert
 	ActiveEntry Entry
 	AFKSince    time.Time
 	BackSince   *time.Time

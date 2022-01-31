@@ -21,6 +21,7 @@
 package dinkurdb
 
 import (
+	"errors"
 	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
@@ -101,6 +102,11 @@ func (EntryFTS5) TableName() string {
 	return "entries_idx"
 }
 
+const (
+	alertColumnPlainMessage = "PlainMessage"
+	alertColumnAFK          = "AFK"
+)
+
 // Alert is the parent alert type for all alert types. Only one of the inner
 // alert types are expected to be set. It's considered undefined behaviour to
 // assign multiple alert types to an alert, such as assigning both a plain
@@ -163,12 +169,30 @@ func convEntryPtr(t *Entry) *dinkur.Entry {
 	return &dinkurEntry
 }
 
-func convEntrySlice(slice []Entry) []dinkur.Entry {
-	result := make([]dinkur.Entry, len(slice))
-	for i, t := range slice {
-		result[i] = convEntry(t)
+func convAlert(alert Alert) (dinkur.Alert, error) {
+	if alert.PlainMessage != nil {
+		return convAlertPlainMessage(alert, *alert.PlainMessage), nil
 	}
-	return result
+	if alert.AFK != nil {
+		return convAlertAFK(alert, *alert.AFK), nil
+	}
+	return nil, errors.New("alert does not have an associated alert type")
+}
+
+func convAlertPlainMessage(alert Alert, plain AlertPlainMessage) dinkur.Alert {
+	return dinkur.AlertPlainMessage{
+		CommonFields: convCommonFields(alert.CommonFields),
+		Message:      plain.Message,
+	}
+}
+
+func convAlertAFK(alert Alert, afk AlertAFK) dinkur.Alert {
+	return dinkur.AlertAFK{
+		CommonFields: convCommonFields(alert.CommonFields),
+		ActiveEntry:  convEntry(afk.ActiveEntry),
+		AFKSince:     afk.AFKSince,
+		BackSince:    afk.BackSince,
+	}
 }
 
 // Migration holds the latest migration revision identifier. At most one row of

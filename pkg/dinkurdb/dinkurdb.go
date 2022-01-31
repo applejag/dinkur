@@ -40,11 +40,6 @@ import (
 
 var log = logger.NewScoped("DB")
 
-// Errors specific to the Dinkur database client
-var (
-	ErrAlerterNotSupported = errors.New("database client does not support alerts")
-)
-
 func nilNotFoundError(err error) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil
@@ -93,10 +88,16 @@ type client struct {
 	prevMigChecked bool
 	prevMigVersion MigrationVersion
 	entryObs       *typ.Publisher[entryEvent]
+	alertObs       *typ.Publisher[alertEvent]
 }
 
 type entryEvent struct {
 	dbEntry Entry
+	event   dinkur.EventType
+}
+
+type alertEvent struct {
+	dbAlert Alert
 	event   dinkur.EventType
 }
 

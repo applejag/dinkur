@@ -101,7 +101,7 @@ func (c *client) GetEntryList(ctx context.Context, search dinkur.SearchEntry) ([
 	if err != nil {
 		return nil, err
 	}
-	return convEntrySlice(dbEntries), nil
+	return typ.Map(dbEntries, convEntry), nil
 }
 
 func (c *client) listDBEntries(search dinkur.SearchEntry) ([]Entry, error) {
@@ -522,6 +522,9 @@ func (c *client) stopActiveDBEntryNoTran(endTime time.Time) (*Entry, error) {
 }
 
 func (c *client) StreamEntry(ctx context.Context) (<-chan dinkur.StreamedEntry, error) {
+	if err := c.assertConnected(); err != nil {
+		return nil, err
+	}
 	ch := make(chan dinkur.StreamedEntry)
 	go func() {
 		done := ctx.Done()
