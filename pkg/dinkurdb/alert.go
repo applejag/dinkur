@@ -73,7 +73,7 @@ func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
-	dbAlerts, err := c.listDBAlertsAtom()
+	dbAlerts, err := c.withContext(ctx).listDBAlertsAtom()
 	if err != nil {
 		return nil, err
 	}
