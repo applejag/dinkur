@@ -72,7 +72,7 @@ func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, 
 }
 
 func (c *client) CreateAlert(ctx context.Context, newAlert dinkur.NewAlert) (dinkur.Alert, error) {
-	return nil, errors.New("not implementation")
+	return nil, errors.New("not implemented")
 }
 
 func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
@@ -102,7 +102,7 @@ func (c *client) listDBAlertsAtom() ([]dbmodel.Alert, error) {
 }
 
 func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur.Alert, error) {
-	return nil, errors.New("not implementation")
+	return nil, errors.New("not implemented")
 }
 
 func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error) {
