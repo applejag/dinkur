@@ -109,7 +109,7 @@ func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error)
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
-	dbAlert, err := c.withContext(ctx).deleteDBAlertAtom(id)
+	dbAlert, err := c.withContext(ctx).deleteDBAlertTran(id)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error)
 	return nil, nil
 }
 
-func (c *client) deleteDBAlertAtom(id uint) (dbmodel.Alert, error) {
+func (c *client) deleteDBAlertTran(id uint) (dbmodel.Alert, error) {
 	var dbAlert dbmodel.Alert
 	err := c.transaction(func(tx *client) (tranErr error) {
 		dbAlert, tranErr = tx.deleteDBAlertNoTran(id)
