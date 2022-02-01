@@ -96,6 +96,12 @@ func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 }
 
 func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur.Alert, error) {
+	if err := c.assertConnected(); err != nil {
+		return nil, err
+	}
+	res, err := c.alerter.UpdateAlert(ctx, &dinkurapiv1.UpdateAlertRequest{
+		Id: uint64(edit.ID()),
+	})
 	return nil, errors.New("not implemented")
 }
 
