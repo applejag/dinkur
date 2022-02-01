@@ -25,8 +25,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"gopkg.in/typ.v1"
+	"github.com/dinkur/dinkur/pkg/fromdb"
 	"gorm.io/gorm"
 )
 
@@ -50,7 +51,7 @@ func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, 
 				if !ok {
 					return
 				}
-				alert, err := convAlert(ev.dbAlert)
+				alert, err := fromdb.Alert(ev.dbAlert)
 				if err != nil {
 					log.Warn().
 						WithError(err).
@@ -82,18 +83,18 @@ func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 	if err != nil {
 		return nil, err
 	}
-	alerts, err := typ.MapErr(dbAlerts, convAlert)
+	alerts, err := fromdb.AlertSlice(dbAlerts)
 	if err != nil {
 		return nil, err
 	}
 	return alerts, nil
 }
 
-func (c *client) listDBAlertsAtom() ([]Alert, error) {
+func (c *client) listDBAlertsAtom() ([]dbmodel.Alert, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
-	var dbAlerts []Alert
+	var dbAlerts []dbmodel.Alert
 	if err := c.dbAlertPreloaded().Find(&dbAlerts).Error; err != nil {
 		return nil, err
 	}
@@ -119,8 +120,8 @@ func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error)
 	return nil, nil
 }
 
-func (c *client) deleteDBAlertAtom(id uint) (Alert, error) {
-	var dbAlert Alert
+func (c *client) deleteDBAlertAtom(id uint) (dbmodel.Alert, error) {
+	var dbAlert dbmodel.Alert
 	err := c.transaction(func(tx *client) (tranErr error) {
 		dbAlert, tranErr = tx.deleteDBAlertNoTran(id)
 		return
@@ -128,31 +129,31 @@ func (c *client) deleteDBAlertAtom(id uint) (Alert, error) {
 	return dbAlert, err
 }
 
-func (c *client) deleteDBAlertNoTran(id uint) (Alert, error) {
+func (c *client) deleteDBAlertNoTran(id uint) (dbmodel.Alert, error) {
 	dbAlert, err := c.getDBAlertAtom(id)
 	if err != nil {
-		return Alert{}, fmt.Errorf("get alert to delete: %w", err)
+		return dbmodel.Alert{}, fmt.Errorf("get alert to delete: %w", err)
 	}
-	if err := c.db.Delete(&Entry{}, id).Error; err != nil {
-		return Alert{}, fmt.Errorf("delete alert: %w", err)
+	if err := c.db.Delete(&dbmodel.Alert{}, id).Error; err != nil {
+		return dbmodel.Alert{}, fmt.Errorf("delete alert: %w", err)
 	}
 	return dbAlert, nil
 }
 
-func (c *client) getDBAlertAtom(id uint) (Alert, error) {
+func (c *client) getDBAlertAtom(id uint) (dbmodel.Alert, error) {
 	if err := c.assertConnected(); err != nil {
-		return Alert{}, err
+		return dbmodel.Alert{}, err
 	}
-	var dbAlert Alert
+	var dbAlert dbmodel.Alert
 	err := c.dbAlertPreloaded().First(&dbAlert, id).Error
 	if err != nil {
-		return Alert{}, err
+		return dbmodel.Alert{}, err
 	}
 	return dbAlert, nil
 }
 
 func (c *client) dbAlertPreloaded() *gorm.DB {
-	return c.db.Model(&Alert{}).
-		Preload(alertColumnPlainMessage).
-		Preload(alertColumnAFK)
+	return c.db.Model(&dbmodel.Alert{}).
+		Preload(dbmodel.AlertColumnPlainMessage).
+		Preload(dbmodel.AlertColumnAFK)
 }

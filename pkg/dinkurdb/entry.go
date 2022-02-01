@@ -28,7 +28,10 @@ import (
 	"math"
 	"time"
 
+	"github.com/dinkur/dinkur/pkg/conv"
+	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/dinkur/dinkur/pkg/dinkur"
+	"github.com/dinkur/dinkur/pkg/fromdb"
 	"github.com/dinkur/dinkur/pkg/timeutil"
 	"gopkg.in/typ.v1"
 )
@@ -38,15 +41,15 @@ func (c *client) GetActiveEntry(ctx context.Context) (*dinkur.Entry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return convEntryPtr(dbEntry), nil
+	return fromdb.EntryPtr(dbEntry), nil
 }
 
-func (c *client) activeDBEntry() (*Entry, error) {
+func (c *client) activeDBEntry() (*dbmodel.Entry, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
-	var dbEntry Entry
-	err := c.db.Where(Entry{End: nil}, entryFieldEnd).First(&dbEntry).Error
+	var dbEntry dbmodel.Entry
+	err := c.db.Where(dbmodel.Entry{End: nil}, dbmodel.EntryFieldEnd).First(&dbEntry).Error
 	if err != nil {
 		return nil, nilNotFoundError(err)
 	}
@@ -58,17 +61,17 @@ func (c *client) GetEntry(ctx context.Context, id uint) (dinkur.Entry, error) {
 	if err != nil {
 		return dinkur.Entry{}, err
 	}
-	return convEntry(dbEntry), nil
+	return fromdb.Entry(dbEntry), nil
 }
 
-func (c *client) getDBEntry(id uint) (Entry, error) {
+func (c *client) getDBEntry(id uint) (dbmodel.Entry, error) {
 	if err := c.assertConnected(); err != nil {
-		return Entry{}, err
+		return dbmodel.Entry{}, err
 	}
-	var dbEntry Entry
+	var dbEntry dbmodel.Entry
 	err := c.db.First(&dbEntry, id).Error
 	if err != nil {
-		return Entry{}, err
+		return dbmodel.Entry{}, err
 	}
 	return dbEntry, nil
 }
@@ -78,21 +81,21 @@ var (
 		"((%[1]s >= @start) OR "+
 			"(%[2]s IS NOT NULL AND %[1]s >= @start) OR "+
 			"(%[2]s IS NULL AND CURRENT_TIMESTAMP >= @start))",
-		entryColumnStart, entryColumnEnd,
+		dbmodel.EntryColumnStart, dbmodel.EntryColumnEnd,
 	)
 
 	entrySQLBetweenEnd = fmt.Sprintf(
 		"((%[2]s <= @end) OR "+
 			"(%[2]s IS NOT NULL AND %[2]s <= @end) OR "+
 			"(%[2]s IS NULL AND CURRENT_TIMESTAMP <= @end))",
-		entryColumnStart, entryColumnEnd,
+		dbmodel.EntryColumnStart, dbmodel.EntryColumnEnd,
 	)
 
 	entrySQLBetween = fmt.Sprintf(
 		"((%[1]s BETWEEN @start AND @end) OR "+
 			"(%[2]s IS NOT NULL AND %[2]s BETWEEN @start AND @end) OR "+
 			"(%[2]s IS NULL AND CURRENT_TIMESTAMP BETWEEN @start AND @end))",
-		entryColumnStart, entryColumnEnd,
+		dbmodel.EntryColumnStart, dbmodel.EntryColumnEnd,
 	)
 )
 
@@ -101,10 +104,10 @@ func (c *client) GetEntryList(ctx context.Context, search dinkur.SearchEntry) ([
 	if err != nil {
 		return nil, err
 	}
-	return typ.Map(dbEntries, convEntry), nil
+	return typ.Map(dbEntries, fromdb.Entry), nil
 }
 
-func (c *client) listDBEntries(search dinkur.SearchEntry) ([]Entry, error) {
+func (c *client) listDBEntries(search dinkur.SearchEntry) ([]dbmodel.Entry, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
@@ -118,9 +121,9 @@ func (c *client) listDBEntries(search dinkur.SearchEntry) ([]Entry, error) {
 	if search.Limit > math.MaxInt {
 		return nil, dinkur.ErrLimitTooLarge
 	}
-	var dbEntries []Entry
-	q := c.db.Model(&Entry{}).
-		Order(entryColumnStart + " DESC").
+	var dbEntries []dbmodel.Entry
+	q := c.db.Model(&dbmodel.Entry{}).
+		Order(dbmodel.EntryColumnStart + " DESC").
 		Limit(int(search.Limit))
 	switch {
 	case search.Start != nil && search.End != nil:
@@ -142,12 +145,12 @@ func (c *client) listDBEntries(search dinkur.SearchEntry) ([]Entry, error) {
 				Select(
 					"id, created_at, updated_at, highlight(entries_idx, 0, ?, ?) AS name, start, end",
 					search.NameHighlightStart, search.NameHighlightEnd).
-				Where(entryFTS5ColumnName+" MATCH ?", search.NameFuzzy)
+				Where(dbmodel.EntryFTS5ColumnName+" MATCH ?", search.NameFuzzy)
 		} else {
-			subQ := c.db.Model(&EntryFTS5{}).
-				Select(entryFTS5ColumnRowID).
-				Where(entryFTS5ColumnName+" MATCH ?", search.NameFuzzy)
-			q = q.Where(entryColumnID+" IN (?)", subQ)
+			subQ := c.db.Model(&dbmodel.EntryFTS5{}).
+				Select(dbmodel.EntryFTS5ColumnRowID).
+				Where(dbmodel.EntryFTS5ColumnName+" MATCH ?", search.NameFuzzy)
+			q = q.Where(dbmodel.EntryColumnID+" IN (?)", subQ)
 		}
 	}
 	if err := q.Find(&dbEntries).Error; err != nil {
@@ -172,14 +175,14 @@ func (c *client) UpdateEntry(ctx context.Context, edit dinkur.EditEntry) (dinkur
 		event:   dinkur.EventUpdated,
 	})
 	return dinkur.UpdatedEntry{
-		Before: convEntry(update.before),
-		After:  convEntry(update.after),
+		Before: fromdb.Entry(update.before),
+		After:  fromdb.Entry(update.after),
 	}, nil
 }
 
 type updatedDBEntry struct {
-	before Entry
-	after  Entry
+	before dbmodel.Entry
+	after  dbmodel.Entry
 }
 
 func (c *client) editDBEntry(edit dinkur.EditEntry) (updatedDBEntry, error) {
@@ -251,7 +254,7 @@ func (c *client) editDBEntryNoTran(edit dinkur.EditEntry) (updatedDBEntry, error
 	}, nil
 }
 
-func (c *client) getDBEntryToStartAfter(idOrZero uint, lastEntry bool) (*Entry, error) {
+func (c *client) getDBEntryToStartAfter(idOrZero uint, lastEntry bool) (*dbmodel.Entry, error) {
 	if idOrZero != 0 {
 		startAfter, err := c.getDBEntry(idOrZero)
 		if err != nil {
@@ -289,7 +292,7 @@ func (c *client) getTimeToStartAfterOrNow(idOrZero uint, lastEntry bool) (*time.
 	return startAfter.End, nil
 }
 
-func (c *client) getDBEntryToEndBefore(idOrZero uint) (*Entry, error) {
+func (c *client) getDBEntryToEndBefore(idOrZero uint) (*dbmodel.Entry, error) {
 	if idOrZero == 0 {
 		return nil, nil
 	}
@@ -311,17 +314,17 @@ func (c *client) getTimeToEndBefore(idOrZero uint) (*time.Time, error) {
 	return &endBefore.Start, nil
 }
 
-func (c *client) getDBEntryToEditNoTran(idOrZero uint) (Entry, error) {
+func (c *client) getDBEntryToEditNoTran(idOrZero uint) (dbmodel.Entry, error) {
 	if idOrZero != 0 {
 		dbEntryByID, err := c.getDBEntry(idOrZero)
 		if err != nil {
-			return Entry{}, fmt.Errorf("get entry by ID: %d: %w", idOrZero, err)
+			return dbmodel.Entry{}, fmt.Errorf("get entry by ID: %d: %w", idOrZero, err)
 		}
 		return dbEntryByID, nil
 	}
 	activeDBEntry, err := c.activeDBEntry()
 	if err != nil {
-		return Entry{}, fmt.Errorf("get active entry: %w", err)
+		return dbmodel.Entry{}, fmt.Errorf("get active entry: %w", err)
 	}
 	if activeDBEntry != nil {
 		return *activeDBEntry, nil
@@ -332,10 +335,10 @@ func (c *client) getDBEntryToEditNoTran(idOrZero uint) (Entry, error) {
 		End:   &now,
 	})
 	if err != nil {
-		return Entry{}, fmt.Errorf("list latest 1 entry: %w", err)
+		return dbmodel.Entry{}, fmt.Errorf("list latest 1 entry: %w", err)
 	}
 	if len(dbEntries) == 0 {
-		return Entry{}, dinkur.ErrNotFound
+		return dbmodel.Entry{}, dinkur.ErrNotFound
 	}
 	return dbEntries[0], nil
 }
@@ -352,11 +355,11 @@ func (c *client) DeleteEntry(ctx context.Context, id uint) (dinkur.Entry, error)
 		dbEntry: dbEntry,
 		event:   dinkur.EventDeleted,
 	})
-	return convEntry(dbEntry), err
+	return fromdb.Entry(dbEntry), err
 }
 
-func (c *client) deleteDBEntry(id uint) (Entry, error) {
-	var dbEntry Entry
+func (c *client) deleteDBEntry(id uint) (dbmodel.Entry, error) {
+	var dbEntry dbmodel.Entry
 	err := c.transaction(func(tx *client) (tranErr error) {
 		dbEntry, tranErr = tx.deleteDBEntryNoTran(id)
 		return
@@ -364,13 +367,13 @@ func (c *client) deleteDBEntry(id uint) (Entry, error) {
 	return dbEntry, err
 }
 
-func (c *client) deleteDBEntryNoTran(id uint) (Entry, error) {
+func (c *client) deleteDBEntryNoTran(id uint) (dbmodel.Entry, error) {
 	dbEntry, err := c.getDBEntry(id)
 	if err != nil {
-		return Entry{}, fmt.Errorf("get entry to delete: %w", err)
+		return dbmodel.Entry{}, fmt.Errorf("get entry to delete: %w", err)
 	}
-	if err := c.db.Delete(&Entry{}, id).Error; err != nil {
-		return Entry{}, fmt.Errorf("delete entry: %w", err)
+	if err := c.db.Delete(&dbmodel.Entry{}, id).Error; err != nil {
+		return dbmodel.Entry{}, fmt.Errorf("delete entry: %w", err)
 	}
 	return dbEntry, nil
 }
@@ -392,10 +395,10 @@ func (c *client) CreateEntry(ctx context.Context, entry dinkur.NewEntry) (dinkur
 		return dinkur.StartedEntry{}, dinkur.ErrEntryEndBeforeStart
 	}
 	newEntry := newEntry{
-		Entry: Entry{
+		Entry: dbmodel.Entry{
 			Name:  entry.Name,
 			Start: start.UTC(),
-			End:   timePtrUTC(entry.End),
+			End:   conv.TimePtrUTC(entry.End),
 		},
 		startAfterIDOrZero: entry.StartAfterIDOrZero,
 		endBeforeIDOrZero:  entry.EndBeforeIDOrZero,
@@ -416,18 +419,18 @@ func (c *client) CreateEntry(ctx context.Context, entry dinkur.NewEntry) (dinkur
 		event:   dinkur.EventCreated,
 	})
 	return dinkur.StartedEntry{
-		Started: convEntry(startedEntry.started),
-		Stopped: convEntryPtr(startedEntry.stopped),
+		Started: fromdb.Entry(startedEntry.started),
+		Stopped: fromdb.EntryPtr(startedEntry.stopped),
 	}, nil
 }
 
 type startedDBEntry struct {
-	started Entry
-	stopped *Entry
+	started dbmodel.Entry
+	stopped *dbmodel.Entry
 }
 
 type newEntry struct {
-	Entry
+	dbmodel.Entry
 	startAfterIDOrZero uint
 	endBeforeIDOrZero  uint
 	startAfterLast     bool
@@ -485,11 +488,11 @@ func (c *client) StopActiveEntry(ctx context.Context, endTime time.Time) (*dinku
 			event:   dinkur.EventUpdated,
 		})
 	}
-	return convEntryPtr(dbEntry), nil
+	return fromdb.EntryPtr(dbEntry), nil
 }
 
-func (c *client) stopActiveDBEntry(endTime time.Time) (*Entry, error) {
-	var activeDBEntry *Entry
+func (c *client) stopActiveDBEntry(endTime time.Time) (*dbmodel.Entry, error) {
+	var activeDBEntry *dbmodel.Entry
 	err := c.transaction(func(tx *client) (tranErr error) {
 		activeDBEntry, tranErr = tx.stopActiveDBEntryNoTran(endTime)
 		return
@@ -497,9 +500,9 @@ func (c *client) stopActiveDBEntry(endTime time.Time) (*Entry, error) {
 	return activeDBEntry, err
 }
 
-func (c *client) stopActiveDBEntryNoTran(endTime time.Time) (*Entry, error) {
-	var entries []Entry
-	if err := c.db.Where(&Entry{End: nil}, entryFieldEnd).Find(&entries).Error; err != nil {
+func (c *client) stopActiveDBEntryNoTran(endTime time.Time) (*dbmodel.Entry, error) {
+	var entries []dbmodel.Entry
+	if err := c.db.Where(&dbmodel.Entry{End: nil}, dbmodel.EntryFieldEnd).Find(&entries).Error; err != nil {
 		return nil, err
 	}
 	if len(entries) == 0 {
@@ -511,9 +514,9 @@ func (c *client) stopActiveDBEntryNoTran(endTime time.Time) (*Entry, error) {
 		}
 		entries[i].End = &endTime
 	}
-	err := c.db.Model(&Entry{}).
-		Where(&Entry{End: nil}, entryFieldEnd).
-		Update(entryFieldEnd, endTime).
+	err := c.db.Model(&dbmodel.Entry{}).
+		Where(&dbmodel.Entry{End: nil}, dbmodel.EntryFieldEnd).
+		Update(dbmodel.EntryFieldEnd, endTime).
 		Error
 	if err != nil {
 		return nil, err
@@ -542,7 +545,7 @@ func (c *client) StreamEntry(ctx context.Context) (<-chan dinkur.StreamedEntry, 
 					return
 				}
 				ch <- dinkur.StreamedEntry{
-					Entry: convEntry(ev.dbEntry),
+					Entry: fromdb.Entry(ev.dbEntry),
 					Event: ev.event,
 				}
 			case <-done:

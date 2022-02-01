@@ -27,19 +27,15 @@ import (
 	"math"
 	"net"
 	"sync"
-	"time"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 	"github.com/dinkur/dinkur/pkg/afkdetect"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/dinkuralert"
-	"github.com/dinkur/dinkur/pkg/timeutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
-	"gopkg.in/typ.v1"
 )
 
 // Errors that are specific to the Dinkur gRPC server daemon.
@@ -71,27 +67,6 @@ func convError(err error) error {
 	default:
 		return err
 	}
-}
-
-func uint64ToUint(i uint64) (uint, error) {
-	if i > math.MaxUint {
-		return 0, ErrUintTooLarge
-	}
-	return uint(i), nil
-}
-
-func convUint64(i uint64) (uint, error) {
-	if i > math.MaxUint {
-		return 0, ErrUintTooLarge
-	}
-	return uint(i), nil
-}
-
-func convString(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 // Options for the daemon server.
@@ -255,130 +230,5 @@ func (d *daemon) listenForAFK(ctx context.Context) {
 		case <-done:
 			return
 		}
-	}
-}
-
-func convEntryPtr(entry *dinkur.Entry) *dinkurapiv1.Entry {
-	if entry == nil {
-		return nil
-	}
-	return &dinkurapiv1.Entry{
-		Id:      uint64(entry.ID),
-		Created: convTime(entry.CreatedAt),
-		Updated: convTime(entry.UpdatedAt),
-		Name:    entry.Name,
-		Start:   convTime(entry.Start),
-		End:     convTimePtr(entry.End),
-	}
-}
-
-func convEntrySlice(slice []dinkur.Entry) []*dinkurapiv1.Entry {
-	entries := make([]*dinkurapiv1.Entry, len(slice))
-	for i, t := range slice {
-		entries[i] = convEntryPtr(&t)
-	}
-	return entries
-}
-
-func convTime(t time.Time) *timestamppb.Timestamp {
-	return timestamppb.New(t)
-}
-
-func convTimePtr(t *time.Time) *timestamppb.Timestamp {
-	if t == nil {
-		return nil
-	}
-	return timestamppb.New(*t)
-}
-
-func convTimestampPtr(ts *timestamppb.Timestamp) *time.Time {
-	if ts == nil {
-		return nil
-	}
-	return typ.Ptr(ts.AsTime())
-}
-
-func convTimestampOrNow(ts *timestamppb.Timestamp) time.Time {
-	if ts == nil {
-		return time.Now()
-	}
-	return ts.AsTime()
-}
-
-func convShorthand(s dinkurapiv1.GetEntryListRequest_Shorthand) timeutil.TimeSpanShorthand {
-	switch s {
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_PAST:
-		return timeutil.TimeSpanPast
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_FUTURE:
-		return timeutil.TimeSpanFuture
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_THIS_DAY:
-		return timeutil.TimeSpanThisDay
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_THIS_MON_TO_SUN:
-		return timeutil.TimeSpanThisWeek
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_PREV_DAY:
-		return timeutil.TimeSpanPrevDay
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_PREV_MON_TO_SUN:
-		return timeutil.TimeSpanPrevWeek
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_NEXT_DAY:
-		return timeutil.TimeSpanNextDay
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_NEXT_MON_TO_SUN:
-		return timeutil.TimeSpanNextWeek
-	default:
-		return timeutil.TimeSpanNone
-	}
-}
-
-func convAlert(alert dinkur.Alert) *dinkurapiv1.Alert {
-	common := alert.Common()
-	a := &dinkurapiv1.Alert{
-		Id:      uint64(common.ID),
-		Created: convTime(common.CreatedAt),
-		Updated: convTime(common.UpdatedAt),
-	}
-	switch alertType := alert.(type) {
-	case dinkur.AlertPlainMessage:
-		a.Type = &dinkurapiv1.AlertType{
-			Data: &dinkurapiv1.AlertType_PlainMessage{
-				PlainMessage: convAlertPlainMessage(alertType),
-			},
-		}
-	case dinkur.AlertAFK:
-		a.Type = &dinkurapiv1.AlertType{
-			Data: &dinkurapiv1.AlertType_Afk{
-				Afk: convAlertAFK(alertType),
-			},
-		}
-	}
-	return a
-}
-
-func convAlertPlainMessage(alert dinkur.AlertPlainMessage) *dinkurapiv1.AlertPlainMessage {
-	return &dinkurapiv1.AlertPlainMessage{
-		Message: alert.Message,
-	}
-}
-
-func convAlertAFK(alert dinkur.AlertAFK) *dinkurapiv1.AlertAfk {
-	return &dinkurapiv1.AlertAfk{
-		ActiveEntry: convEntryPtr(&alert.ActiveEntry),
-		AfkSince:    convTime(alert.AFKSince),
-		BackSince:   convTimePtr(alert.BackSince),
-	}
-}
-
-func convAlertSlice(slice []dinkur.Alert) []*dinkurapiv1.Alert {
-	return typ.Map(slice, convAlert)
-}
-
-func convEvent(ev dinkur.EventType) dinkurapiv1.Event {
-	switch ev {
-	case dinkur.EventCreated:
-		return dinkurapiv1.Event_EVENT_CREATED
-	case dinkur.EventUpdated:
-		return dinkurapiv1.Event_EVENT_UPDATED
-	case dinkur.EventDeleted:
-		return dinkurapiv1.Event_EVENT_DELETED
-	default:
-		return dinkurapiv1.Event_EVENT_UNSPECIFIED
 	}
 }

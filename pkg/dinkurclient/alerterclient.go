@@ -26,6 +26,7 @@ import (
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 	"github.com/dinkur/dinkur/pkg/dinkur"
+	"github.com/dinkur/dinkur/pkg/fromgrpc"
 )
 
 func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, error) {
@@ -53,7 +54,7 @@ func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, 
 				continue
 			}
 			const logWarnMsg = "Error when streaming alerts. Ignoring message."
-			alert, err := convAlertPtr(res.Alert)
+			alert, err := fromgrpc.AlertPtr(res.Alert)
 			if err != nil {
 				log.Warn().WithError(convError(err)).
 					Message(logWarnMsg)
@@ -66,7 +67,7 @@ func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, 
 			}
 			alertChan <- dinkur.StreamedAlert{
 				Alert: *alert,
-				Event: convEvent(res.Event),
+				Event: fromgrpc.Event(res.Event),
 			}
 		}
 	}()
@@ -88,7 +89,7 @@ func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 	if res == nil {
 		return nil, ErrResponseIsNil
 	}
-	alerts, err := convAlertSlice(res.Alerts)
+	alerts, err := fromgrpc.AlertSlice(res.Alerts)
 	if err != nil {
 		return nil, convError(err)
 	}
@@ -99,9 +100,9 @@ func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
-	res, err := c.alerter.UpdateAlert(ctx, &dinkurapiv1.UpdateAlertRequest{
-		Id: uint64(edit.ID()),
-	})
+	//res, err := c.alerter.UpdateAlert(ctx, &dinkurapiv1.UpdateAlertRequest{
+	//	Id: uint64(edit.ID()),
+	//})
 	return nil, errors.New("not implemented")
 }
 
@@ -118,7 +119,7 @@ func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error)
 	if res == nil {
 		return nil, ErrResponseIsNil
 	}
-	alert, err := convAlertPtr(res.DeletedAlert)
+	alert, err := fromgrpc.AlertPtr(res.DeletedAlert)
 	if err != nil {
 		return nil, convError(err)
 	}

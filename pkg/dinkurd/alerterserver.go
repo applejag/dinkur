@@ -23,6 +23,8 @@ import (
 	"context"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
+	"github.com/dinkur/dinkur/pkg/conv"
+	"github.com/dinkur/dinkur/pkg/togrpc"
 )
 
 func (d *daemon) StreamAlert(req *dinkurapiv1.StreamAlertRequest, stream dinkurapiv1.Alerter_StreamAlertServer) error {
@@ -43,8 +45,8 @@ func (d *daemon) StreamAlert(req *dinkurapiv1.StreamAlertRequest, stream dinkura
 				return nil
 			}
 			if err := stream.Send(&dinkurapiv1.StreamAlertResponse{
-				Alert: convAlert(ev.Alert),
-				Event: convEvent(ev.Event),
+				Alert: togrpc.Alert(ev.Alert),
+				Event: togrpc.Event(ev.Event),
 			}); err != nil {
 				return err
 			}
@@ -63,7 +65,7 @@ func (d *daemon) GetAlertList(_ context.Context, req *dinkurapiv1.GetAlertListRe
 	}
 	alerts := d.alertStore.Alerts()
 	return &dinkurapiv1.GetAlertListResponse{
-		Alerts: convAlertSlice(alerts),
+		Alerts: togrpc.AlertSlice(alerts),
 	}, nil
 }
 
@@ -74,7 +76,7 @@ func (d *daemon) DeleteAlert(_ context.Context, req *dinkurapiv1.DeleteAlertRequ
 	if req == nil {
 		return nil, convError(ErrRequestIsNil)
 	}
-	id, err := convUint64(req.Id)
+	id, err := conv.Uint64ToUint(req.Id)
 	if err != nil {
 		return nil, convError(err)
 	}
@@ -83,6 +85,6 @@ func (d *daemon) DeleteAlert(_ context.Context, req *dinkurapiv1.DeleteAlertRequ
 		return nil, convError(err)
 	}
 	return &dinkurapiv1.DeleteAlertResponse{
-		DeletedAlert: convAlert(deleted),
+		DeletedAlert: togrpc.Alert(deleted),
 	}, nil
 }

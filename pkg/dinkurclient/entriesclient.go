@@ -25,7 +25,10 @@ import (
 	"io"
 	"time"
 
+	"github.com/dinkur/dinkur/pkg/conv"
 	"github.com/dinkur/dinkur/pkg/dinkur"
+	"github.com/dinkur/dinkur/pkg/fromgrpc"
+	"github.com/dinkur/dinkur/pkg/togrpc"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 )
@@ -43,7 +46,7 @@ func (c *client) GetEntry(ctx context.Context, id uint) (dinkur.Entry, error) {
 	if res == nil {
 		return dinkur.Entry{}, ErrResponseIsNil
 	}
-	entry, err := convEntryPtrNoNil(res.Entry)
+	entry, err := fromgrpc.EntryPtrNoNil(res.Entry)
 	if err != nil {
 		return dinkur.Entry{}, convError(err)
 	}
@@ -55,10 +58,10 @@ func (c *client) GetEntryList(ctx context.Context, search dinkur.SearchEntry) ([
 		return nil, err
 	}
 	req := dinkurapiv1.GetEntryListRequest{
-		Start:              convTimePtr(search.Start),
-		End:                convTimePtr(search.End),
+		Start:              togrpc.TimestampPtr(search.Start),
+		End:                togrpc.TimestampPtr(search.End),
 		Limit:              uint64(search.Limit),
-		Shorthand:          convShorthand(search.Shorthand),
+		Shorthand:          togrpc.Shorthand(search.Shorthand),
 		NameFuzzy:          search.NameFuzzy,
 		NameHighlightStart: search.NameHighlightStart,
 		NameHighlightEnd:   search.NameHighlightEnd,
@@ -70,7 +73,7 @@ func (c *client) GetEntryList(ctx context.Context, search dinkur.SearchEntry) ([
 	if res == nil {
 		return nil, ErrResponseIsNil
 	}
-	entries, err := convEntrySlice(res.Entries)
+	entries, err := fromgrpc.EntrySlice(res.Entries)
 	if err != nil {
 		return nil, convError(err)
 	}
@@ -83,9 +86,9 @@ func (c *client) UpdateEntry(ctx context.Context, edit dinkur.EditEntry) (dinkur
 	}
 	res, err := c.entryer.UpdateEntry(ctx, &dinkurapiv1.UpdateEntryRequest{
 		IdOrZero:           uint64(edit.IDOrZero),
-		Name:               convStringPtr(edit.Name),
-		Start:              convTimePtr(edit.Start),
-		End:                convTimePtr(edit.End),
+		Name:               conv.DerefOrZero(edit.Name),
+		Start:              togrpc.TimestampPtr(edit.Start),
+		End:                togrpc.TimestampPtr(edit.End),
 		AppendName:         edit.AppendName,
 		StartAfterIdOrZero: uint64(edit.StartAfterIDOrZero),
 		EndBeforeIdOrZero:  uint64(edit.EndBeforeIDOrZero),
@@ -97,11 +100,11 @@ func (c *client) UpdateEntry(ctx context.Context, edit dinkur.EditEntry) (dinkur
 	if res == nil {
 		return dinkur.UpdatedEntry{}, ErrResponseIsNil
 	}
-	entryBefore, err := convEntryPtrNoNil(res.Before)
+	entryBefore, err := fromgrpc.EntryPtrNoNil(res.Before)
 	if err != nil {
 		return dinkur.UpdatedEntry{}, fmt.Errorf("entry before: %w", convError(err))
 	}
-	entryAfter, err := convEntryPtrNoNil(res.After)
+	entryAfter, err := fromgrpc.EntryPtrNoNil(res.After)
 	if err != nil {
 		return dinkur.UpdatedEntry{}, fmt.Errorf("entry after: %w", convError(err))
 	}
@@ -124,7 +127,7 @@ func (c *client) DeleteEntry(ctx context.Context, id uint) (dinkur.Entry, error)
 	if res == nil {
 		return dinkur.Entry{}, ErrResponseIsNil
 	}
-	entry, err := convEntryPtrNoNil(res.DeletedEntry)
+	entry, err := fromgrpc.EntryPtrNoNil(res.DeletedEntry)
 	if err != nil {
 		return dinkur.Entry{}, convError(err)
 	}
@@ -137,8 +140,8 @@ func (c *client) CreateEntry(ctx context.Context, entry dinkur.NewEntry) (dinkur
 	}
 	res, err := c.entryer.CreateEntry(ctx, &dinkurapiv1.CreateEntryRequest{
 		Name:               entry.Name,
-		Start:              convTimePtr(entry.Start),
-		End:                convTimePtr(entry.End),
+		Start:              togrpc.TimestampPtr(entry.Start),
+		End:                togrpc.TimestampPtr(entry.End),
 		StartAfterIdOrZero: uint64(entry.StartAfterIDOrZero),
 		EndBeforeIdOrZero:  uint64(entry.EndBeforeIDOrZero),
 		StartAfterLast:     entry.StartAfterLast,
@@ -149,11 +152,11 @@ func (c *client) CreateEntry(ctx context.Context, entry dinkur.NewEntry) (dinkur
 	if res == nil {
 		return dinkur.StartedEntry{}, ErrResponseIsNil
 	}
-	prevEntry, err := convEntryPtr(res.PreviouslyActiveEntry)
+	prevEntry, err := fromgrpc.EntryPtr(res.PreviouslyActiveEntry)
 	if err != nil {
 		return dinkur.StartedEntry{}, fmt.Errorf("stopped entry: %w", convError(err))
 	}
-	newEntry, err := convEntryPtrNoNil(res.CreatedEntry)
+	newEntry, err := fromgrpc.EntryPtrNoNil(res.CreatedEntry)
 	if err != nil {
 		return dinkur.StartedEntry{}, fmt.Errorf("created entry: %w", convError(err))
 	}
@@ -174,7 +177,7 @@ func (c *client) GetActiveEntry(ctx context.Context) (*dinkur.Entry, error) {
 	if res == nil {
 		return nil, ErrResponseIsNil
 	}
-	entry, err := convEntryPtr(res.ActiveEntry)
+	entry, err := fromgrpc.EntryPtr(res.ActiveEntry)
 	if err != nil {
 		return nil, convError(err)
 	}
@@ -186,7 +189,7 @@ func (c *client) StopActiveEntry(ctx context.Context, endTime time.Time) (*dinku
 		return nil, err
 	}
 	res, err := c.entryer.StopActiveEntry(ctx, &dinkurapiv1.StopActiveEntryRequest{
-		End: convTimePtr(&endTime),
+		End: togrpc.TimestampPtr(&endTime),
 	})
 	if err != nil {
 		return nil, convError(err)
@@ -194,7 +197,7 @@ func (c *client) StopActiveEntry(ctx context.Context, endTime time.Time) (*dinku
 	if res == nil {
 		return nil, ErrResponseIsNil
 	}
-	entry, err := convEntryPtr(res.StoppedEntry)
+	entry, err := fromgrpc.EntryPtr(res.StoppedEntry)
 	if err != nil {
 		return nil, convError(err)
 	}
@@ -226,7 +229,7 @@ func (c *client) StreamEntry(ctx context.Context) (<-chan dinkur.StreamedEntry, 
 				continue
 			}
 			const logWarnMsg = "Error when streaming entries. Ignoring message."
-			entry, err := convEntryPtr(res.Entry)
+			entry, err := fromgrpc.EntryPtr(res.Entry)
 			if err != nil {
 				log.Warn().WithError(convError(err)).
 					Message(logWarnMsg)
@@ -238,8 +241,8 @@ func (c *client) StreamEntry(ctx context.Context) (<-chan dinkur.StreamedEntry, 
 				continue
 			}
 			entryChan <- dinkur.StreamedEntry{
-				Entry:  *entry,
-				Event: convEvent(res.Event),
+				Entry: *entry,
+				Event: fromgrpc.Event(res.Event),
 			}
 		}
 	}()

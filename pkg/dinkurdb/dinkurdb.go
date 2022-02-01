@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/iver-wharf/wharf-core/pkg/gormutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
@@ -86,18 +87,18 @@ type client struct {
 	sqliteDsn      string
 	db             *gorm.DB
 	prevMigChecked bool
-	prevMigVersion MigrationVersion
+	prevMigVersion dbmodel.MigrationVersion
 	entryObs       *typ.Publisher[entryEvent]
 	alertObs       *typ.Publisher[alertEvent]
 }
 
 type entryEvent struct {
-	dbEntry Entry
+	dbEntry dbmodel.Entry
 	event   dinkur.EventType
 }
 
 type alertEvent struct {
-	dbAlert Alert
+	dbAlert dbmodel.Alert
 	event   dinkur.EventType
 }
 
