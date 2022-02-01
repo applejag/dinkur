@@ -337,12 +337,16 @@ func convAlert(alert dinkur.Alert) *dinkurapiv1.Alert {
 	}
 	switch alertType := alert.(type) {
 	case dinkur.AlertPlainMessage:
-		a.Type = &dinkurapiv1.Alert_PlainMessage{
-			PlainMessage: convAlertPlainMessage(alertType),
+		a.Type = &dinkurapiv1.AlertType{
+			Data: &dinkurapiv1.AlertType_PlainMessage{
+				PlainMessage: convAlertPlainMessage(alertType),
+			},
 		}
 	case dinkur.AlertAFK:
-		a.Type = &dinkurapiv1.Alert_Afk{
-			Afk: convAlertAFK(alertType),
+		a.Type = &dinkurapiv1.AlertType{
+			Data: &dinkurapiv1.AlertType_Afk{
+				Afk: convAlertAFK(alertType),
+			},
 		}
 	}
 	return a

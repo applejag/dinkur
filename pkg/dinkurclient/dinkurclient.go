@@ -272,10 +272,10 @@ func convAlertPtr(alert *dinkurapiv1.Alert) (*dinkur.Alert, error) {
 		UpdatedAt: convTimestampOrZero(alert.Updated),
 	}
 	var a dinkur.Alert
-	switch alertType := alert.Type.(type) {
-	case *dinkurapiv1.Alert_PlainMessage:
+	switch alertType := alert.Type.Data.(type) {
+	case *dinkurapiv1.AlertType_PlainMessage:
 		a = convAlertPlainMessage(common, alertType.PlainMessage)
-	case *dinkurapiv1.Alert_Afk:
+	case *dinkurapiv1.AlertType_Afk:
 		at, err := convAlertAFK(common, alertType.Afk)
 		if err != nil {
 			return nil, err

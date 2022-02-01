@@ -21,6 +21,7 @@ package dinkurclient
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
@@ -72,6 +73,10 @@ func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, 
 	return alertChan, nil
 }
 
+func (c *client) CreateAlert(ctx context.Context, newAlert dinkur.NewAlert) (dinkur.Alert, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
@@ -88,6 +93,10 @@ func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 		return nil, convError(err)
 	}
 	return alerts, nil
+}
+
+func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur.Alert, error) {
+	return nil, errors.New("not implemented")
 }
 
 func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error) {

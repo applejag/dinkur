@@ -34,13 +34,13 @@ import (
 
 // Common errors used by multiple Dinkur client and daemon implementations.
 var (
-	ErrAlreadyConnected   = errors.New("client is already connected to database")
-	ErrNotConnected       = errors.New("client is not connected to database")
+	ErrAlreadyConnected    = errors.New("client is already connected to database")
+	ErrNotConnected        = errors.New("client is not connected to database")
 	ErrEntryNameEmpty      = errors.New("entry name cannot be empty")
 	ErrEntryEndBeforeStart = errors.New("entry end time cannot be before start time")
-	ErrNotFound           = gorm.ErrRecordNotFound
-	ErrLimitTooLarge      = errors.New("search limit is too large, maximum: " + strconv.Itoa(math.MaxInt))
-	ErrClientIsNil        = errors.New("client is nil")
+	ErrNotFound            = gorm.ErrRecordNotFound
+	ErrLimitTooLarge       = errors.New("search limit is too large, maximum: " + strconv.Itoa(math.MaxInt))
+	ErrClientIsNil         = errors.New("client is nil")
 )
 
 // Client is a Dinkur client interface. This is the core interface to act upon
@@ -72,7 +72,9 @@ type Entries interface {
 // Alerter is the Dinkur client methods targeted to reading alerts.
 type Alerter interface {
 	StreamAlert(ctx context.Context) (<-chan StreamedAlert, error)
+	CreateAlert(ctx context.Context, newAlert NewAlert) (Alert, error)
 	GetAlertList(ctx context.Context) ([]Alert, error)
+	UpdateAlert(ctx context.Context, edit EditAlert) (Alert, error)
 	DeleteAlert(ctx context.Context, id uint) (Alert, error)
 }
 
@@ -148,6 +150,6 @@ type StartedEntry struct {
 
 // StreamedEntry holds a entry and its event type.
 type StreamedEntry struct {
-	Entry  Entry
+	Entry Entry
 	Event EventType
 }

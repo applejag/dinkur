@@ -32,9 +32,13 @@ option go_package = "github.com/dinkur/dinkur/api/dinkurapi/v1";
 service Alerter {
   // StreamAlert streams alert change events: created, updated, deleted.
   rpc StreamAlert (StreamAlertRequest) returns (stream StreamAlertResponse);
+  // CreateAlert creates a new alert.
+  rpc CreateAlert (CreateAlertRequest) returns (CreateAlertResponse);
   // GetAlertList gets a specific alert by its ID. Status 5 "NOT_FOUND" is
   // reported if no alert was found by that ID.
   rpc GetAlertList (GetAlertListRequest) returns (GetAlertListResponse);
+  // UpdateAlert creates a new alert.
+  rpc UpdateAlert (UpdateAlertRequest) returns (UpdateAlertResponse);
   // DeleteAlert removes a specific alert by its ID. Status 5 "NOT_FOUND" is
   // reported if no alert was found by that ID.
   rpc DeleteAlert (DeleteAlertRequest) returns (DeleteAlertResponse);
@@ -54,6 +58,18 @@ message StreamAlertResponse {
   Event event = 2;
 }
 
+// CreateAlertRequest
+message CreateAlertRequest {
+  // Alert is the new alert type to create.
+  AlertType type = 1;
+}
+
+// CreateAlertResponse
+message CreateAlertResponse {
+  // Alert is the alert that was created.
+  Alert alert = 1;
+}
+
 // GetAlertListRequest is an empty message and unused. It is here as a
 // placeholder for potential future use.
 message GetAlertListRequest {
@@ -63,6 +79,20 @@ message GetAlertListRequest {
 message GetAlertListResponse {
   // Alerts is the list of alerts.
   repeated Alert alerts = 1;
+}
+
+// UpdateAlertRequest
+message UpdateAlertRequest {
+  // ID of the alert to update.
+  uint64 id = 1;
+  // Type is the new values for the alert.
+  AlertType type = 2;
+}
+
+// UpdateAlertResponse
+message UpdateAlertResponse {
+  // Alert is the alert that was updated.
+  Alert alert = 1;
 }
 
 // DeleteAlertRequest holds the ID of the alert to delete.
@@ -91,15 +121,21 @@ message Alert {
   google.protobuf.Timestamp updated = 3;
 
   // Type holds the inner type of this alert.
-  oneof type {
+  AlertType type = 4;
+}
+
+// AlertType is a union type of the inner alert type.
+message AlertType {
+  // Data holds the inner type of this alert.
+  oneof data {
     // PlainMessage means this alert is a plain string message alert.
-    AlertPlainMessage plain_message = 4;
+    AlertPlainMessage plain_message = 1;
     // AFK means this alert is an AFK alert, where the user has been away from
     // their keyboard for too long, and any clients can start idling. The alert
     // also contains information for when the user has returned from being AFK,
     // for which the Dinkur clients are expected to prompt the user for how to
     // save the away time.
-    AlertAfk afk = 5;
+    AlertAfk afk = 2;
   }
 }
 

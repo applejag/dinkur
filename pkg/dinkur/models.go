@@ -89,6 +89,20 @@ type Alert interface {
 	Common() CommonFields
 }
 
+// NewAlert defines a new alert to be created. The ID and other common fields
+// are ignored as they will be set on creation.
+type NewAlert interface {
+	isAlertUnion()
+}
+
+// EditAlert defines an alert to be updated. The ID is used to identify the
+// alert, but the other common fields are ignored as they will be automatically
+// updated.
+type EditAlert interface {
+	ID() uint
+	isAlertUnion()
+}
+
 // AlertPlainMessage is a type of alert for generic messages that needs to be
 // presented to the user with no need for user action.
 type AlertPlainMessage struct {

@@ -100,9 +100,21 @@ func (*NilClient) StreamAlert(context.Context) (<-chan StreamedAlert, error) {
 	return nil, ErrClientIsNil
 }
 
+// CreateAlert is a dummy implementation of the dinkur.Client that only
+// returns the "client is nil" error.
+func (*NilClient) CreateAlert(context.Context, NewAlert) (Alert, error) {
+	return nil, ErrClientIsNil
+}
+
 // GetAlertList is a dummy implementation of the dinkur.Client that only
 // returns the "client is nil" error.
 func (*NilClient) GetAlertList(context.Context) ([]Alert, error) {
+	return nil, ErrClientIsNil
+}
+
+// UpdateAlert is a dummy implementation of the dinkur.Client that only
+// returns the "client is nil" error.
+func (*NilClient) UpdateAlert(context.Context, EditAlert) (Alert, error) {
 	return nil, ErrClientIsNil
 }
 
