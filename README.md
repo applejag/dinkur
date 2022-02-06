@@ -6,14 +6,14 @@ SPDX-FileCopyrightText: 2021 Kalle Fagerberg
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
-# Dinkur
+<div align="center">
+  <img width="200" src="docs/dinkur-large-512.svg" alt="Dinkur icon" />
+  <h1 style="color: #c43000">Dinkur</h1>
+  <p>Task and time tracking CLI and framework.</p>
 
-<img align="right" width="100" src="docs/dinkur-large-512.svg" />
-
-[![REUSE status](https://api.reuse.software/badge/github.com/dinkur/dinkur)](https://api.reuse.software/info/github.com/dinkur/dinkur)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/956b94a743244ce2a971ce572e05be3e)](https://www.codacy.com/gh/dinkur/dinkur/dashboard?utm_source=github.com&utm_medium=referral&utm_content=dinkur/dinkur&utm_campaign=Badge_Grade)
-
-Task and time tracking utility.
+  [![REUSE status](https://api.reuse.software/badge/github.com/dinkur/dinkur)](https://api.reuse.software/info/github.com/dinkur/dinkur)
+  [![Codacy Badge](https://app.codacy.com/project/badge/Grade/956b94a743244ce2a971ce572e05be3e)](https://www.codacy.com/gh/dinkur/dinkur/dashboard?utm_source=github.com&utm_medium=referral&utm_content=dinkur/dinkur&utm_campaign=Badge_Grade)
+</div>
 
 ## Install
 
