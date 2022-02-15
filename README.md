@@ -63,6 +63,9 @@ Then enable it only for your user:
 ## Does not need sudo
 systemctl --user enable dinkur --now
 
+## Read logs, does not need sudo either
+journalctl --user --unit dinkur --follow
+
 ## Try it out
 dinkur --client=grpc status
 ```
