@@ -1,0 +1,11 @@
+[Unit]
+Description=Dinkur daemon
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=/bin/env dinkur daemon -v
+
+[Install]
+WantedBy=multi-user.target

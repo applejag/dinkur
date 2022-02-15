@@ -48,6 +48,25 @@ with `zsh`, `fish`, and `powershell`):
 dinkur completion bash --help
 ```
 
+### Run daemon on boot (systemd)
+
+Copy the [`dinkur.service`](./dinkur.service) file from the repo into your
+local user systemd unit store:
+
+```sh
+sudo cp dinkur.service /usr/local/lib/systemd/user/dinkur.service
+```
+
+Then enable it only for your user:
+
+```sh
+## Does not need sudo
+systemctl --user enable dinkur --now
+
+## Try it out
+dinkur --client=grpc status
+```
+
 ## Usage
 
 ```console
