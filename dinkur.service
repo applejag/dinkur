@@ -14,4 +14,4 @@ RestartSec=1
 ExecStart=%h/go/bin/dinkur daemon -v
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
