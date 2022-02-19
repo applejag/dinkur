@@ -99,7 +99,7 @@ func (EntryFTS5) TableName() string {
 
 type Status struct {
 	CommonFields
-	AFKSince  time.Time
+	AFKSince  *time.Time
 	BackSince *time.Time
 }
 
