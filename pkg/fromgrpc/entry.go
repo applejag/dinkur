@@ -31,6 +31,7 @@ import (
 // Errors that are specific to converting gRPC entries to Go.
 var (
 	ErrUnexpectedNilEntry = errors.New("unexpected nil entry")
+	ErrUnexpectedNilAlert = errors.New("unexpected nil alert")
 )
 
 // EntryPtr converts a gRPC entry to a Go entry.

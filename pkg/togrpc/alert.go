@@ -32,22 +32,29 @@ func Alert(alert dinkur.Alert) *dinkurapiv1.Alert {
 		Id:      uint64(common.ID),
 		Created: Timestamp(common.CreatedAt),
 		Updated: Timestamp(common.UpdatedAt),
+		Type:    AlertData(alert),
 	}
+	return a
+}
+
+// AlertData converts a Go alert to a gRPC alert data type.
+func AlertData(alert dinkur.AlertInterface) *dinkurapiv1.AlertType {
 	switch alertType := alert.(type) {
 	case dinkur.AlertPlainMessage:
-		a.Type = &dinkurapiv1.AlertType{
+		return &dinkurapiv1.AlertType{
 			Data: &dinkurapiv1.AlertType_PlainMessage{
 				PlainMessage: AlertPlainMessage(alertType),
 			},
 		}
 	case dinkur.AlertAFK:
-		a.Type = &dinkurapiv1.AlertType{
+		return &dinkurapiv1.AlertType{
 			Data: &dinkurapiv1.AlertType_Afk{
 				Afk: AlertAFK(alertType),
 			},
 		}
+	default:
+		return nil
 	}
-	return a
 }
 
 // AlertPlainMessage converts a Go plain message alert to a gRPC alert.

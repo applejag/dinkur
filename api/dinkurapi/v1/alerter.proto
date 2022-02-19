@@ -86,11 +86,11 @@ message CreateOrUpdateAlertRequest {
 
 // CreateOrUpdateAlertResponse
 message CreateOrUpdateAlertResponse {
-  // Alert is the alert that was created.
-  Alert alert = 1;
-  // Event is what actually happened to the alert. The EVENT_DELETED will never
-  // be a result from the CreateOrUpdateAlert RPC.
-  Event event = 2;
+  // Before is the alert before the update, if any. I.e. will be null/nil if
+  // the operation resulting in a created alert.
+  Alert before = 1;
+  // After is the alert state after the update.
+  Alert after = 2;
 }
 
 // GetAlertListRequest is an empty message and unused. It is here as a
@@ -133,8 +133,8 @@ message DeleteAlertResponse {
 
 // DeleteAlertTypeRequest holds the type of the alert to delete.
 message DeleteAlertTypeRequest {
-  // ID of the alert to delete.
-  uint64 id = 1;
+  // Type is the type of alert to delete.
+  ALERT type = 1;
 }
 
 // DeleteAlertTypeResponse holds the alert that was just deleted.

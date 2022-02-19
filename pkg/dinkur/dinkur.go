@@ -132,9 +132,10 @@ type UpdatedEntry struct {
 	After  Entry
 }
 
-// NewOrUpdatedAlert is the response from a create-or-update call.
+// NewOrUpdatedAlert is the response from a create-or-update call. The Before
+// field can be nil if the operation resulted in a created alert.
 type NewOrUpdatedAlert struct {
-	Before *Alert
+	Before Alert // will be nil if alert was created
 	After  Alert
 }
 

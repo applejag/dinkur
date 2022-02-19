@@ -21,12 +21,12 @@ package dinkurclient
 
 import (
 	"context"
-	"errors"
 	"io"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/fromgrpc"
+	"github.com/dinkur/dinkur/pkg/togrpc"
 )
 
 func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, error) {
@@ -66,7 +66,7 @@ func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, 
 				continue
 			}
 			alertChan <- dinkur.StreamedAlert{
-				Alert: *alert,
+				Alert: alert,
 				Event: fromgrpc.Event(res.Event),
 			}
 		}
@@ -75,11 +75,38 @@ func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, 
 }
 
 func (c *client) CreateAlert(ctx context.Context, newAlert dinkur.NewAlert) (dinkur.Alert, error) {
-	return nil, errors.New("not implemented")
+	res, err := invoke(ctx, c, c.alerter.CreateAlert, &dinkurapiv1.CreateAlertRequest{
+		Type: togrpc.AlertData(newAlert),
+	})
+	if err != nil {
+		return nil, convError(err)
+	}
+	alert, err := fromgrpc.AlertPtrNoNil(res.Alert)
+	if err != nil {
+		return nil, convError(err)
+	}
+	return alert, nil
 }
 
 func (c *client) CreateOrUpdateAlertByType(ctx context.Context, newAlert dinkur.NewAlert) (dinkur.NewOrUpdatedAlert, error) {
-	return dinkur.NewOrUpdatedAlert{}, errors.New("not implemented")
+	res, err := invoke(ctx, c, c.alerter.CreateOrUpdateAlert, &dinkurapiv1.CreateOrUpdateAlertRequest{
+		Type: togrpc.AlertData(newAlert),
+	})
+	if err != nil {
+		return dinkur.NewOrUpdatedAlert{}, convError(err)
+	}
+	alertBefore, err := fromgrpc.AlertPtr(res.Before)
+	if err != nil {
+		return dinkur.NewOrUpdatedAlert{}, convError(err)
+	}
+	alertAfter, err := fromgrpc.AlertPtrNoNil(res.After)
+	if err != nil {
+		return dinkur.NewOrUpdatedAlert{}, convError(err)
+	}
+	return dinkur.NewOrUpdatedAlert{
+		Before: alertBefore,
+		After:  alertAfter,
+	}, nil
 }
 
 func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
@@ -95,13 +122,18 @@ func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 }
 
 func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur.Alert, error) {
-	if err := c.assertConnected(); err != nil {
-		return nil, err
+	res, err := invoke(ctx, c, c.alerter.UpdateAlert, &dinkurapiv1.UpdateAlertRequest{
+		Id:   uint64(edit.ID()),
+		Type: togrpc.AlertData(edit),
+	})
+	if err != nil {
+		return nil, convError(err)
 	}
-	//res, err := c.alerter.UpdateAlert(ctx, &dinkurapiv1.UpdateAlertRequest{
-	//	Id: uint64(edit.ID()),
-	//})
-	return nil, errors.New("not implemented")
+	alert, err := fromgrpc.AlertPtrNoNil(res.Alert)
+	if err != nil {
+		return nil, convError(err)
+	}
+	return alert, nil
 }
 
 func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error) {
@@ -111,16 +143,23 @@ func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error)
 	if err != nil {
 		return nil, convError(err)
 	}
-	alert, err := fromgrpc.AlertPtr(res.DeletedAlert)
+	alert, err := fromgrpc.AlertPtrNoNil(res.DeletedAlert)
 	if err != nil {
 		return nil, convError(err)
 	}
-	if alert == nil {
-		return nil, ErrUnexpectedNilAlert
-	}
-	return *alert, nil
+	return alert, nil
 }
 
 func (c *client) DeleteAlertByType(ctx context.Context, alertType dinkur.AlertType) (dinkur.Alert, error) {
-	return nil, errors.New("not implemented")
+	res, err := invoke(ctx, c, c.alerter.DeleteAlertType, &dinkurapiv1.DeleteAlertTypeRequest{
+		Type: togrpc.AlertType(alertType),
+	})
+	if err != nil {
+		return nil, convError(err)
+	}
+	alert, err := fromgrpc.AlertPtrNoNil(res.DeletedAlert)
+	if err != nil {
+		return nil, convError(err)
+	}
+	return alert, nil
 }

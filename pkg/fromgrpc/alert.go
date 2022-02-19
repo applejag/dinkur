@@ -28,7 +28,7 @@ import (
 )
 
 // AlertPtr converts a gRPC alert to a Go alert.
-func AlertPtr(alert *dinkurapiv1.Alert) (*dinkur.Alert, error) {
+func AlertPtr(alert *dinkurapiv1.Alert) (dinkur.Alert, error) {
 	if alert == nil {
 		return nil, nil
 	}
@@ -52,7 +52,20 @@ func AlertPtr(alert *dinkurapiv1.Alert) (*dinkur.Alert, error) {
 		}
 		a = at
 	}
-	return &a, nil
+	return a, nil
+}
+
+// AlertPtrNoNil converts a gRPC alert to a Go alert, but errors if the result
+// is a nil alert.
+func AlertPtrNoNil(alert *dinkurapiv1.Alert) (dinkur.Alert, error) {
+	alertPtr, err := AlertPtr(alert)
+	if err != nil {
+		return nil, err
+	}
+	if alertPtr == nil {
+		return nil, ErrUnexpectedNilAlert
+	}
+	return alertPtr, nil
 }
 
 // AlertPlainMessage converts a gRPC plain message alert to a Go alert.
@@ -94,7 +107,7 @@ func AlertSlice(slice []*dinkurapiv1.Alert) ([]dinkur.Alert, error) {
 		if err != nil {
 			return nil, fmt.Errorf("alert #%d: %w", a.Id, err)
 		}
-		entries = append(entries, *a2)
+		entries = append(entries, a2)
 	}
 	return entries, nil
 }
