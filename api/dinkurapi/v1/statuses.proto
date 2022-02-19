@@ -1,0 +1,92 @@
+// Dinkur the task time tracking utility.
+// <https://github.com/dinkur/dinkur>
+//
+// Copyright (C) 2021 Kalle Fagerberg
+// SPDX-FileCopyrightText: 2021 Kalle Fagerberg
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// This program is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by the
+// Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+// more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+syntax = "proto3";
+
+package dinkurapi.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/dinkur/dinkur/api/dinkurapi/v1";
+
+// Statuses is a service for keeping track of the user's status, such as being
+// AFK (away from keyboard). Only one status exists at a time.
+service Statuses {
+  // StreamStatus streams status change events.
+  rpc StreamStatus (StreamStatusRequest) returns (stream StreamStatusResponse);
+  // SetStatus updates the current status.
+  rpc SetStatus (SetStatusRequest) returns (SetStatusResponse);
+  // GetStatus gets the current status.
+  rpc GetStatusList (GetStatusRequest) returns (GetStatusResponse);
+}
+
+// StreamStatusRequest is an empty message and unused. It is here as a
+// placeholder for potential future use.
+message StreamStatusRequest {
+}
+
+// StreamStatusResponse is returned every time a the status is updated.
+message StreamStatusResponse {
+  // Status is the new status value.
+  Status status = 1;
+}
+
+// SetStatusRequest
+message SetStatusRequest {
+  // AfkSince is set whenever the user has gone AFK.
+  google.protobuf.Timestamp afk_since = 1;
+  // BackSince is set whenever the user has returned from being AFK, but has not
+  // yet resolved their AFK status.
+  google.protobuf.Timestamp back_since = 2;
+}
+
+// SetStatusResponse
+message SetStatusResponse {
+  // Status is the status that was created.
+  Status status = 1;
+}
+
+// GetStatusRequest is an empty message and unused. It is here as a
+// placeholder for potential future use.
+message GetStatusRequest {
+}
+
+// GetStatusResponse holds the current status.
+message GetStatusResponse {
+  // Status is the current status.
+  Status status = 1;
+}
+
+// Status is a sort of notification issued by the Dinkur daemon, and contains a
+// union type of different status types.
+message Status {
+  // Created is a timestamp of when the status was initially issued.
+  google.protobuf.Timestamp created = 2;
+  // Updated is a timestamp of when the status was most recently changed. This
+  // has the same value as when the status was created if it has never been
+  // updated.
+  google.protobuf.Timestamp updated = 3;
+
+  // AfkSince is set whenever the user has gone AFK.
+  google.protobuf.Timestamp afk_since = 4;
+  // BackSince is set whenever the user has returned from being AFK, but has not
+  // yet resolved their AFK status.
+  google.protobuf.Timestamp back_since = 5;
+}

@@ -27,7 +27,6 @@ import (
 	"math"
 	"net"
 	"sync"
-	"time"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 	"github.com/dinkur/dinkur/pkg/afkdetect"
@@ -36,7 +35,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gopkg.in/typ.v2"
 )
 
 // Errors that are specific to the Dinkur gRPC server daemon.
@@ -121,7 +119,7 @@ func NewDaemon(client dinkur.Client, opt Options) Daemon {
 type daemon struct {
 	Options
 	dinkurapiv1.UnimplementedEntriesServer
-	dinkurapiv1.UnimplementedAlerterServer
+	dinkurapiv1.UnimplementedStatusesServer
 
 	client     dinkur.Client
 	grpcServer *grpc.Server
@@ -129,12 +127,10 @@ type daemon struct {
 
 	afkDetector afkdetect.Detector
 	closeMutex  sync.Mutex
-	oldAFKAlert *dinkur.AlertAFK
 }
 
 func (d *daemon) onEntryMutation() {
-	d.oldAFKAlert = nil
-	go d.client.DeleteAlertByType(context.Background(), dinkur.AlertTypeAFK)
+	// TODO: Mark as not AFK
 }
 
 func (d *daemon) assertConnected() error {
@@ -167,7 +163,7 @@ func (d *daemon) Serve(ctx context.Context) error {
 		d.Close()
 	}(ctx, d)
 	dinkurapiv1.RegisterEntriesServer(grpcServer, d)
-	dinkurapiv1.RegisterAlerterServer(grpcServer, d)
+	dinkurapiv1.RegisterStatusesServer(grpcServer, d)
 	d.updateAFKStatusAsWeAreStarting(ctx)
 	go d.listenForAFK(ctx)
 	if err := d.afkDetector.StartDetecting(); err != nil {
@@ -199,29 +195,13 @@ func (d *daemon) Close() (finalErr error) {
 }
 
 func (d *daemon) updateAFKStatusAsWeAreStarting(ctx context.Context) {
-	alerts, err := d.client.GetAlertList(ctx)
-	if err != nil {
+	// must use new context as base context from Serve is cancelled by now
+	entry, err := d.client.GetActiveEntry(context.Background())
+	if err != nil || entry == nil {
+		// TODO: Mark as not AFK
 		return
 	}
-	afk, ok := findAFKAlert(alerts)
-	if !ok {
-		return
-	}
-	afk.BackSince = typ.Ref(time.Now())
-	d.client.UpdateAlert(context.Background(), dinkur.EditAlert{
-		ID:    afk.ID,
-		Alert: afk,
-	})
-}
-
-func findAFKAlert(alerts []dinkur.Alert) (dinkur.AlertAFK, bool) {
-	for _, a := range alerts {
-		afk, ok := a.(dinkur.AlertAFK)
-		if ok {
-			return afk, true
-		}
-	}
-	return dinkur.AlertAFK{}, false
+	// TODO: Mark as returned if AFK
 }
 
 func (d *daemon) updateAFKStatusAsWeAreClosing() {
@@ -230,12 +210,7 @@ func (d *daemon) updateAFKStatusAsWeAreClosing() {
 	if err != nil || entry == nil {
 		return
 	}
-	d.client.CreateOrUpdateAlertByType(context.Background(), dinkur.NewAlert{
-		Alert: dinkur.AlertAFK{
-			ActiveEntry: *entry,
-			AFKSince:    time.Now(),
-		},
-	})
+	// TODO: Mark as AFK
 }
 
 func (d *daemon) listenForAFK(ctx context.Context) {
@@ -251,39 +226,15 @@ func (d *daemon) listenForAFK(ctx context.Context) {
 			entry, err := d.client.GetActiveEntry(ctx)
 			if err != nil {
 				log.Warn().WithError(err).
-					Message("Failed to get active entry when issuing AFK alert.")
+					Message("Failed to get active entry when marking status as AFK.")
 				continue
 			}
 			if entry == nil {
 				continue
 			}
-			updated, err := d.client.CreateOrUpdateAlertByType(ctx, dinkur.NewAlert{
-				Alert: dinkur.AlertAFK{
-					AFKSince:    time.Now(),
-					ActiveEntry: *entry,
-				},
-			})
-			if err != nil {
-				log.Warn().WithError(err).
-					Message("Failed to create AFK alert.")
-				continue
-			}
-			d.oldAFKAlert = typ.Ref(updated.After.(dinkur.AlertAFK))
+			// TODO:
 		case <-stoppedChan:
-			var alert dinkur.AlertAFK
-			if oldAFKAlert := d.oldAFKAlert; oldAFKAlert != nil {
-				alert = *oldAFKAlert
-			}
-			alert.BackSince = typ.Ref(time.Now())
-			updated, err := d.client.CreateOrUpdateAlertByType(ctx, dinkur.NewAlert{
-				Alert: alert,
-			})
-			if err != nil {
-				log.Warn().WithError(err).
-					Message("Failed to set as formerly AFK.")
-				continue
-			}
-			d.oldAFKAlert = typ.Ref(updated.After.(dinkur.AlertAFK))
+			// TODO:
 		case <-done:
 			return
 		}

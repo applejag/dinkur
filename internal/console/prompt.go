@@ -78,24 +78,24 @@ type AFKResolution struct {
 	NewEntry *dinkur.NewEntry
 }
 
-// PromptAFKResolution asks the user for how to resolve an AFK alert.
-func PromptAFKResolution(alert dinkur.AlertAFK) (AFKResolution, error) {
+// PromptAFKResolution asks the user for how to resolve an AFK status.
+func PromptAFKResolution(activeEntry dinkur.Entry, afkSince, backSince time.Time) (AFKResolution, error) {
 	var sb strings.Builder
 	now := time.Now()
 
 	promptWarnIconColor.Fprint(&sb, promptWarnIconText)
 	sb.WriteString(" Note: You were away since ")
-	writeEntryTimeSpanNow(&sb, alert.AFKSince, nil)
+	writeEntryTimeSpanNow(&sb, afkSince, nil)
 	sb.WriteByte(' ')
-	writeEntryDurationWithDelim(&sb, now.Sub(alert.AFKSince))
+	writeEntryDurationWithDelim(&sb, now.Sub(afkSince))
 	sb.WriteByte('\n')
 	promptWarnIconColor.Fprint(&sb, promptWarnIconText)
 	sb.WriteString(" while having an active entry ")
-	writeEntryID(&sb, alert.ActiveEntry.ID)
+	writeEntryID(&sb, activeEntry.ID)
 	sb.WriteByte(' ')
-	writeEntryName(&sb, alert.ActiveEntry.Name)
+	writeEntryName(&sb, activeEntry.Name)
 	sb.WriteByte(' ')
-	writeEntryTimeSpanActiveDuration(&sb, alert.ActiveEntry.Start, alert.ActiveEntry.End, alert.ActiveEntry.Elapsed())
+	writeEntryTimeSpanActiveDuration(&sb, activeEntry.Start, activeEntry.End, activeEntry.Elapsed())
 	sb.WriteString("\n\n")
 
 	if checkIfNonInteractiveTTY() {
@@ -113,11 +113,11 @@ func PromptAFKResolution(alert dinkur.AlertAFK) (AFKResolution, error) {
 	sb.WriteString("  1. Leave the active entry as-is and continue with the invoked command.\n")
 
 	sb.WriteString("  2. Discard the away time I was away, changing active entry to ")
-	writeEntryTimeSpanNowDuration(&sb, alert.ActiveEntry.Start, &alert.AFKSince, alert.AFKSince.Sub(alert.ActiveEntry.Start))
+	writeEntryTimeSpanNowDuration(&sb, activeEntry.Start, &afkSince, afkSince.Sub(activeEntry.Start))
 	sb.WriteString(".\n")
 
 	sb.WriteString("  3. Save the away time as a new entry ")
-	writeEntryTimeSpanNowDuration(&sb, alert.AFKSince, nil, now.Sub(alert.AFKSince))
+	writeEntryTimeSpanNowDuration(&sb, afkSince, nil, now.Sub(afkSince))
 	sb.WriteString("  (naming it in a later prompt).\n")
 
 	sb.WriteByte(' ')
@@ -146,21 +146,21 @@ func PromptAFKResolution(alert dinkur.AlertAFK) (AFKResolution, error) {
 		fmt.Fprintln(stderr, "Discarding the away time from the currently active entry.")
 		return AFKResolution{
 			Edit: &dinkur.EditEntry{
-				IDOrZero: alert.ActiveEntry.ID,
-				End:      &alert.AFKSince,
+				IDOrZero: activeEntry.ID,
+				End:      &afkSince,
 			},
 		}, nil
 
 	case 3:
 		// Save the time as a new entry
-		return promptAFKSaveAsNewEntry(alert)
+		return promptAFKSaveAsNewEntry(activeEntry, afkSince)
 
 	default:
 		return AFKResolution{}, errors.New("no answer chosen")
 	}
 }
 
-func promptAFKSaveAsNewEntry(alert dinkur.AlertAFK) (AFKResolution, error) {
+func promptAFKSaveAsNewEntry(activeEntry dinkur.Entry, afkSince time.Time) (AFKResolution, error) {
 	name, err := promptNonEmptyString(&survey.Input{
 		Message: "Enter name of new entry:",
 	})
@@ -174,13 +174,13 @@ func promptAFKSaveAsNewEntry(alert dinkur.AlertAFK) (AFKResolution, error) {
 	fmt.Fprint(stderr, sb.String())
 	return AFKResolution{
 		Edit: &dinkur.EditEntry{
-			IDOrZero: alert.ActiveEntry.ID,
-			End:      &alert.AFKSince,
+			IDOrZero: activeEntry.ID,
+			End:      &afkSince,
 		},
 		NewEntry: &dinkur.NewEntry{
 			Name:               name,
-			Start:              &alert.AFKSince,
-			StartAfterIDOrZero: alert.ActiveEntry.ID,
+			Start:              &afkSince,
+			StartAfterIDOrZero: activeEntry.ID,
 		},
 	}, nil
 }

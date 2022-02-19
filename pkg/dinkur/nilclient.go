@@ -94,44 +94,20 @@ func (*NilClient) StreamEntry(context.Context) (<-chan StreamedEntry, error) {
 	return nil, ErrClientIsNil
 }
 
-// StreamAlert is a dummy implementation of the dinkur.Client that only
+// StreamStatus is a dummy implementation of the dinkur.Client that only
 // returns the "client is nil" error.
-func (*NilClient) StreamAlert(context.Context) (<-chan StreamedAlert, error) {
+func (*NilClient) StreamStatus(context.Context) (<-chan StreamedStatus, error) {
 	return nil, ErrClientIsNil
 }
 
-// CreateAlert is a dummy implementation of the dinkur.Client that only
+// SetStatus is a dummy implementation of the dinkur.Client that only
 // returns the "client is nil" error.
-func (*NilClient) CreateAlert(context.Context, NewAlert) (Alert, error) {
-	return nil, ErrClientIsNil
+func (*NilClient) SetStatus(context.Context, EditStatus) error {
+	return ErrClientIsNil
 }
 
-// CreateOrUpdateAlertByType is a dummy implementation of the dinkur.Client that only
+// GetStatus is a dummy implementation of the dinkur.Client that only
 // returns the "client is nil" error.
-func (*NilClient) CreateOrUpdateAlertByType(context.Context, NewAlert) (NewOrUpdatedAlert, error) {
-	return NewOrUpdatedAlert{}, ErrClientIsNil
-}
-
-// GetAlertList is a dummy implementation of the dinkur.Client that only
-// returns the "client is nil" error.
-func (*NilClient) GetAlertList(context.Context) ([]Alert, error) {
-	return nil, ErrClientIsNil
-}
-
-// UpdateAlert is a dummy implementation of the dinkur.Client that only
-// returns the "client is nil" error.
-func (*NilClient) UpdateAlert(context.Context, EditAlert) (UpdatedAlert, error) {
-	return UpdatedAlert{}, ErrClientIsNil
-}
-
-// DeleteAlert is a dummy implementation of the dinkur.Client that only
-// returns the "client is nil" error.
-func (*NilClient) DeleteAlert(context.Context, uint) (Alert, error) {
-	return nil, ErrClientIsNil
-}
-
-// DeleteAlertByType is a dummy implementation of the dinkur.Client that only
-// returns the "client is nil" error.
-func (*NilClient) DeleteAlertByType(context.Context, AlertType) (Alert, error) {
-	return nil, ErrClientIsNil
+func (*NilClient) GetStatus(context.Context) (Status, error) {
+	return Status{}, ErrClientIsNil
 }

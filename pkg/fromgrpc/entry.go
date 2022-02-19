@@ -30,8 +30,8 @@ import (
 
 // Errors that are specific to converting gRPC entries to Go.
 var (
-	ErrUnexpectedNilEntry = errors.New("unexpected nil entry")
-	ErrUnexpectedNilAlert = errors.New("unexpected nil alert")
+	ErrUnexpectedNilEntry  = errors.New("unexpected nil entry")
+	ErrUnexpectedNilStatus = errors.New("unexpected nil status")
 )
 
 // EntryPtr converts a gRPC entry to a Go entry.
@@ -45,9 +45,11 @@ func EntryPtr(entry *dinkurapiv1.Entry) (*dinkur.Entry, error) {
 	}
 	return &dinkur.Entry{
 		CommonFields: dinkur.CommonFields{
-			ID:        id,
-			CreatedAt: TimeOrZero(entry.Created),
-			UpdatedAt: TimeOrZero(entry.Updated),
+			TimeFields: dinkur.TimeFields{
+				CreatedAt: TimeOrZero(entry.Created),
+				UpdatedAt: TimeOrZero(entry.Updated),
+			},
+			ID: id,
 		},
 		Name:  entry.Name,
 		Start: TimeOrZero(entry.Start),

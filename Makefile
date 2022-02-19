@@ -41,7 +41,7 @@ grpc:
 		--go-grpc_opt=paths=source_relative \
 		api/dinkurapi/v1/event.proto \
 		api/dinkurapi/v1/entries.proto \
-		api/dinkurapi/v1/alerter.proto
+		api/dinkurapi/v1/statuses.proto
 
 lint: lint-md lint-go lint-license lint-proto
 lint-fix: lint-md-fix lint-proto-fix

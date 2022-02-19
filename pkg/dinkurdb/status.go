@@ -1,6 +1,7 @@
 // Dinkur the task time tracking utility.
 // <https://github.com/dinkur/dinkur>
 //
+// Copyright (C) 2021 Kalle Fagerberg
 // SPDX-FileCopyrightText: 2021 Kalle Fagerberg
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -17,34 +18,29 @@
 // You should have received a copy of the GNU General Public License along
 // with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package fromdb
+package dinkurdb
 
 import (
-	"github.com/dinkur/dinkur/pkg/dbmodel"
+	"context"
+	"errors"
+
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
-// TimeFields converts dbmodel common fields to dinkur time fields.
-func TimeFields(f dbmodel.CommonFields) dinkur.TimeFields {
-	return dinkur.TimeFields{
-		CreatedAt: f.CreatedAt,
-		UpdatedAt: f.UpdatedAt,
-	}
+// StreamStatus is a dummy implementation of the dinkur.Client that only
+// returns the "client is nil" error.
+func (*client) StreamStatus(context.Context) (<-chan dinkur.StreamedStatus, error) {
+	return nil, errors.New("not implemented")
 }
 
-// CommonFields converts dbmodel common fields to dinkur common fields.
-func CommonFields(f dbmodel.CommonFields) dinkur.CommonFields {
-	return dinkur.CommonFields{
-		TimeFields: TimeFields(f),
-		ID:         f.ID,
-	}
+// SetStatus is a dummy implementation of the dinkur.Client that only
+// returns the "client is nil" error.
+func (*client) SetStatus(context.Context, dinkur.EditStatus) error {
+	return errors.New("not implemented")
 }
 
-// CommonFieldsID converts dbmodel common fields to dinkur common fields with
-// custom ID.
-func CommonFieldsID(f dbmodel.CommonFields, id uint) dinkur.CommonFields {
-	return dinkur.CommonFields{
-		TimeFields: TimeFields(f),
-		ID:         id,
-	}
+// GetStatus is a dummy implementation of the dinkur.Client that only
+// returns the "client is nil" error.
+func (*client) GetStatus(context.Context) (dinkur.Status, error) {
+	return dinkur.Status{}, errors.New("not implemented")
 }

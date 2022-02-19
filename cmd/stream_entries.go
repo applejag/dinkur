@@ -28,8 +28,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// entriesCmd represents the test command
-var entriesCmd = &cobra.Command{
+// streamEntriesCmd represents the test command
+var streamEntriesCmd = &cobra.Command{
 	Use:   "entries",
 	Args:  cobra.NoArgs,
 	Short: "Testing entry streaming",
@@ -59,5 +59,5 @@ var entriesCmd = &cobra.Command{
 }
 
 func init() {
-	streamCmd.AddCommand(entriesCmd)
+	streamCmd.AddCommand(streamEntriesCmd)
 }

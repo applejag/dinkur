@@ -38,10 +38,10 @@ import (
 
 // Errors that are specific to the Dinkur gRPC client.
 var (
-	ErrUintTooLarge       = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
-	ErrResponseIsNil      = errors.New("grpc response was nil")
-	ErrUnexpectedNilEntry = errors.New("unexpected nil entry")
-	ErrUnexpectedNilAlert = errors.New("unexpected nil alert")
+	ErrUintTooLarge        = fmt.Errorf("unsigned int value is too large, maximum: %d", uint64(math.MaxUint))
+	ErrResponseIsNil       = errors.New("grpc response was nil")
+	ErrUnexpectedNilEntry  = errors.New("unexpected nil entry")
+	ErrUnexpectedNilStatus = errors.New("unexpected nil status")
 )
 
 var log = logger.NewScoped("client")
@@ -63,14 +63,14 @@ type client struct {
 	serverAddr string
 	conn       *grpc.ClientConn
 	entryer    dinkurapiv1.EntriesClient
-	alerter    dinkurapiv1.AlerterClient
+	statuses   dinkurapiv1.StatusesClient
 }
 
 func (c *client) assertConnected() error {
 	if c == nil {
 		return dinkur.ErrClientIsNil
 	}
-	if c.conn == nil || c.entryer == nil || c.alerter == nil {
+	if c.conn == nil || c.entryer == nil || c.statuses == nil {
 		return dinkur.ErrNotConnected
 	}
 	return nil
@@ -80,7 +80,7 @@ func (c *client) Connect(ctx context.Context) error {
 	if c == nil {
 		return dinkur.ErrClientIsNil
 	}
-	if c.conn != nil || c.entryer != nil || c.alerter != nil {
+	if c.conn != nil || c.entryer != nil || c.statuses != nil {
 		return dinkur.ErrAlreadyConnected
 	}
 	// TODO: add credentials via opts args
@@ -90,7 +90,7 @@ func (c *client) Connect(ctx context.Context) error {
 	}
 	c.conn = conn
 	c.entryer = dinkurapiv1.NewEntriesClient(conn)
-	c.alerter = dinkurapiv1.NewAlerterClient(conn)
+	c.statuses = dinkurapiv1.NewStatusesClient(conn)
 	return nil
 }
 

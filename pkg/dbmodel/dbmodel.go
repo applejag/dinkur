@@ -97,44 +97,10 @@ func (EntryFTS5) TableName() string {
 	return "entries_idx"
 }
 
-// Field names for Alert.
-const (
-	AlertFieldPlainMessage = "PlainMessage"
-	AlertFieldAFK          = "AFK"
-)
-
-// Alert is the parent alert type for all alert types. Only one of the inner
-// alert types are expected to be set. It's considered undefined behaviour to
-// assign multiple alert types to an alert, such as assigning both a plain
-// message alert and an AFK alert.
-type Alert struct {
-	ID           uint               `gorm:"primaryKey;autoIncrement;type:INTEGER PRIMARY KEY AUTOINCREMENT"`
-	PlainMessage *AlertPlainMessage `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	AFK          *AlertAFK          `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-}
-
-// AlertPlainMessage is an arbitrary message the user needs to see.
-type AlertPlainMessage struct {
+type Status struct {
 	CommonFields
-	AlertID uint
-
-	Message string
-}
-
-// Field names for AlertAFK.
-const (
-	AlertAFKFieldActiveEntry = "ActiveEntry"
-)
-
-// AlertAFK is an AFK (Away From Keyboard) alert.
-type AlertAFK struct {
-	CommonFields
-	AlertID uint
-
-	ActiveEntry   Entry `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	ActiveEntryID uint
-	AFKSince      time.Time
-	BackSince     *time.Time
+	AFKSince  time.Time
+	BackSince *time.Time
 }
 
 // Migration holds the latest migration revision identifier. At most one row of
@@ -150,7 +116,7 @@ type MigrationVersion int
 // LatestMigrationVersion is an integer revision identifier for what migration
 // was last applied to the database. This is stored in the database to quickly
 // figure out if new migrations needs to be applied.
-const LatestMigrationVersion MigrationVersion = 7
+const LatestMigrationVersion MigrationVersion = 8
 
 const (
 	// MigrationUnknown means that Dinkur was unable to evaluate the database's

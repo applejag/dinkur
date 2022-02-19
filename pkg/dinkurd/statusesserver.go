@@ -17,34 +17,6 @@
 // You should have received a copy of the GNU General Public License along
 // with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package fromdb
+package dinkurd
 
-import (
-	"github.com/dinkur/dinkur/pkg/dbmodel"
-	"github.com/dinkur/dinkur/pkg/dinkur"
-)
-
-// TimeFields converts dbmodel common fields to dinkur time fields.
-func TimeFields(f dbmodel.CommonFields) dinkur.TimeFields {
-	return dinkur.TimeFields{
-		CreatedAt: f.CreatedAt,
-		UpdatedAt: f.UpdatedAt,
-	}
-}
-
-// CommonFields converts dbmodel common fields to dinkur common fields.
-func CommonFields(f dbmodel.CommonFields) dinkur.CommonFields {
-	return dinkur.CommonFields{
-		TimeFields: TimeFields(f),
-		ID:         f.ID,
-	}
-}
-
-// CommonFieldsID converts dbmodel common fields to dinkur common fields with
-// custom ID.
-func CommonFieldsID(f dbmodel.CommonFields, id uint) dinkur.CommonFields {
-	return dinkur.CommonFields{
-		TimeFields: TimeFields(f),
-		ID:         id,
-	}
-}
+// TODO: implement this

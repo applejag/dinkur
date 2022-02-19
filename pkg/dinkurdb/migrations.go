@@ -113,9 +113,7 @@ func (c *client) migrateNoTran() error {
 	tables := []any{
 		dbmodel.Migration{},
 		dbmodel.Entry{},
-		dbmodel.Alert{},
-		dbmodel.AlertAFK{},
-		dbmodel.AlertPlainMessage{},
+		dbmodel.Status{},
 		// Note: Do not add EntryFTS5 to auto migration! It is created separately
 		// through manual SQL queries down below.
 	}

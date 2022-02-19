@@ -79,21 +79,10 @@ func NewClient(dsn string, opt Options) dinkur.Client {
 					Message("Timed out sending entry event.")
 			},
 		},
-		alertObs: &typ.Publisher[alertEvent]{
+		statusObs: &typ.Publisher[statusEvent]{
 			PubTimeoutAfter: 10 * time.Second,
-			OnPubTimeout: func(ev alertEvent) {
-				alertType := "unknown"
-				switch {
-				case ev.dbAlert.PlainMessage != nil:
-					alertType = "plainMessage"
-				case ev.dbAlert.AFK != nil:
-					alertType = "afk"
-				}
-				log.Warn().
-					WithUint("id", ev.dbAlert.ID).
-					WithString("type", alertType).
-					WithStringer("event", ev.event).
-					Message("Timed out sending entry event.")
+			OnPubTimeout: func(ev statusEvent) {
+				log.Warn().Message("Timed out sending status event.")
 			},
 		},
 	}
@@ -106,7 +95,7 @@ type client struct {
 	prevMigChecked bool
 	prevMigVersion dbmodel.MigrationVersion
 	entryObs       *typ.Publisher[entryEvent]
-	alertObs       *typ.Publisher[alertEvent]
+	statusObs      *typ.Publisher[statusEvent]
 }
 
 type entryEvent struct {
@@ -114,9 +103,8 @@ type entryEvent struct {
 	event   dinkur.EventType
 }
 
-type alertEvent struct {
-	dbAlert dbmodel.Alert
-	event   dinkur.EventType
+type statusEvent struct {
+	dbStatus dbmodel.Status
 }
 
 func (c *client) assertConnected() error {
