@@ -110,6 +110,14 @@ func (c *client) migrateNoTran() error {
 			return err
 		}
 	}
+	if oldVersion != dbmodel.MigrationNeverApplied && oldVersion < 8 {
+		alertTables := []string{"alerts", "alert_afks", "alert_plain_messages"}
+		for _, tbl := range alertTables {
+			if err := c.db.Migrator().DropTable(tbl); err != nil {
+				return err
+			}
+		}
+	}
 	tables := []any{
 		dbmodel.Migration{},
 		dbmodel.Entry{},
