@@ -97,10 +97,10 @@ func (EntryFTS5) TableName() string {
 	return "entries_idx"
 }
 
-// Column names for Alert.
+// Field names for Alert.
 const (
-	AlertColumnPlainMessage = "PlainMessage"
-	AlertColumnAFK          = "AFK"
+	AlertFieldPlainMessage = "PlainMessage"
+	AlertFieldAFK          = "AFK"
 )
 
 // Alert is the parent alert type for all alert types. Only one of the inner

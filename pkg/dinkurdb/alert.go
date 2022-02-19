@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/dinkur/dinkur/pkg/conv"
 	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/fromdb"
@@ -72,7 +73,36 @@ func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, 
 }
 
 func (c *client) CreateAlert(ctx context.Context, newAlert dinkur.NewAlert) (dinkur.Alert, error) {
-	return nil, errors.New("not implemented")
+	if err := c.assertConnected(); err != nil {
+		return nil, err
+	}
+	dbAlert, err := c.withContext(ctx).createDBAlertAtom(newAlert)
+	if err != nil {
+		return nil, err
+	}
+	return fromdb.Alert(dbAlert)
+}
+
+func (c *client) createDBAlertAtom(newAlert dinkur.NewAlert) (dbmodel.Alert, error) {
+	var dbAlert dbmodel.Alert
+	switch alert := newAlert.(type) {
+	case dinkur.AlertAFK:
+		dbAlert.AFK = &dbmodel.AlertAFK{
+			AFKSince:      alert.AFKSince.UTC(),
+			BackSince:     conv.TimePtrUTC(alert.BackSince),
+			ActiveEntryID: alert.ActiveEntry.ID,
+		}
+	case dinkur.AlertPlainMessage:
+		dbAlert.PlainMessage = &dbmodel.AlertPlainMessage{
+			Message: alert.Message,
+		}
+	default:
+		return dbmodel.Alert{}, fmt.Errorf("unsupported alert type: %v", newAlert.Type())
+	}
+	if err := c.db.Create(&dbAlert).Error; err != nil {
+		return dbmodel.Alert{}, err
+	}
+	return dbAlert, nil
 }
 
 func (c *client) CreateOrUpdateAlertByType(ctx context.Context, newAlert dinkur.NewAlert) (dinkur.NewOrUpdatedAlert, error) {
@@ -134,13 +164,65 @@ func (c *client) deleteDBAlertTran(id uint) (dbmodel.Alert, error) {
 }
 
 func (c *client) DeleteAlertByType(ctx context.Context, alertType dinkur.AlertType) (dinkur.Alert, error) {
-	return nil, errors.New("not implemented")
+	if err := c.assertConnected(); err != nil {
+		return nil, err
+	}
+	dbAlert, err := c.withContext(ctx).deleteDBAlertByType(alertType)
+	if err != nil {
+		return nil, err
+	}
+	c.alertObs.PubWait(alertEvent{
+		dbAlert: dbAlert,
+		event:   dinkur.EventDeleted,
+	})
+	return fromdb.Alert(dbAlert)
+}
+
+func (c *client) deleteDBAlertByType(alertType dinkur.AlertType) (dbmodel.Alert, error) {
+	var dbAlert dbmodel.Alert
+	err := c.transaction(func(tx *client) (tranErr error) {
+		dbAlert, tranErr = tx.deleteDBAlertByTypeNoTran(alertType)
+		return
+	})
+	return dbAlert, err
+}
+
+func (c *client) deleteDBAlertByTypeNoTran(alertType dinkur.AlertType) (dbmodel.Alert, error) {
+	dbAlert, err := c.getDBAlertByTypeNoTran(alertType)
+	if err != nil {
+		return dbmodel.Alert{}, fmt.Errorf("get alert by type to delete: %w", err)
+	}
+	if err := c.db.Delete(&dbmodel.Alert{}, dbAlert.ID).Error; err != nil {
+		return dbmodel.Alert{}, fmt.Errorf("delete alert: %w", err)
+	}
+	return dbAlert, nil
+}
+
+func (c *client) getDBAlertByTypeNoTran(alertType dinkur.AlertType) (dbmodel.Alert, error) {
+	var joinField string
+	switch alertType {
+	case dinkur.AlertTypePlainMessage:
+		joinField = dbmodel.AlertFieldPlainMessage
+	case dinkur.AlertTypeAFK:
+		joinField = dbmodel.AlertFieldAFK
+	default:
+		return dbmodel.Alert{}, fmt.Errorf("unsupported alert type: %v", alertType)
+	}
+	var dbAlert dbmodel.Alert
+	err := c.db.
+		Joins(joinField).
+		First(&dbAlert).
+		Error
+	if err != nil {
+		return dbmodel.Alert{}, err
+	}
+	return dbAlert, nil
 }
 
 func (c *client) deleteDBAlertNoTran(id uint) (dbmodel.Alert, error) {
 	dbAlert, err := c.getDBAlertAtom(id)
 	if err != nil {
-		return dbmodel.Alert{}, fmt.Errorf("get alert to delete: %w", err)
+		return dbmodel.Alert{}, fmt.Errorf("get alert by ID to delete: %w", err)
 	}
 	if err := c.db.Delete(&dbmodel.Alert{}, id).Error; err != nil {
 		return dbmodel.Alert{}, fmt.Errorf("delete alert: %w", err)
@@ -162,6 +244,6 @@ func (c *client) getDBAlertAtom(id uint) (dbmodel.Alert, error) {
 
 func (c *client) dbAlertPreloaded() *gorm.DB {
 	return c.db.Model(&dbmodel.Alert{}).
-		Preload(dbmodel.AlertColumnPlainMessage).
-		Preload(dbmodel.AlertColumnAFK)
+		Preload(dbmodel.AlertFieldPlainMessage).
+		Preload(dbmodel.AlertFieldAFK)
 }
