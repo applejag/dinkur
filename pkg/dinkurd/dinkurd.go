@@ -197,6 +197,14 @@ func (d *daemon) Close() (finalErr error) {
 }
 
 func (d *daemon) updateAFKStatusAsWeAreStarting(ctx context.Context) {
+	status, err := d.client.GetStatus(ctx)
+	if err != nil {
+		return
+	}
+	d.lastStatus = dinkur.EditStatus{
+		AFKSince:  status.AFKSince,
+		BackSince: status.BackSince,
+	}
 	entry, err := d.client.GetActiveEntry(ctx)
 	if err != nil || entry == nil {
 		d.markAsNotAFK(ctx)
