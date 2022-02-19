@@ -28,6 +28,14 @@ import (
 	"gopkg.in/typ.v2"
 )
 
+// AlertPtr converts a dbmodel alert to a dinkur alert, or nil if nil.
+func AlertPtr(alert *dbmodel.Alert) (dinkur.Alert, error) {
+	if alert == nil {
+		return nil, nil
+	}
+	return Alert(*alert)
+}
+
 // Alert converts a dbmodel alert to a dinkur alert.
 func Alert(alert dbmodel.Alert) (dinkur.Alert, error) {
 	if alert.PlainMessage != nil {

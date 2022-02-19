@@ -107,8 +107,63 @@ func (c *client) createDBAlertAtom(newAlert dinkur.NewAlert) (dbmodel.Alert, err
 	return dbAlert, nil
 }
 
+type newOrUpdatedDBAlert struct {
+	before *dbmodel.Alert // will be nil if alert was created
+	after  dbmodel.Alert
+}
+
 func (c *client) CreateOrUpdateAlertByType(ctx context.Context, newAlert dinkur.NewAlert) (dinkur.NewOrUpdatedAlert, error) {
-	return dinkur.NewOrUpdatedAlert{}, errors.New("not implemented")
+	if err := c.assertConnected(); err != nil {
+		return dinkur.NewOrUpdatedAlert{}, err
+	}
+	newOrUpdate, err := c.withContext(ctx).createOrUpdateDBAlertByType(newAlert)
+	if err != nil {
+		return dinkur.NewOrUpdatedAlert{}, err
+	}
+	alertBefore, err := fromdb.AlertPtr(newOrUpdate.before)
+	alertAfter, err := fromdb.Alert(newOrUpdate.after)
+	return dinkur.NewOrUpdatedAlert{
+		Before: alertBefore,
+		After:  alertAfter,
+	}, nil
+}
+
+func (c *client) createOrUpdateDBAlertByType(newAlert dinkur.NewAlert) (newOrUpdatedDBAlert, error) {
+	var update newOrUpdatedDBAlert
+	err := c.transaction(func(tx *client) (tranErr error) {
+		update, tranErr = tx.createOrUpdateDBAlertByTypeNoTran(newAlert)
+		return
+	})
+	return update, err
+}
+
+func (c *client) createOrUpdateDBAlertByTypeNoTran(newAlert dinkur.NewAlert) (newOrUpdatedDBAlert, error) {
+	dbAlert, err := c.getDBAlertByTypeNoTran(newAlert.Alert.Type())
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		newDBAlert, err := c.createDBAlertAtom(dinkur.NewAlert{
+			Alert: newAlert.Alert,
+		})
+		if err != nil {
+			return newOrUpdatedDBAlert{}, fmt.Errorf("create new alert as no alert of type was found: %w", err)
+		}
+		return newOrUpdatedDBAlert{
+			before: nil,
+			after:  newDBAlert,
+		}, nil
+	} else if err != nil {
+		return newOrUpdatedDBAlert{}, fmt.Errorf("get alert by type for create-or-update: %w", err)
+	}
+	update, err := c.editDBAlertNoTran(dinkur.EditAlert{
+		ID:    dbAlert.ID,
+		Alert: newAlert.Alert,
+	})
+	if err != nil {
+		return newOrUpdatedDBAlert{}, fmt.Errorf("update existing alert by type: %w", err)
+	}
+	return newOrUpdatedDBAlert{
+		before: &update.before,
+		after:  update.after,
+	}, nil
 }
 
 func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
