@@ -41,7 +41,7 @@ func EntryPtr(t *dbmodel.Entry) *dinkur.Entry {
 	if t == nil {
 		return nil
 	}
-	return typ.Ptr(Entry(*t))
+	return typ.Ref(Entry(*t))
 }
 
 // EntrySlice converts a slice of dbmodel entries to dinkur entries.

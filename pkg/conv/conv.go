@@ -46,7 +46,7 @@ func TimePtrUTC(t *time.Time) *time.Time {
 	if t == nil {
 		return nil
 	}
-	return typ.Ptr((*t).UTC())
+	return typ.Ref((*t).UTC())
 }
 
 // TimePtrLocal converts a time to local time, or nil.
@@ -54,5 +54,5 @@ func TimePtrLocal(t *time.Time) *time.Time {
 	if t == nil {
 		return nil
 	}
-	return typ.Ptr((*t).Local())
+	return typ.Ref((*t).Local())
 }

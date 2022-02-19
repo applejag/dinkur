@@ -31,7 +31,7 @@ func TimePtr(ts *timestamppb.Timestamp) *time.Time {
 	if ts == nil {
 		return nil
 	}
-	return typ.Ptr(ts.AsTime().Local())
+	return typ.Ref(ts.AsTime().Local())
 }
 
 // TimeOrZero converts gRPC timestamp to Go time, or zero if nil.
