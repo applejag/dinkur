@@ -73,9 +73,11 @@ type Entries interface {
 type Alerter interface {
 	StreamAlert(ctx context.Context) (<-chan StreamedAlert, error)
 	CreateAlert(ctx context.Context, newAlert NewAlert) (Alert, error)
+	CreateOrUpdateAlertByType(ctx context.Context, newAlert NewAlert) (NewOrUpdatedAlert, error)
 	GetAlertList(ctx context.Context) ([]Alert, error)
 	UpdateAlert(ctx context.Context, edit EditAlert) (Alert, error)
 	DeleteAlert(ctx context.Context, id uint) (Alert, error)
+	DeleteAlertByType(ctx context.Context, alertType AlertType) (Alert, error)
 }
 
 // StreamedAlert holds an alert and its event type.
@@ -128,6 +130,12 @@ type EditEntry struct {
 type UpdatedEntry struct {
 	Before Entry
 	After  Entry
+}
+
+// NewOrUpdatedAlert is the response from a create-or-update call.
+type NewOrUpdatedAlert struct {
+	Before *Alert
+	After  Alert
 }
 
 // NewEntry holds parameters used when creating a new entry.

@@ -98,3 +98,15 @@ func AlertSlice(slice []*dinkurapiv1.Alert) ([]dinkur.Alert, error) {
 	}
 	return entries, nil
 }
+
+// AlertType converts a gRPC alert type enum to a Dinkur alert type enum.
+func AlertType(alertType dinkurapiv1.ALERT) dinkur.AlertType {
+	switch alertType {
+	case dinkurapiv1.ALERT_ALERT_PLAIN_MESSAGE:
+		return dinkur.AlertTypePlainMessage
+	case dinkurapiv1.ALERT_ALERT_AFK:
+		return dinkur.AlertTypeAFK
+	default:
+		return dinkur.AlertTypeUnspecified
+	}
+}

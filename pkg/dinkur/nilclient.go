@@ -106,6 +106,12 @@ func (*NilClient) CreateAlert(context.Context, NewAlert) (Alert, error) {
 	return nil, ErrClientIsNil
 }
 
+// CreateOrUpdateAlertByType is a dummy implementation of the dinkur.Client that only
+// returns the "client is nil" error.
+func (*NilClient) CreateOrUpdateAlertByType(context.Context, NewAlert) (NewOrUpdatedAlert, error) {
+	return NewOrUpdatedAlert{}, ErrClientIsNil
+}
+
 // GetAlertList is a dummy implementation of the dinkur.Client that only
 // returns the "client is nil" error.
 func (*NilClient) GetAlertList(context.Context) ([]Alert, error) {
@@ -121,5 +127,11 @@ func (*NilClient) UpdateAlert(context.Context, EditAlert) (Alert, error) {
 // DeleteAlert is a dummy implementation of the dinkur.Client that only
 // returns the "client is nil" error.
 func (*NilClient) DeleteAlert(context.Context, uint) (Alert, error) {
+	return nil, ErrClientIsNil
+}
+
+// DeleteAlertByType is a dummy implementation of the dinkur.Client that only
+// returns the "client is nil" error.
+func (*NilClient) DeleteAlertByType(context.Context, AlertType) (Alert, error) {
 	return nil, ErrClientIsNil
 }

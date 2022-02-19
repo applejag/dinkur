@@ -78,6 +78,10 @@ func (c *client) CreateAlert(ctx context.Context, newAlert dinkur.NewAlert) (din
 	return nil, errors.New("not implemented")
 }
 
+func (c *client) CreateOrUpdateAlertByType(ctx context.Context, newAlert dinkur.NewAlert) (dinkur.NewOrUpdatedAlert, error) {
+	return dinkur.NewOrUpdatedAlert{}, errors.New("not implemented")
+}
+
 func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
@@ -127,4 +131,8 @@ func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error)
 		return nil, ErrUnexpectedNilAlert
 	}
 	return *alert, nil
+}
+
+func (c *client) DeleteAlertByType(ctx context.Context, alertType dinkur.AlertType) (dinkur.Alert, error) {
+	return nil, errors.New("not implemented")
 }
