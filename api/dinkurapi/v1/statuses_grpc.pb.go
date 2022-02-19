@@ -23,7 +23,7 @@ type StatusesClient interface {
 	// SetStatus updates the current status.
 	SetStatus(ctx context.Context, in *SetStatusRequest, opts ...grpc.CallOption) (*SetStatusResponse, error)
 	// GetStatus gets the current status.
-	GetStatusList(ctx context.Context, in *GetStatusRequest, opts ...grpc.CallOption) (*GetStatusResponse, error)
+	GetStatus(ctx context.Context, in *GetStatusRequest, opts ...grpc.CallOption) (*GetStatusResponse, error)
 }
 
 type statusesClient struct {
@@ -75,9 +75,9 @@ func (c *statusesClient) SetStatus(ctx context.Context, in *SetStatusRequest, op
 	return out, nil
 }
 
-func (c *statusesClient) GetStatusList(ctx context.Context, in *GetStatusRequest, opts ...grpc.CallOption) (*GetStatusResponse, error) {
+func (c *statusesClient) GetStatus(ctx context.Context, in *GetStatusRequest, opts ...grpc.CallOption) (*GetStatusResponse, error) {
 	out := new(GetStatusResponse)
-	err := c.cc.Invoke(ctx, "/dinkurapi.v1.Statuses/GetStatusList", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/dinkurapi.v1.Statuses/GetStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ type StatusesServer interface {
 	// SetStatus updates the current status.
 	SetStatus(context.Context, *SetStatusRequest) (*SetStatusResponse, error)
 	// GetStatus gets the current status.
-	GetStatusList(context.Context, *GetStatusRequest) (*GetStatusResponse, error)
+	GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error)
 	mustEmbedUnimplementedStatusesServer()
 }
 
@@ -107,8 +107,8 @@ func (UnimplementedStatusesServer) StreamStatus(*StreamStatusRequest, Statuses_S
 func (UnimplementedStatusesServer) SetStatus(context.Context, *SetStatusRequest) (*SetStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetStatus not implemented")
 }
-func (UnimplementedStatusesServer) GetStatusList(context.Context, *GetStatusRequest) (*GetStatusResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetStatusList not implemented")
+func (UnimplementedStatusesServer) GetStatus(context.Context, *GetStatusRequest) (*GetStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStatus not implemented")
 }
 func (UnimplementedStatusesServer) mustEmbedUnimplementedStatusesServer() {}
 
@@ -162,20 +162,20 @@ func _Statuses_SetStatus_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Statuses_GetStatusList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Statuses_GetStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StatusesServer).GetStatusList(ctx, in)
+		return srv.(StatusesServer).GetStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dinkurapi.v1.Statuses/GetStatusList",
+		FullMethod: "/dinkurapi.v1.Statuses/GetStatus",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StatusesServer).GetStatusList(ctx, req.(*GetStatusRequest))
+		return srv.(StatusesServer).GetStatus(ctx, req.(*GetStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -192,8 +192,8 @@ var Statuses_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Statuses_SetStatus_Handler,
 		},
 		{
-			MethodName: "GetStatusList",
-			Handler:    _Statuses_GetStatusList_Handler,
+			MethodName: "GetStatus",
+			Handler:    _Statuses_GetStatus_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -34,7 +34,7 @@ service Statuses {
   // SetStatus updates the current status.
   rpc SetStatus (SetStatusRequest) returns (SetStatusResponse);
   // GetStatus gets the current status.
-  rpc GetStatusList (GetStatusRequest) returns (GetStatusResponse);
+  rpc GetStatus (GetStatusRequest) returns (GetStatusResponse);
 }
 
 // StreamStatusRequest is an empty message and unused. It is here as a
@@ -57,10 +57,9 @@ message SetStatusRequest {
   google.protobuf.Timestamp back_since = 2;
 }
 
-// SetStatusResponse
+// SetStatusResponse is an empty message and unused. It is here as a placeholder
+// for potential future use.
 message SetStatusResponse {
-  // Status is the status that was created.
-  Status status = 1;
 }
 
 // GetStatusRequest is an empty message and unused. It is here as a

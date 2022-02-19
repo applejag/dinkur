@@ -21,25 +21,66 @@ package dinkurclient
 
 import (
 	"context"
-	"errors"
+	"io"
 
+	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
+	v1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 	"github.com/dinkur/dinkur/pkg/dinkur"
+	"github.com/dinkur/dinkur/pkg/fromgrpc"
+	"github.com/dinkur/dinkur/pkg/togrpc"
 )
 
-// StreamStatus is a dummy implementation of the dinkur.Client that only
-// returns the "client is nil" error.
-func (*client) StreamStatus(context.Context) (<-chan dinkur.StreamedStatus, error) {
-	return nil, errors.New("not implemented")
+func (c *client) StreamStatus(ctx context.Context) (<-chan dinkur.StreamedStatus, error) {
+	if err := c.assertConnected(); err != nil {
+		return nil, err
+	}
+	stream, err := c.statuses.StreamStatus(ctx, &dinkurapiv1.StreamStatusRequest{})
+	if err != nil {
+		return nil, convError(err)
+	}
+	statusChan := make(chan dinkur.StreamedStatus)
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err != nil {
+				if err != io.EOF {
+					log.Error().
+						WithError(convError(err)).
+						Message("Error when streaming statuses. Closing stream.")
+				}
+				close(statusChan)
+				return
+			}
+			if res == nil {
+				continue
+			}
+			const logWarnMsg = "Error when streaming statuses. Ignoring message."
+			status, err := fromgrpc.StatusPtrNoNil(res.Status)
+			if err != nil {
+				log.Warn().WithError(convError(err)).
+					Message(logWarnMsg)
+				continue
+			}
+			statusChan <- dinkur.StreamedStatus{
+				Status: status,
+			}
+		}
+	}()
+	return statusChan, nil
 }
 
-// SetStatus is a dummy implementation of the dinkur.Client that only
-// returns the "client is nil" error.
-func (*client) SetStatus(context.Context, dinkur.EditStatus) error {
-	return errors.New("not implemented")
+func (c *client) SetStatus(ctx context.Context, edit dinkur.EditStatus) error {
+	_, err := invoke(ctx, c, c.statuses.SetStatus, &v1.SetStatusRequest{
+		AfkSince:  togrpc.TimestampPtr(edit.AFKSince),
+		BackSince: togrpc.TimestampPtr(edit.BackSince),
+	})
+	return err
 }
 
-// GetStatus is a dummy implementation of the dinkur.Client that only
-// returns the "client is nil" error.
-func (*client) GetStatus(context.Context) (dinkur.Status, error) {
-	return dinkur.Status{}, errors.New("not implemented")
+func (c *client) GetStatus(ctx context.Context) (dinkur.Status, error) {
+	res, err := invoke(ctx, c, c.statuses.GetStatus, &v1.GetStatusRequest{})
+	if err != nil {
+		return dinkur.Status{}, err
+	}
+	return fromgrpc.StatusPtrNoNil(res.Status)
 }
