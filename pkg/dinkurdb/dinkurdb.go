@@ -79,6 +79,23 @@ func NewClient(dsn string, opt Options) dinkur.Client {
 					Message("Timed out sending entry event.")
 			},
 		},
+		alertObs: &typ.Publisher[alertEvent]{
+			PubTimeoutAfter: 10 * time.Second,
+			OnPubTimeout: func(ev alertEvent) {
+				alertType := "unknown"
+				switch {
+				case ev.dbAlert.PlainMessage != nil:
+					alertType = "plainMessage"
+				case ev.dbAlert.AFK != nil:
+					alertType = "afk"
+				}
+				log.Warn().
+					WithUint("id", ev.dbAlert.ID).
+					WithString("type", alertType).
+					WithStringer("event", ev.event).
+					Message("Timed out sending entry event.")
+			},
+		},
 	}
 }
 

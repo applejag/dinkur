@@ -36,12 +36,14 @@ func (d *daemon) StreamAlert(req *dinkurapiv1.StreamAlertRequest, stream dinkura
 		return convError(ErrRequestIsNil)
 	}
 	ctx := stream.Context()
+	ch, err := d.client.StreamAlert(ctx)
+	if err != nil {
+		return err
+	}
 	done := ctx.Done()
-	alertChan := d.alertStore.Sub()
-	defer d.alertStore.Unsub(alertChan)
 	for {
 		select {
-		case ev, ok := <-alertChan:
+		case ev, ok := <-ch:
 			if !ok {
 				return nil
 			}
@@ -57,20 +59,23 @@ func (d *daemon) StreamAlert(req *dinkurapiv1.StreamAlertRequest, stream dinkura
 	}
 }
 
-func (d *daemon) GetAlertList(_ context.Context, req *dinkurapiv1.GetAlertListRequest) (*dinkurapiv1.GetAlertListResponse, error) {
+func (d *daemon) GetAlertList(ctx context.Context, req *dinkurapiv1.GetAlertListRequest) (*dinkurapiv1.GetAlertListResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
 	if req == nil {
 		return nil, convError(ErrRequestIsNil)
 	}
-	alerts := d.alertStore.Alerts()
+	alerts, err := d.client.GetAlertList(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return &dinkurapiv1.GetAlertListResponse{
 		Alerts: togrpc.AlertSlice(alerts),
 	}, nil
 }
 
-func (d *daemon) DeleteAlert(_ context.Context, req *dinkurapiv1.DeleteAlertRequest) (*dinkurapiv1.DeleteAlertResponse, error) {
+func (d *daemon) DeleteAlert(ctx context.Context, req *dinkurapiv1.DeleteAlertRequest) (*dinkurapiv1.DeleteAlertResponse, error) {
 	if err := d.assertConnected(); err != nil {
 		return nil, convError(err)
 	}
@@ -81,7 +86,7 @@ func (d *daemon) DeleteAlert(_ context.Context, req *dinkurapiv1.DeleteAlertRequ
 	if err != nil {
 		return nil, convError(err)
 	}
-	deleted, err := d.alertStore.Delete(id)
+	deleted, err := d.client.DeleteAlert(ctx, id)
 	if err != nil {
 		return nil, convError(err)
 	}

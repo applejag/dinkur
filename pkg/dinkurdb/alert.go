@@ -29,6 +29,7 @@ import (
 	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/fromdb"
+	"gopkg.in/typ.v2"
 	"gorm.io/gorm"
 )
 
@@ -153,7 +154,7 @@ func (c *client) createOrUpdateDBAlertByTypeNoTran(newAlert dinkur.NewAlert) (ne
 	} else if err != nil {
 		return newOrUpdatedDBAlert{}, fmt.Errorf("get alert by type for create-or-update: %w", err)
 	}
-	update, err := c.editDBAlertNoTran(dinkur.EditAlert{
+	update, err := c.editDBAlertNoTran(dbAlert, dinkur.EditAlert{
 		ID:    dbAlert.ID,
 		Alert: newAlert.Alert,
 	})
@@ -170,7 +171,7 @@ func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 	if err := c.assertConnected(); err != nil {
 		return nil, err
 	}
-	dbAlerts, err := c.withContext(ctx).listDBAlertsAtom()
+	dbAlerts, err := c.withContext(ctx).listDBAlerts()
 	if err != nil {
 		return nil, err
 	}
@@ -181,10 +182,34 @@ func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 	return alerts, nil
 }
 
-func (c *client) listDBAlertsAtom() ([]dbmodel.Alert, error) {
+func (c *client) listDBAlerts() ([]dbmodel.Alert, error) {
+	var dbAlerts []dbmodel.Alert
+	err := c.transaction(func(tx *client) (tranErr error) {
+		dbAlerts, tranErr = tx.listDBAlertsNoTran()
+		return
+	})
+	return dbAlerts, err
+}
+
+func (c *client) listDBAlertsNoTran() ([]dbmodel.Alert, error) {
 	var dbAlerts []dbmodel.Alert
 	if err := c.dbAlertPreloaded().Find(&dbAlerts).Error; err != nil {
 		return nil, err
+	}
+	dbAFKAlertIDs := typ.Map(dbAlerts, func(a dbmodel.Alert) uint { return a.ID })
+	var dbAFKAlerts []dbmodel.AlertAFK
+	if err := c.db.Preload(dbmodel.AlertAFKFieldActiveEntry).
+		Find(&dbAFKAlerts, dbAFKAlertIDs).
+		Error; err != nil {
+		return nil, err
+	}
+	for i, alert := range dbAlerts {
+		for _, afkAlert := range dbAFKAlerts {
+			if alert.AFK == nil && alert.AFK.ID != afkAlert.ID {
+				continue
+			}
+			dbAlerts[i].AFK = &afkAlert
+		}
 	}
 	return dbAlerts, nil
 }
@@ -219,17 +244,17 @@ type updatedDBAlert struct {
 func (c *client) editDBAlert(edit dinkur.EditAlert) (updatedDBAlert, error) {
 	var update updatedDBAlert
 	err := c.transaction(func(tx *client) (tranErr error) {
-		update, tranErr = tx.editDBAlertNoTran(edit)
+		dbAlert, err := tx.getDBAlertAtom(edit.ID)
+		if err != nil {
+			return fmt.Errorf("get alert to edit: %w", err)
+		}
+		update, tranErr = tx.editDBAlertNoTran(dbAlert, edit)
 		return
 	})
 	return update, err
 }
 
-func (c *client) editDBAlertNoTran(edit dinkur.EditAlert) (updatedDBAlert, error) {
-	dbAlert, err := c.getDBAlertAtom(edit.ID)
-	if err != nil {
-		return updatedDBAlert{}, fmt.Errorf("get alert to edit: %w", err)
-	}
+func (c *client) editDBAlertNoTran(dbAlert dbmodel.Alert, edit dinkur.EditAlert) (updatedDBAlert, error) {
 	var (
 		dbAlertToSave any
 		changed       bool
@@ -302,7 +327,7 @@ func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error)
 		dbAlert: dbAlert,
 		event:   dinkur.EventDeleted,
 	})
-	return nil, nil
+	return fromdb.Alert(dbAlert)
 }
 
 func (c *client) deleteDBAlertTran(id uint) (dbmodel.Alert, error) {

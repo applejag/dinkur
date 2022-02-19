@@ -27,6 +27,9 @@ import (
 
 // Alert converts a Go alert to a gRPC alert.
 func Alert(alert dinkur.Alert) *dinkurapiv1.Alert {
+	if alert == nil {
+		return nil
+	}
 	common := alert.Common()
 	a := &dinkurapiv1.Alert{
 		Id:      uint64(common.ID),

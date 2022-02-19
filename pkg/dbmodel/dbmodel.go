@@ -121,6 +121,11 @@ type AlertPlainMessage struct {
 	Message string
 }
 
+// Field names for AlertAFK.
+const (
+	AlertAFKFieldActiveEntry = "ActiveEntry"
+)
+
 // AlertAFK is an AFK (Away From Keyboard) alert.
 type AlertAFK struct {
 	CommonFields
