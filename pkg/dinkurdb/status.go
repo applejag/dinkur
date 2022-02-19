@@ -104,6 +104,7 @@ func (c *client) setStatusNoTran(edit dinkur.EditStatus) error {
 		// No update needed
 		return nil
 	}
+	log.Debug().WithStringf("status", "%#v", dbStatus).Message("Set status.")
 	if err := c.db.Save(&dbStatus).Error; err != nil {
 		return err
 	}
