@@ -29,22 +29,33 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/fromgrpc"
 	"github.com/dinkur/dinkur/pkg/togrpc"
+	"google.golang.org/grpc"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 )
 
-func (c *client) GetEntry(ctx context.Context, id uint) (dinkur.Entry, error) {
+type grpcFunc[Req, Res any] func(context.Context, Req, ...grpc.CallOption) (Res, error)
+
+func invoke[Req any, Res ~*ResPtr, ResPtr any](ctx context.Context, c *client, f grpcFunc[Req, Res], req Req) (Res, error) {
 	if err := c.assertConnected(); err != nil {
-		return dinkur.Entry{}, err
+		return nil, err
 	}
-	res, err := c.entryer.GetEntry(ctx, &dinkurapiv1.GetEntryRequest{
+	res, err := f(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if res == nil {
+		return nil, ErrResponseIsNil
+	}
+	return res, nil
+}
+
+func (c *client) GetEntry(ctx context.Context, id uint) (dinkur.Entry, error) {
+	res, err := invoke(ctx, c, c.entryer.GetEntry, &dinkurapiv1.GetEntryRequest{
 		Id: uint64(id),
 	})
 	if err != nil {
 		return dinkur.Entry{}, convError(err)
-	}
-	if res == nil {
-		return dinkur.Entry{}, ErrResponseIsNil
 	}
 	entry, err := fromgrpc.EntryPtrNoNil(res.Entry)
 	if err != nil {
@@ -54,10 +65,7 @@ func (c *client) GetEntry(ctx context.Context, id uint) (dinkur.Entry, error) {
 }
 
 func (c *client) GetEntryList(ctx context.Context, search dinkur.SearchEntry) ([]dinkur.Entry, error) {
-	if err := c.assertConnected(); err != nil {
-		return nil, err
-	}
-	req := dinkurapiv1.GetEntryListRequest{
+	res, err := invoke(ctx, c, c.entryer.GetEntryList, &dinkurapiv1.GetEntryListRequest{
 		Start:              togrpc.TimestampPtr(search.Start),
 		End:                togrpc.TimestampPtr(search.End),
 		Limit:              uint64(search.Limit),
@@ -65,13 +73,9 @@ func (c *client) GetEntryList(ctx context.Context, search dinkur.SearchEntry) ([
 		NameFuzzy:          search.NameFuzzy,
 		NameHighlightStart: search.NameHighlightStart,
 		NameHighlightEnd:   search.NameHighlightEnd,
-	}
-	res, err := c.entryer.GetEntryList(ctx, &req)
+	})
 	if err != nil {
 		return nil, convError(err)
-	}
-	if res == nil {
-		return nil, ErrResponseIsNil
 	}
 	entries, err := fromgrpc.EntrySlice(res.Entries)
 	if err != nil {
@@ -81,10 +85,7 @@ func (c *client) GetEntryList(ctx context.Context, search dinkur.SearchEntry) ([
 }
 
 func (c *client) UpdateEntry(ctx context.Context, edit dinkur.EditEntry) (dinkur.UpdatedEntry, error) {
-	if err := c.assertConnected(); err != nil {
-		return dinkur.UpdatedEntry{}, err
-	}
-	res, err := c.entryer.UpdateEntry(ctx, &dinkurapiv1.UpdateEntryRequest{
+	res, err := invoke(ctx, c, c.entryer.UpdateEntry, &dinkurapiv1.UpdateEntryRequest{
 		IdOrZero:           uint64(edit.IDOrZero),
 		Name:               conv.DerefOrZero(edit.Name),
 		Start:              togrpc.TimestampPtr(edit.Start),
@@ -96,9 +97,6 @@ func (c *client) UpdateEntry(ctx context.Context, edit dinkur.EditEntry) (dinkur
 	})
 	if err != nil {
 		return dinkur.UpdatedEntry{}, convError(err)
-	}
-	if res == nil {
-		return dinkur.UpdatedEntry{}, ErrResponseIsNil
 	}
 	entryBefore, err := fromgrpc.EntryPtrNoNil(res.Before)
 	if err != nil {
@@ -115,17 +113,11 @@ func (c *client) UpdateEntry(ctx context.Context, edit dinkur.EditEntry) (dinkur
 }
 
 func (c *client) DeleteEntry(ctx context.Context, id uint) (dinkur.Entry, error) {
-	if err := c.assertConnected(); err != nil {
-		return dinkur.Entry{}, err
-	}
-	res, err := c.entryer.DeleteEntry(ctx, &dinkurapiv1.DeleteEntryRequest{
+	res, err := invoke(ctx, c, c.entryer.DeleteEntry, &dinkurapiv1.DeleteEntryRequest{
 		Id: uint64(id),
 	})
 	if err != nil {
 		return dinkur.Entry{}, convError(err)
-	}
-	if res == nil {
-		return dinkur.Entry{}, ErrResponseIsNil
 	}
 	entry, err := fromgrpc.EntryPtrNoNil(res.DeletedEntry)
 	if err != nil {
@@ -135,10 +127,7 @@ func (c *client) DeleteEntry(ctx context.Context, id uint) (dinkur.Entry, error)
 }
 
 func (c *client) CreateEntry(ctx context.Context, entry dinkur.NewEntry) (dinkur.StartedEntry, error) {
-	if err := c.assertConnected(); err != nil {
-		return dinkur.StartedEntry{}, err
-	}
-	res, err := c.entryer.CreateEntry(ctx, &dinkurapiv1.CreateEntryRequest{
+	res, err := invoke(ctx, c, c.entryer.CreateEntry, &dinkurapiv1.CreateEntryRequest{
 		Name:               entry.Name,
 		Start:              togrpc.TimestampPtr(entry.Start),
 		End:                togrpc.TimestampPtr(entry.End),
@@ -148,9 +137,6 @@ func (c *client) CreateEntry(ctx context.Context, entry dinkur.NewEntry) (dinkur
 	})
 	if err != nil {
 		return dinkur.StartedEntry{}, convError(err)
-	}
-	if res == nil {
-		return dinkur.StartedEntry{}, ErrResponseIsNil
 	}
 	prevEntry, err := fromgrpc.EntryPtr(res.PreviouslyActiveEntry)
 	if err != nil {
@@ -167,15 +153,9 @@ func (c *client) CreateEntry(ctx context.Context, entry dinkur.NewEntry) (dinkur
 }
 
 func (c *client) GetActiveEntry(ctx context.Context) (*dinkur.Entry, error) {
-	if err := c.assertConnected(); err != nil {
-		return nil, err
-	}
-	res, err := c.entryer.GetActiveEntry(ctx, &dinkurapiv1.GetActiveEntryRequest{})
+	res, err := invoke(ctx, c, c.entryer.GetActiveEntry, &dinkurapiv1.GetActiveEntryRequest{})
 	if err != nil {
 		return nil, convError(err)
-	}
-	if res == nil {
-		return nil, ErrResponseIsNil
 	}
 	entry, err := fromgrpc.EntryPtr(res.ActiveEntry)
 	if err != nil {
@@ -185,17 +165,11 @@ func (c *client) GetActiveEntry(ctx context.Context) (*dinkur.Entry, error) {
 }
 
 func (c *client) StopActiveEntry(ctx context.Context, endTime time.Time) (*dinkur.Entry, error) {
-	if err := c.assertConnected(); err != nil {
-		return nil, err
-	}
-	res, err := c.entryer.StopActiveEntry(ctx, &dinkurapiv1.StopActiveEntryRequest{
+	res, err := invoke(ctx, c, c.entryer.StopActiveEntry, &dinkurapiv1.StopActiveEntryRequest{
 		End: togrpc.TimestampPtr(&endTime),
 	})
 	if err != nil {
 		return nil, convError(err)
-	}
-	if res == nil {
-		return nil, ErrResponseIsNil
 	}
 	entry, err := fromgrpc.EntryPtr(res.StoppedEntry)
 	if err != nil {

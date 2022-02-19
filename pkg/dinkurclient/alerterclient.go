@@ -83,15 +83,9 @@ func (c *client) CreateOrUpdateAlertByType(ctx context.Context, newAlert dinkur.
 }
 
 func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
-	if err := c.assertConnected(); err != nil {
-		return nil, err
-	}
-	res, err := c.alerter.GetAlertList(ctx, &dinkurapiv1.GetAlertListRequest{})
+	res, err := invoke(ctx, c, c.alerter.GetAlertList, &dinkurapiv1.GetAlertListRequest{})
 	if err != nil {
 		return nil, convError(err)
-	}
-	if res == nil {
-		return nil, ErrResponseIsNil
 	}
 	alerts, err := fromgrpc.AlertSlice(res.Alerts)
 	if err != nil {
@@ -111,17 +105,11 @@ func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur
 }
 
 func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error) {
-	if err := c.assertConnected(); err != nil {
-		return nil, err
-	}
-	res, err := c.alerter.DeleteAlert(ctx, &dinkurapiv1.DeleteAlertRequest{
+	res, err := invoke(ctx, c, c.alerter.DeleteAlert, &dinkurapiv1.DeleteAlertRequest{
 		Id: uint64(id),
 	})
 	if err != nil {
 		return nil, convError(err)
-	}
-	if res == nil {
-		return nil, ErrResponseIsNil
 	}
 	alert, err := fromgrpc.AlertPtr(res.DeletedAlert)
 	if err != nil {
