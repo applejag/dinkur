@@ -220,11 +220,11 @@ func checkStatusForAFK(c dinkur.Client) {
 	if activeEntry == nil {
 		return
 	}
-	promptAFKResolution(c, *activeEntry, *status.AFKSince, *status.BackSince)
+	promptAFKResolution(c, *activeEntry, *status.AFKSince)
 }
 
-func promptAFKResolution(c dinkur.Client, activeEntry dinkur.Entry, afkSince, backSince time.Time) {
-	res, err := console.PromptAFKResolution(activeEntry, afkSince, backSince)
+func promptAFKResolution(c dinkur.Client, activeEntry dinkur.Entry, afkSince time.Time) {
+	res, err := console.PromptAFKResolution(activeEntry, afkSince)
 	fmt.Println()
 	if err != nil {
 		console.PrintFatal("Prompt error:", err)

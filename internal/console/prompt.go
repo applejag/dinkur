@@ -79,7 +79,7 @@ type AFKResolution struct {
 }
 
 // PromptAFKResolution asks the user for how to resolve an AFK status.
-func PromptAFKResolution(activeEntry dinkur.Entry, afkSince, backSince time.Time) (AFKResolution, error) {
+func PromptAFKResolution(activeEntry dinkur.Entry, afkSince time.Time) (AFKResolution, error) {
 	var sb strings.Builder
 	now := time.Now()
 

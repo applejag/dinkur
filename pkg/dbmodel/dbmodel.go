@@ -97,6 +97,8 @@ func (EntryFTS5) TableName() string {
 	return "entries_idx"
 }
 
+// Status is used to track the user's current status, such as if they're
+// currently AFK.
 type Status struct {
 	CommonFields
 	AFKSince  *time.Time
