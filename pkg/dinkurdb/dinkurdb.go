@@ -29,21 +29,17 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/iver-wharf/wharf-core/pkg/gormutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
-	"gopkg.in/typ.v1"
+	"gopkg.in/typ.v2"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 )
 
 var log = logger.NewScoped("DB")
-
-// Errors specific to the Dinkur database client
-var (
-	ErrAlerterNotSupported = errors.New("database client does not support alerts")
-)
 
 func nilNotFoundError(err error) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -83,6 +79,12 @@ func NewClient(dsn string, opt Options) dinkur.Client {
 					Message("Timed out sending entry event.")
 			},
 		},
+		statusObs: &typ.Publisher[statusEvent]{
+			PubTimeoutAfter: 10 * time.Second,
+			OnPubTimeout: func(ev statusEvent) {
+				log.Warn().Message("Timed out sending status event.")
+			},
+		},
 	}
 }
 
@@ -91,13 +93,18 @@ type client struct {
 	sqliteDsn      string
 	db             *gorm.DB
 	prevMigChecked bool
-	prevMigVersion MigrationVersion
+	prevMigVersion dbmodel.MigrationVersion
 	entryObs       *typ.Publisher[entryEvent]
+	statusObs      *typ.Publisher[statusEvent]
 }
 
 type entryEvent struct {
-	dbEntry Entry
+	dbEntry dbmodel.Entry
 	event   dinkur.EventType
+}
+
+type statusEvent struct {
+	dbStatus dbmodel.Status
 }
 
 func (c *client) assertConnected() error {
@@ -126,6 +133,9 @@ func (c *client) Connect(ctx context.Context) error {
 		Logger: getLogger(c.Options),
 	})
 	if err != nil {
+		return err
+	}
+	if err := c.db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
 		return err
 	}
 	sqlDB, err := c.db.DB()

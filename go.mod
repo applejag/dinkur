@@ -15,16 +15,16 @@ require (
 	github.com/iver-wharf/wharf-core v1.3.0
 	github.com/mattn/go-colorable v0.1.12
 	github.com/mattn/go-isatty v0.0.14
-	github.com/mattn/go-sqlite3 v1.14.10
+	github.com/mattn/go-sqlite3 v1.14.11
 	github.com/olebedev/when v0.0.0-20211212231525-59bd4edcf9d6
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
 	google.golang.org/grpc v1.44.0
 	google.golang.org/protobuf v1.27.1
-	gopkg.in/typ.v1 v1.2.0
+	gopkg.in/typ.v2 v2.0.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	gorm.io/driver/sqlite v1.2.6
-	gorm.io/gorm v1.22.5
+	gorm.io/driver/sqlite v1.3.1
+	gorm.io/gorm v1.23.1
 )
 
 require (

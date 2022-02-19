@@ -27,47 +27,48 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
-func (c *client) MigrationStatus(ctx context.Context) (MigrationVersion, error) {
+func (c *client) MigrationStatus(ctx context.Context) (dbmodel.MigrationVersion, error) {
 	if err := c.assertConnected(); err != nil {
-		return MigrationUnknown, err
+		return dbmodel.MigrationUnknown, err
 	}
 	return c.withContext(ctx).migrationStatus()
 }
 
-func (c *client) migrationStatus() (MigrationVersion, error) {
+func (c *client) migrationStatus() (dbmodel.MigrationVersion, error) {
 	if c.prevMigChecked {
 		return c.prevMigVersion, nil
 	}
 	status, err := getMigrationStatus(c.db)
 	if err != nil {
-		return MigrationUnknown, err
+		return dbmodel.MigrationUnknown, err
 	}
 	c.prevMigVersion = status
 	c.prevMigChecked = true
 	return status, nil
 }
 
-func getMigrationStatus(db *gorm.DB) (MigrationVersion, error) {
-	var latest Migration
+func getMigrationStatus(db *gorm.DB) (dbmodel.MigrationVersion, error) {
+	var latest dbmodel.Migration
 	silentDB := db.Session(&gorm.Session{Logger: logger.Discard})
 	if err := silentDB.First(&latest).Error; err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.Code == sqlite3.ErrError &&
 			strings.HasPrefix(sqliteErr.Error(), "no such table:") {
-			return MigrationNeverApplied, nil
+			return dbmodel.MigrationNeverApplied, nil
 		}
 		m := db.Migrator()
-		if !m.HasTable(&Migration{}) {
-			return MigrationNeverApplied, nil
+		if !m.HasTable(&dbmodel.Migration{}) {
+			return dbmodel.MigrationNeverApplied, nil
 		}
-		return MigrationUnknown, nilNotFoundError(err)
+		return dbmodel.MigrationUnknown, nilNotFoundError(err)
 	}
-	v := MigrationVersion(latest.Version)
+	v := dbmodel.MigrationVersion(latest.Version)
 	return v, nil
 }
 
@@ -75,7 +76,10 @@ func (c *client) Migrate(ctx context.Context) error {
 	if err := c.assertConnected(); err != nil {
 		return err
 	}
-	return c.withContext(ctx).migrate()
+	if err := c.withContext(ctx).migrate(); err != nil {
+		return fmt.Errorf("migration: %w", err)
+	}
+	return nil
 }
 
 func (c *client) migrate() error {
@@ -90,29 +94,39 @@ func (c *client) migrateNoTran() error {
 		return fmt.Errorf("check migration status: %w", err)
 	}
 	log.Debug().WithStringer("status", oldVersion).Message("Migration status checked.")
-	if oldVersion == MigrationUpToDate {
+	if oldVersion == dbmodel.MigrationUpToDate {
 		return nil
 	}
 	var start time.Time
-	if oldVersion != MigrationNeverApplied {
+	if oldVersion != dbmodel.MigrationNeverApplied {
 		start = time.Now()
 		log.Info().
 			WithInt("old", int(oldVersion)).
-			WithInt("new", int(LatestMigrationVersion)).
+			WithInt("new", int(dbmodel.LatestMigrationVersion)).
 			Message("The database is outdated. Migrating...")
 	}
-	if oldVersion != MigrationNeverApplied && oldVersion < 5 {
+	if oldVersion != dbmodel.MigrationNeverApplied && oldVersion < 5 {
 		if err := c.db.Migrator().RenameTable("tasks", "entries"); err != nil {
 			return err
 		}
 	}
+	if oldVersion != dbmodel.MigrationNeverApplied && oldVersion < 8 {
+		alertTables := []string{"alerts", "alert_afks", "alert_plain_messages"}
+		for _, tbl := range alertTables {
+			if err := c.db.Migrator().DropTable(tbl); err != nil {
+				return err
+			}
+		}
+	}
 	tables := []any{
-		&Migration{},
-		&Entry{},
+		dbmodel.Migration{},
+		dbmodel.Entry{},
+		dbmodel.Status{},
 		// Note: Do not add EntryFTS5 to auto migration! It is created separately
 		// through manual SQL queries down below.
 	}
 	for _, tbl := range tables {
+		log.Debug().WithStringf("type", "%T", tbl).Message("Applying auto migrations.")
 		if err := c.db.AutoMigrate(tbl); err != nil {
 			return err
 		}
@@ -122,6 +136,7 @@ func (c *client) migrateNoTran() error {
 			return err
 		}
 	}
+	log.Debug().Message("Done with auto migrations.")
 	if oldVersion < 4 || !c.db.Migrator().HasTable("entries_idx") {
 		// Creates FTS5 (Sqlite free-text search) virtual table
 		// and triggers to keep it up-to-date.
@@ -146,16 +161,16 @@ INSERT INTO entries_idx (rowid, name) SELECT id, name FROM entries;
 			return err
 		}
 	}
-	var migration Migration
+	var migration dbmodel.Migration
 	if err := c.db.FirstOrCreate(&migration).Error; err != nil &&
 		!errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
-	migration.Version = LatestMigrationVersion
+	migration.Version = dbmodel.LatestMigrationVersion
 	if err := c.db.Save(&migration).Error; err != nil {
 		return err
 	}
-	if oldVersion != MigrationNeverApplied {
+	if oldVersion != dbmodel.MigrationNeverApplied {
 		dur := time.Since(start)
 		log.Info().WithDuration("duration", dur).Message("Database migration complete.")
 	}

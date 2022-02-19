@@ -26,60 +26,51 @@ import (
 	"time"
 
 	"github.com/dinkur/dinkur/internal/console"
-	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/spf13/cobra"
 )
 
-// alertsCmd represents the test command
-var alertsCmd = &cobra.Command{
-	Use:   "alerts",
+// streamStatusCmd represents the test command
+var streamStatusCmd = &cobra.Command{
+	Use:   "status",
 	Args:  cobra.NoArgs,
-	Short: "Testing alerts streaming",
+	Short: "Testing status streaming",
 	Run: func(cmd *cobra.Command, args []string) {
 		if flagClient != "grpc" {
 			console.PrintFatal("Error running test:", `--client must be set to "grpc"`)
 		}
 		connectClientOrExit()
 		ctx, cancel := context.WithTimeout(rootCtx, 60*time.Second)
-		alertChan, err := c.StreamAlert(ctx)
+		statusChan, err := c.StreamStatus(ctx)
 		if err != nil {
 			cancel()
 			console.PrintFatal("Error streaming events:", err)
 		}
-		fmt.Println("Streaming alerts...")
+		fmt.Println("Streaming statuses...")
 		for {
-			ev, ok := <-alertChan
+			ev, ok := <-statusChan
 			if !ok {
 				cancel()
 				fmt.Println("Channel was closed.")
 				os.Exit(0)
 			}
-			common := ev.Alert.Common()
-			log.Info().
-				WithUint("id", common.ID).
-				WithStringer("event", ev.Event).
-				WithStringf("type", "%T", ev.Alert).
-				WithTime("createdAt", common.CreatedAt).
-				WithTime("updatedAt", common.UpdatedAt).
-				Message("Received alert.")
-			switch alert := ev.Alert.(type) {
-			case dinkur.AlertPlainMessage:
-				fmt.Println("  Plain message:")
-				fmt.Printf("    Message: %q\n", alert.Message)
-			case dinkur.AlertAFK:
-				fmt.Println("  AFK:")
-				fmt.Println("    AFK since:", alert.AFKSince)
-				fmt.Println("    Back since:", alert.BackSince)
-				console.PrintEntryLabel(console.LabelledEntry{
-					Label: "    Active entry:",
-					Entry: alert.ActiveEntry,
-				})
+			logEv := log.Info()
+			if ev.Status.AFKSince == nil {
+				logEv = logEv.WithString("afkSince", "<null>")
+			} else {
+				logEv = logEv.WithTime("afkSince", *ev.Status.AFKSince)
 			}
+			if ev.Status.BackSince == nil {
+				logEv = logEv.WithString("backSince", "<null>")
+			} else {
+				logEv = logEv.WithTime("backSince", *ev.Status.BackSince)
+			}
+
+			logEv.Message("Received status.")
 			fmt.Println()
 		}
 	},
 }
 
 func init() {
-	streamCmd.AddCommand(alertsCmd)
+	streamCmd.AddCommand(streamStatusCmd)
 }

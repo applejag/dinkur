@@ -28,6 +28,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/dinkur/dinkur/internal/cfgpath"
 	"github.com/dinkur/dinkur/internal/console"
@@ -200,25 +201,30 @@ func connectToGRPCClient() (dinkur.Client, error) {
 	if err := c.Ping(rootCtx); err != nil {
 		return nil, fmt.Errorf("attempting ping: %w", err)
 	}
-	checkAlerts(c)
+	checkStatusForAFK(c)
 	return c, nil
 }
 
-func checkAlerts(c dinkur.Client) {
-	alerts, err := c.GetAlertList(rootCtx)
+func checkStatusForAFK(c dinkur.Client) {
+	status, err := c.GetStatus(rootCtx)
 	if err != nil {
-		console.PrintFatal("Error getting alerts list:", err)
+		console.PrintFatal("Error getting status:", err)
 	}
-	for _, alert := range alerts {
-		if afk, ok := alert.(dinkur.AlertAFK); ok && afk.BackSince != nil {
-			promptAFKResolution(c, alert, afk)
-			break
-		}
+	if status.AFKSince == nil || status.BackSince == nil {
+		return
 	}
+	activeEntry, err := c.GetActiveEntry(rootCtx)
+	if err != nil {
+		console.PrintFatal("Error getting active entry:", err)
+	}
+	if activeEntry == nil {
+		return
+	}
+	promptAFKResolution(c, *activeEntry, *status.AFKSince)
 }
 
-func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, afk dinkur.AlertAFK) {
-	res, err := console.PromptAFKResolution(afk)
+func promptAFKResolution(c dinkur.Client, activeEntry dinkur.Entry, afkSince time.Time) {
+	res, err := console.PromptAFKResolution(activeEntry, afkSince)
 	fmt.Println()
 	if err != nil {
 		console.PrintFatal("Prompt error:", err)
@@ -239,8 +245,8 @@ func promptAFKResolution(c dinkur.Client, alert dinkur.Alert, afk dinkur.AlertAF
 		printStartedEntry(startedEntry)
 		fmt.Println()
 	}
-	if _, err := c.DeleteAlert(rootCtx, alert.Common().ID); err != nil {
-		console.PrintFatal("Error removing alert:", err)
+	if err := c.SetStatus(rootCtx, dinkur.EditStatus{}); err != nil {
+		console.PrintFatal("Error removing AFK status:", err)
 	}
 	fmt.Println("Continuing with command...")
 	fmt.Println()

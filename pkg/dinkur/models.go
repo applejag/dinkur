@@ -21,8 +21,8 @@ package dinkur
 
 import "time"
 
-// CommonFields contains fields used by multiple other models.
-type CommonFields struct {
+// TimeFields contains time metadata fields used by multiple other models.
+type TimeFields struct {
 	// ID is a unique identifier for this entry. The same ID will never be used
 	// twice for a given database.
 	ID uint `json:"id" yaml:"id" xml:"Id"`
@@ -30,6 +30,14 @@ type CommonFields struct {
 	CreatedAt time.Time `json:"createdAt" yaml:"createdAt" xml:"CreatedAt"`
 	// UpdatedAt stores when the object was last updated/edited.
 	UpdatedAt time.Time `json:"updatedAt" yaml:"updatedAt" xml:"UpdatedAt"`
+}
+
+// CommonFields contains fields used by multiple other models.
+type CommonFields struct {
+	// ID is a unique identifier for this entry. The same ID will never be used
+	// twice for a given database.
+	ID uint `json:"id" yaml:"id" xml:"Id"`
+	TimeFields
 }
 
 // Entry is a time tracked entry.
@@ -83,37 +91,9 @@ func (ev EventType) String() string {
 	}
 }
 
-// Alert defines unexported interface used to restrict the alert union types.
-type Alert interface {
-	isAlertUnion()
-	Common() CommonFields
+// Status holds data about the user's status, such as if they're currently AFK.
+type Status struct {
+	TimeFields
+	AFKSince  *time.Time // set if currently AFK
+	BackSince *time.Time // set if returned from being AFK
 }
-
-// AlertPlainMessage is a type of alert for generic messages that needs to be
-// presented to the user with no need for user action.
-type AlertPlainMessage struct {
-	CommonFields
-	Alert
-	Message string
-}
-
-func (AlertPlainMessage) isAlertUnion() {}
-
-// Common returns the common model fields: ID, CreatedAt, and UpdatedAt.
-func (a AlertPlainMessage) Common() CommonFields { return a.CommonFields }
-
-// AlertAFK is a type of alert that's issued when the user has just become AFK
-// (away from keyboard) and when they have returned, both when also having an
-// active entry. I.e. no AFK alert is issued when not tracking any entry.
-type AlertAFK struct {
-	CommonFields
-	Alert
-	ActiveEntry Entry
-	AFKSince    time.Time
-	BackSince   *time.Time
-}
-
-func (AlertAFK) isAlertUnion() {}
-
-// Common returns the common model fields: ID, CreatedAt, and UpdatedAt.
-func (a AlertAFK) Common() CommonFields { return a.CommonFields }

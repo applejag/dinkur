@@ -27,18 +27,14 @@ import (
 	"math"
 	"net"
 	"sync"
-	"time"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 	"github.com/dinkur/dinkur/pkg/afkdetect"
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"github.com/dinkur/dinkur/pkg/dinkuralert"
-	"github.com/dinkur/dinkur/pkg/timeutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Errors that are specific to the Dinkur gRPC server daemon.
@@ -70,27 +66,6 @@ func convError(err error) error {
 	default:
 		return err
 	}
-}
-
-func uint64ToUint(i uint64) (uint, error) {
-	if i > math.MaxUint {
-		return 0, ErrUintTooLarge
-	}
-	return uint(i), nil
-}
-
-func convUint64(i uint64) (uint, error) {
-	if i > math.MaxUint {
-		return 0, ErrUintTooLarge
-	}
-	return uint(i), nil
-}
-
-func convString(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 // Options for the daemon server.
@@ -144,7 +119,7 @@ func NewDaemon(client dinkur.Client, opt Options) Daemon {
 type daemon struct {
 	Options
 	dinkurapiv1.UnimplementedEntriesServer
-	dinkurapiv1.UnimplementedAlerterServer
+	dinkurapiv1.UnimplementedStatusesServer
 
 	client     dinkur.Client
 	grpcServer *grpc.Server
@@ -153,11 +128,11 @@ type daemon struct {
 	afkDetector afkdetect.Detector
 	closeMutex  sync.Mutex
 
-	alertStore dinkuralert.Store
+	lastStatus dinkur.EditStatus
 }
 
-func (d *daemon) onEntryMutation() {
-	d.alertStore.DeleteAFKAlert()
+func (d *daemon) onEntryMutation(ctx context.Context) {
+	d.markAsNotAFK(ctx)
 }
 
 func (d *daemon) assertConnected() error {
@@ -190,7 +165,8 @@ func (d *daemon) Serve(ctx context.Context) error {
 		d.Close()
 	}(ctx, d)
 	dinkurapiv1.RegisterEntriesServer(grpcServer, d)
-	dinkurapiv1.RegisterAlerterServer(grpcServer, d)
+	dinkurapiv1.RegisterStatusesServer(grpcServer, d)
+	d.updateAFKStatusAsWeAreStarting(ctx)
 	go d.listenForAFK(ctx)
 	if err := d.afkDetector.StartDetecting(); err != nil {
 		return fmt.Errorf("start afk detector: %w", err)
@@ -216,7 +192,34 @@ func (d *daemon) Close() (finalErr error) {
 		log.Error().WithError(err).Message("Stopping AFK detector in Dinkur daemon.")
 		finalErr = err
 	}
+	d.updateAFKStatusAsWeAreClosing()
 	return
+}
+
+func (d *daemon) updateAFKStatusAsWeAreStarting(ctx context.Context) {
+	status, err := d.client.GetStatus(ctx)
+	if err != nil {
+		return
+	}
+	d.lastStatus = dinkur.EditStatus{
+		AFKSince:  status.AFKSince,
+		BackSince: status.BackSince,
+	}
+	entry, err := d.client.GetActiveEntry(ctx)
+	if err != nil || entry == nil {
+		d.markAsNotAFK(ctx)
+		return
+	}
+	d.markAsReturnedFromAFK(ctx)
+}
+
+func (d *daemon) updateAFKStatusAsWeAreClosing() {
+	// must use new context as base context from Serve is cancelled by now
+	entry, err := d.client.GetActiveEntry(context.Background())
+	if err != nil || entry == nil {
+		return
+	}
+	d.markAsAFK(context.Background())
 }
 
 func (d *daemon) listenForAFK(ctx context.Context) {
@@ -232,144 +235,18 @@ func (d *daemon) listenForAFK(ctx context.Context) {
 			entry, err := d.client.GetActiveEntry(ctx)
 			if err != nil {
 				log.Warn().WithError(err).
-					Message("Failed to get active entry when issuing AFK alert.")
+					Message("Failed to get active entry when marking status as AFK.")
 				continue
 			}
 			if entry == nil {
+				d.markAsNotAFK(ctx)
 				continue
 			}
-			d.alertStore.SetAFK(*entry)
+			d.markAsAFK(ctx)
 		case <-stoppedChan:
-			d.alertStore.SetBackFromAFK()
+			d.markAsReturnedFromAFK(ctx)
 		case <-done:
 			return
 		}
-	}
-}
-
-func convEntryPtr(entry *dinkur.Entry) *dinkurapiv1.Entry {
-	if entry == nil {
-		return nil
-	}
-	return &dinkurapiv1.Entry{
-		Id:      uint64(entry.ID),
-		Created: convTime(entry.CreatedAt),
-		Updated: convTime(entry.UpdatedAt),
-		Name:    entry.Name,
-		Start:   convTime(entry.Start),
-		End:     convTimePtr(entry.End),
-	}
-}
-
-func convEntrySlice(slice []dinkur.Entry) []*dinkurapiv1.Entry {
-	entries := make([]*dinkurapiv1.Entry, len(slice))
-	for i, t := range slice {
-		entries[i] = convEntryPtr(&t)
-	}
-	return entries
-}
-
-func convTime(t time.Time) *timestamppb.Timestamp {
-	return timestamppb.New(t)
-}
-
-func convTimePtr(t *time.Time) *timestamppb.Timestamp {
-	if t == nil {
-		return nil
-	}
-	return timestamppb.New(*t)
-}
-
-func convTimestampPtr(ts *timestamppb.Timestamp) *time.Time {
-	if ts == nil {
-		return nil
-	}
-	t := ts.AsTime()
-	return &t
-}
-
-func convTimestampOrNow(ts *timestamppb.Timestamp) time.Time {
-	if ts == nil {
-		return time.Now()
-	}
-	t := ts.AsTime()
-	return t
-}
-
-func convShorthand(s dinkurapiv1.GetEntryListRequest_Shorthand) timeutil.TimeSpanShorthand {
-	switch s {
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_PAST:
-		return timeutil.TimeSpanPast
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_FUTURE:
-		return timeutil.TimeSpanFuture
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_THIS_DAY:
-		return timeutil.TimeSpanThisDay
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_THIS_MON_TO_SUN:
-		return timeutil.TimeSpanThisWeek
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_PREV_DAY:
-		return timeutil.TimeSpanPrevDay
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_PREV_MON_TO_SUN:
-		return timeutil.TimeSpanPrevWeek
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_NEXT_DAY:
-		return timeutil.TimeSpanNextDay
-	case dinkurapiv1.GetEntryListRequest_SHORTHAND_NEXT_MON_TO_SUN:
-		return timeutil.TimeSpanNextWeek
-	default:
-		return timeutil.TimeSpanNone
-	}
-}
-
-func convAlert(alert dinkur.Alert) *dinkurapiv1.Alert {
-	common := alert.Common()
-	a := &dinkurapiv1.Alert{
-		Id:      uint64(common.ID),
-		Created: convTime(common.CreatedAt),
-		Updated: convTime(common.UpdatedAt),
-	}
-	switch alertType := alert.(type) {
-	case dinkur.AlertPlainMessage:
-		a.Type = &dinkurapiv1.Alert_PlainMessage{
-			PlainMessage: convAlertPlainMessage(alertType),
-		}
-	case dinkur.AlertAFK:
-		a.Type = &dinkurapiv1.Alert_Afk{
-			Afk: convAlertAFK(alertType),
-		}
-	}
-	return a
-}
-
-func convAlertPlainMessage(alert dinkur.AlertPlainMessage) *dinkurapiv1.AlertPlainMessage {
-	return &dinkurapiv1.AlertPlainMessage{
-		Message: alert.Message,
-	}
-}
-
-func convAlertAFK(alert dinkur.AlertAFK) *dinkurapiv1.AlertAfk {
-	return &dinkurapiv1.AlertAfk{
-		ActiveEntry: convEntryPtr(&alert.ActiveEntry),
-		AfkSince:    convTime(alert.AFKSince),
-		BackSince:   convTimePtr(alert.BackSince),
-	}
-}
-
-func convAlertSlice(slice []dinkur.Alert) []*dinkurapiv1.Alert {
-	alerts := make([]*dinkurapiv1.Alert, len(slice))
-	for i, t := range slice {
-		alerts[i] = convAlert(t)
-	}
-	return alerts
-}
-
-func convEvent(ev dinkur.EventType) dinkurapiv1.Event {
-	switch ev {
-	case dinkur.EventCreated:
-		return dinkurapiv1.Event_EVENT_CREATED
-	case dinkur.EventUpdated:
-		return dinkurapiv1.Event_EVENT_UPDATED
-	case dinkur.EventDeleted:
-		return dinkurapiv1.Event_EVENT_DELETED
-	default:
-		return dinkurapiv1.Event_EVENT_UNSPECIFIED
 	}
 }

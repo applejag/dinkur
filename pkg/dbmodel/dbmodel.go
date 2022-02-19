@@ -18,16 +18,15 @@
 // You should have received a copy of the GNU General Public License along
 // with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package dinkurdb
+package dbmodel
 
 import (
 	"time"
-
-	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
+// Fields names for CommonFields.
 var (
-	commonFieldsColumnID = "id"
+	CommonFieldsColumnID = "id"
 )
 
 // CommonFields contains fields used by multiple other models.
@@ -46,20 +45,16 @@ type CommonFields struct {
 	UpdatedAt time.Time
 }
 
-func convCommonFields(f CommonFields) dinkur.CommonFields {
-	return dinkur.CommonFields{
-		ID:        f.ID,
-		CreatedAt: f.CreatedAt,
-		UpdatedAt: f.UpdatedAt,
-	}
-}
-
+// Field names for Entry.
 const (
-	entryFieldEnd = "End"
+	EntryFieldEnd = "End"
+)
 
-	entryColumnID    = "id"
-	entryColumnStart = "start"
-	entryColumnEnd   = "end"
+// Column names for Entry.
+const (
+	EntryColumnID    = "id"
+	EntryColumnStart = "start"
+	EntryColumnEnd   = "end"
 )
 
 // Entry is a time tracked entry stored in the database.
@@ -85,9 +80,10 @@ func (t Entry) Elapsed() time.Duration {
 	return end.Sub(t.Start)
 }
 
+// Column names for EntryFTS5.
 const (
-	entryFTS5ColumnRowID = "entries_idx.rowid"
-	entryFTS5ColumnName  = "entries_idx.name"
+	EntryFTS5ColumnRowID = "entries_idx.rowid"
+	EntryFTS5ColumnName  = "entries_idx.name"
 )
 
 // EntryFTS5 is used for free-text searching entries.
@@ -101,45 +97,12 @@ func (EntryFTS5) TableName() string {
 	return "entries_idx"
 }
 
-func timePtrUTC(t *time.Time) *time.Time {
-	if t == nil {
-		return nil
-	}
-	utcTime := (*t).UTC()
-	return &utcTime
-}
-
-func timePtrLocal(t *time.Time) *time.Time {
-	if t == nil {
-		return nil
-	}
-	utcTime := (*t).Local()
-	return &utcTime
-}
-
-func convEntry(t Entry) dinkur.Entry {
-	return dinkur.Entry{
-		CommonFields: convCommonFields(t.CommonFields),
-		Name:         t.Name,
-		Start:        t.Start.Local(),
-		End:          timePtrLocal(t.End),
-	}
-}
-
-func convEntryPtr(t *Entry) *dinkur.Entry {
-	if t == nil {
-		return nil
-	}
-	dinkurEntry := convEntry(*t)
-	return &dinkurEntry
-}
-
-func convEntrySlice(slice []Entry) []dinkur.Entry {
-	result := make([]dinkur.Entry, len(slice))
-	for i, t := range slice {
-		result[i] = convEntry(t)
-	}
-	return result
+// Status is used to track the user's current status, such as if they're
+// currently AFK.
+type Status struct {
+	CommonFields
+	AFKSince  *time.Time
+	BackSince *time.Time
 }
 
 // Migration holds the latest migration revision identifier. At most one row of
@@ -155,7 +118,7 @@ type MigrationVersion int
 // LatestMigrationVersion is an integer revision identifier for what migration
 // was last applied to the database. This is stored in the database to quickly
 // figure out if new migrations needs to be applied.
-const LatestMigrationVersion MigrationVersion = 6
+const LatestMigrationVersion MigrationVersion = 8
 
 const (
 	// MigrationUnknown means that Dinkur was unable to evaluate the database's
