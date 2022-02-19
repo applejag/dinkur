@@ -34,6 +34,10 @@ service Alerter {
   rpc StreamAlert (StreamAlertRequest) returns (stream StreamAlertResponse);
   // CreateAlert creates a new alert.
   rpc CreateAlert (CreateAlertRequest) returns (CreateAlertResponse);
+  // CreateOrUpdateAlert creates a new alert or updates the existing, based on
+  // the alert type.
+  rpc CreateOrUpdateAlert (CreateOrUpdateAlertRequest)
+    returns (CreateOrUpdateAlertResponse);
   // GetAlertList gets a specific alert by its ID. Status 5 "NOT_FOUND" is
   // reported if no alert was found by that ID.
   rpc GetAlertList (GetAlertListRequest) returns (GetAlertListResponse);
@@ -42,6 +46,10 @@ service Alerter {
   // DeleteAlert removes a specific alert by its ID. Status 5 "NOT_FOUND" is
   // reported if no alert was found by that ID.
   rpc DeleteAlert (DeleteAlertRequest) returns (DeleteAlertResponse);
+  // DeleteAlertType removes an alert by its type. It is undefined which one it
+  // will remove if there are multiple alerts of the same type.
+  rpc DeleteAlertType (DeleteAlertTypeRequest)
+    returns (DeleteAlertTypeResponse);
 }
 
 // StreamAlertRequest is an empty message and unused. It is here as a
@@ -68,6 +76,21 @@ message CreateAlertRequest {
 message CreateAlertResponse {
   // Alert is the alert that was created.
   Alert alert = 1;
+}
+
+// CreateOrUpdateAlertRequest
+message CreateOrUpdateAlertRequest {
+  // Alert is the new alert type to create.
+  AlertType type = 1;
+}
+
+// CreateOrUpdateAlertResponse
+message CreateOrUpdateAlertResponse {
+  // Alert is the alert that was created.
+  Alert alert = 1;
+  // Event is what actually happened to the alert. The EVENT_DELETED will never
+  // be a result from the CreateOrUpdateAlert RPC.
+  Event event = 2;
 }
 
 // GetAlertListRequest is an empty message and unused. It is here as a
@@ -104,6 +127,18 @@ message DeleteAlertRequest {
 
 // DeleteAlertResponse holds the alert that was just deleted.
 message DeleteAlertResponse {
+  // DeletedAlert is the alert that was just deleted.
+  Alert deleted_alert = 1;
+}
+
+// DeleteAlertTypeRequest holds the type of the alert to delete.
+message DeleteAlertTypeRequest {
+  // ID of the alert to delete.
+  uint64 id = 1;
+}
+
+// DeleteAlertTypeResponse holds the alert that was just deleted.
+message DeleteAlertTypeResponse {
   // DeletedAlert is the alert that was just deleted.
   Alert deleted_alert = 1;
 }
@@ -165,4 +200,15 @@ message AlertAfk {
   // BackSince is a timestamp of when the user returned from being AFK.
   // This value is null/nil when the user has not yet returned.
   google.protobuf.Timestamp back_since = 3;
+}
+
+// ALERT is an enum of the different alert types.
+enum ALERT {
+  // ALERT_UNSPECIFIED is the default value and is considered undefined
+  // behaviour on usage.
+  ALERT_UNSPECIFIED = 0;
+  // ALERT_PLAIN_MESSAGE represents the AlertPlainMessage alert type.
+  ALERT_PLAIN_MESSAGE = 1;
+  // ALERT_AFK represents the AlertAfk alert type.
+  ALERT_AFK = 2;
 }

@@ -22,6 +22,9 @@ type AlerterClient interface {
 	StreamAlert(ctx context.Context, in *StreamAlertRequest, opts ...grpc.CallOption) (Alerter_StreamAlertClient, error)
 	// CreateAlert creates a new alert.
 	CreateAlert(ctx context.Context, in *CreateAlertRequest, opts ...grpc.CallOption) (*CreateAlertResponse, error)
+	// CreateOrUpdateAlert creates a new alert or updates the existing, based on
+	// the alert type.
+	CreateOrUpdateAlert(ctx context.Context, in *CreateOrUpdateAlertRequest, opts ...grpc.CallOption) (*CreateOrUpdateAlertResponse, error)
 	// GetAlertList gets a specific alert by its ID. Status 5 "NOT_FOUND" is
 	// reported if no alert was found by that ID.
 	GetAlertList(ctx context.Context, in *GetAlertListRequest, opts ...grpc.CallOption) (*GetAlertListResponse, error)
@@ -30,6 +33,9 @@ type AlerterClient interface {
 	// DeleteAlert removes a specific alert by its ID. Status 5 "NOT_FOUND" is
 	// reported if no alert was found by that ID.
 	DeleteAlert(ctx context.Context, in *DeleteAlertRequest, opts ...grpc.CallOption) (*DeleteAlertResponse, error)
+	// DeleteAlertType removes an alert by its type. It is undefined which one it
+	// will remove if there are multiple alerts of the same type.
+	DeleteAlertType(ctx context.Context, in *DeleteAlertTypeRequest, opts ...grpc.CallOption) (*DeleteAlertTypeResponse, error)
 }
 
 type alerterClient struct {
@@ -81,6 +87,15 @@ func (c *alerterClient) CreateAlert(ctx context.Context, in *CreateAlertRequest,
 	return out, nil
 }
 
+func (c *alerterClient) CreateOrUpdateAlert(ctx context.Context, in *CreateOrUpdateAlertRequest, opts ...grpc.CallOption) (*CreateOrUpdateAlertResponse, error) {
+	out := new(CreateOrUpdateAlertResponse)
+	err := c.cc.Invoke(ctx, "/dinkurapi.v1.Alerter/CreateOrUpdateAlert", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *alerterClient) GetAlertList(ctx context.Context, in *GetAlertListRequest, opts ...grpc.CallOption) (*GetAlertListResponse, error) {
 	out := new(GetAlertListResponse)
 	err := c.cc.Invoke(ctx, "/dinkurapi.v1.Alerter/GetAlertList", in, out, opts...)
@@ -108,6 +123,15 @@ func (c *alerterClient) DeleteAlert(ctx context.Context, in *DeleteAlertRequest,
 	return out, nil
 }
 
+func (c *alerterClient) DeleteAlertType(ctx context.Context, in *DeleteAlertTypeRequest, opts ...grpc.CallOption) (*DeleteAlertTypeResponse, error) {
+	out := new(DeleteAlertTypeResponse)
+	err := c.cc.Invoke(ctx, "/dinkurapi.v1.Alerter/DeleteAlertType", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AlerterServer is the server API for Alerter service.
 // All implementations must embed UnimplementedAlerterServer
 // for forward compatibility
@@ -116,6 +140,9 @@ type AlerterServer interface {
 	StreamAlert(*StreamAlertRequest, Alerter_StreamAlertServer) error
 	// CreateAlert creates a new alert.
 	CreateAlert(context.Context, *CreateAlertRequest) (*CreateAlertResponse, error)
+	// CreateOrUpdateAlert creates a new alert or updates the existing, based on
+	// the alert type.
+	CreateOrUpdateAlert(context.Context, *CreateOrUpdateAlertRequest) (*CreateOrUpdateAlertResponse, error)
 	// GetAlertList gets a specific alert by its ID. Status 5 "NOT_FOUND" is
 	// reported if no alert was found by that ID.
 	GetAlertList(context.Context, *GetAlertListRequest) (*GetAlertListResponse, error)
@@ -124,6 +151,9 @@ type AlerterServer interface {
 	// DeleteAlert removes a specific alert by its ID. Status 5 "NOT_FOUND" is
 	// reported if no alert was found by that ID.
 	DeleteAlert(context.Context, *DeleteAlertRequest) (*DeleteAlertResponse, error)
+	// DeleteAlertType removes an alert by its type. It is undefined which one it
+	// will remove if there are multiple alerts of the same type.
+	DeleteAlertType(context.Context, *DeleteAlertTypeRequest) (*DeleteAlertTypeResponse, error)
 	mustEmbedUnimplementedAlerterServer()
 }
 
@@ -137,6 +167,9 @@ func (UnimplementedAlerterServer) StreamAlert(*StreamAlertRequest, Alerter_Strea
 func (UnimplementedAlerterServer) CreateAlert(context.Context, *CreateAlertRequest) (*CreateAlertResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateAlert not implemented")
 }
+func (UnimplementedAlerterServer) CreateOrUpdateAlert(context.Context, *CreateOrUpdateAlertRequest) (*CreateOrUpdateAlertResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateOrUpdateAlert not implemented")
+}
 func (UnimplementedAlerterServer) GetAlertList(context.Context, *GetAlertListRequest) (*GetAlertListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAlertList not implemented")
 }
@@ -145,6 +178,9 @@ func (UnimplementedAlerterServer) UpdateAlert(context.Context, *UpdateAlertReque
 }
 func (UnimplementedAlerterServer) DeleteAlert(context.Context, *DeleteAlertRequest) (*DeleteAlertResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteAlert not implemented")
+}
+func (UnimplementedAlerterServer) DeleteAlertType(context.Context, *DeleteAlertTypeRequest) (*DeleteAlertTypeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteAlertType not implemented")
 }
 func (UnimplementedAlerterServer) mustEmbedUnimplementedAlerterServer() {}
 
@@ -194,6 +230,24 @@ func _Alerter_CreateAlert_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AlerterServer).CreateAlert(ctx, req.(*CreateAlertRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Alerter_CreateOrUpdateAlert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateOrUpdateAlertRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AlerterServer).CreateOrUpdateAlert(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dinkurapi.v1.Alerter/CreateOrUpdateAlert",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AlerterServer).CreateOrUpdateAlert(ctx, req.(*CreateOrUpdateAlertRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -252,6 +306,24 @@ func _Alerter_DeleteAlert_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Alerter_DeleteAlertType_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteAlertTypeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AlerterServer).DeleteAlertType(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dinkurapi.v1.Alerter/DeleteAlertType",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AlerterServer).DeleteAlertType(ctx, req.(*DeleteAlertTypeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Alerter_ServiceDesc is the grpc.ServiceDesc for Alerter service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -264,6 +336,10 @@ var Alerter_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Alerter_CreateAlert_Handler,
 		},
 		{
+			MethodName: "CreateOrUpdateAlert",
+			Handler:    _Alerter_CreateOrUpdateAlert_Handler,
+		},
+		{
 			MethodName: "GetAlertList",
 			Handler:    _Alerter_GetAlertList_Handler,
 		},
@@ -274,6 +350,10 @@ var Alerter_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteAlert",
 			Handler:    _Alerter_DeleteAlert_Handler,
+		},
+		{
+			MethodName: "DeleteAlertType",
+			Handler:    _Alerter_DeleteAlertType_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
