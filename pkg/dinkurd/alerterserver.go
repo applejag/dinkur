@@ -24,6 +24,7 @@ import (
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 	"github.com/dinkur/dinkur/pkg/conv"
+	"github.com/dinkur/dinkur/pkg/fromgrpc"
 	"github.com/dinkur/dinkur/pkg/togrpc"
 )
 
@@ -85,6 +86,22 @@ func (d *daemon) DeleteAlert(_ context.Context, req *dinkurapiv1.DeleteAlertRequ
 		return nil, convError(err)
 	}
 	return &dinkurapiv1.DeleteAlertResponse{
+		DeletedAlert: togrpc.Alert(deleted),
+	}, nil
+}
+
+func (d *daemon) DeleteAlertType(ctx context.Context, req *dinkurapiv1.DeleteAlertTypeRequest) (*dinkurapiv1.DeleteAlertTypeResponse, error) {
+	if err := d.assertConnected(); err != nil {
+		return nil, convError(err)
+	}
+	if req == nil {
+		return nil, convError(ErrRequestIsNil)
+	}
+	deleted, err := d.client.DeleteAlertByType(ctx, fromgrpc.AlertType(req.Type))
+	if err != nil {
+		return nil, convError(err)
+	}
+	return &dinkurapiv1.DeleteAlertTypeResponse{
 		DeletedAlert: togrpc.Alert(deleted),
 	}, nil
 }
