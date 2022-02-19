@@ -22,7 +22,7 @@ package togrpc
 import (
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"gopkg.in/typ.v1"
+	"gopkg.in/typ.v2"
 )
 
 // Alert converts a Go alert to a gRPC alert.

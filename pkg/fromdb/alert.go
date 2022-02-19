@@ -25,7 +25,7 @@ import (
 	"github.com/dinkur/dinkur/pkg/conv"
 	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"gopkg.in/typ.v1"
+	"gopkg.in/typ.v2"
 )
 
 // Alert converts a dbmodel alert to a dinkur alert.

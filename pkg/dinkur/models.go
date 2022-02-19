@@ -83,25 +83,43 @@ func (ev EventType) String() string {
 	}
 }
 
+type AlertInterface interface {
+	isAlertUnion()
+	Type() AlertType
+}
+
 // Alert defines unexported interface used to restrict the alert union types.
 type Alert interface {
-	isAlertUnion()
+	AlertInterface
 	Common() CommonFields
 }
 
 // NewAlert defines a new alert to be created. The ID and other common fields
 // are ignored as they will be set on creation.
 type NewAlert interface {
-	isAlertUnion()
+	AlertInterface
 }
 
 // EditAlert defines an alert to be updated. The ID is used to identify the
 // alert, but the other common fields are ignored as they will be automatically
 // updated.
 type EditAlert interface {
+	AlertInterface
 	ID() uint
-	isAlertUnion()
 }
+
+// AlertType is an enum of the different alert types.
+type AlertType uint8
+
+const (
+	// AlertTypeUnspecified is the default value for the alert type enum.
+	// It does not represent any alert type.
+	AlertTypeUnspecified AlertType = iota
+	// AlertTypePlainMessage represents the AlertPlainMessage type.
+	AlertTypePlainMessage
+	// AlertTypeAFK represents the AlertAFK type.
+	AlertTypeAFK
+)
 
 // AlertPlainMessage is a type of alert for generic messages that needs to be
 // presented to the user with no need for user action.
@@ -111,6 +129,9 @@ type AlertPlainMessage struct {
 }
 
 func (AlertPlainMessage) isAlertUnion() {}
+
+// Type returns the enum value of this alert type.
+func (AlertPlainMessage) Type() AlertType { return AlertTypePlainMessage }
 
 // Common returns the common model fields: ID, CreatedAt, and UpdatedAt.
 func (a AlertPlainMessage) Common() CommonFields { return a.CommonFields }
@@ -126,6 +147,9 @@ type AlertAFK struct {
 }
 
 func (AlertAFK) isAlertUnion() {}
+
+// Type returns the enum value of this alert type.
+func (AlertAFK) Type() AlertType { return AlertTypeAFK }
 
 // Common returns the common model fields: ID, CreatedAt, and UpdatedAt.
 func (a AlertAFK) Common() CommonFields { return a.CommonFields }

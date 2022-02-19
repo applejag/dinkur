@@ -23,7 +23,7 @@ import (
 	"github.com/dinkur/dinkur/pkg/conv"
 	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"gopkg.in/typ.v1"
+	"gopkg.in/typ.v2"
 )
 
 // Entry converts a dbmodel entry to a dinkur entry.
