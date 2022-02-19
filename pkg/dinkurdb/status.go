@@ -99,12 +99,16 @@ func (c *client) setStatusNoTran(edit dinkur.EditStatus) error {
 	if err != nil {
 		return err
 	}
-	if !updateTimePtrUTC(&dbStatus.AFKSince, edit.AFKSince) &&
-		!updateTimePtrUTC(&dbStatus.BackSince, edit.BackSince) {
-		// No update needed
+	var changed bool
+	if updateTimePtrUTC(&dbStatus.AFKSince, edit.AFKSince) {
+		changed = true
+	}
+	if updateTimePtrUTC(&dbStatus.BackSince, edit.BackSince) {
+		changed = true
+	}
+	if !changed {
 		return nil
 	}
-	log.Debug().WithStringf("status", "%#v", dbStatus).Message("Set status.")
 	if err := c.db.Save(&dbStatus).Error; err != nil {
 		return err
 	}
