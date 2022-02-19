@@ -196,19 +196,22 @@ func (c *client) listDBAlertsNoTran() ([]dbmodel.Alert, error) {
 	if err := c.dbAlertPreloaded().Find(&dbAlerts).Error; err != nil {
 		return nil, err
 	}
-	dbAFKAlertIDs := typ.Map(dbAlerts, func(a dbmodel.Alert) uint { return a.ID })
-	var dbAFKAlerts []dbmodel.AlertAFK
-	if err := c.db.Preload(dbmodel.AlertAFKFieldActiveEntry).
-		Find(&dbAFKAlerts, dbAFKAlertIDs).
-		Error; err != nil {
+	// GORM's nested preloads and joins doesn't work, so we have to do it
+	// manually instead.
+	dbEntryIDs := typ.Map(dbAlerts, func(a dbmodel.Alert) uint { return a.AFK.ActiveEntryID })
+	var dbEntries []dbmodel.Entry
+	if err := c.db.Find(&dbEntries, dbEntryIDs).Error; err != nil {
 		return nil, err
 	}
 	for i, alert := range dbAlerts {
-		for _, afkAlert := range dbAFKAlerts {
-			if alert.AFK == nil && alert.AFK.ID != afkAlert.ID {
+		if alert.AFK == nil {
+			continue
+		}
+		for _, entry := range dbEntries {
+			if alert.AFK.ActiveEntryID != entry.ID {
 				continue
 			}
-			dbAlerts[i].AFK = &afkAlert
+			dbAlerts[i].AFK.ActiveEntry = entry
 		}
 	}
 	return dbAlerts, nil
@@ -415,11 +418,17 @@ func (c *client) getDBAlertAtom(id uint) (dbmodel.Alert, error) {
 	if err != nil {
 		return dbmodel.Alert{}, err
 	}
+	if dbAlert.AFK != nil {
+		err := c.db.First(&dbAlert.AFK.ActiveEntry, dbAlert.AFK.ActiveEntryID).Error
+		if err != nil {
+			return dbmodel.Alert{}, err
+		}
+	}
 	return dbAlert, nil
 }
 
 func (c *client) dbAlertPreloaded() *gorm.DB {
 	return c.db.Model(&dbmodel.Alert{}).
-		Preload(dbmodel.AlertFieldPlainMessage).
-		Preload(dbmodel.AlertFieldAFK)
+		Joins(dbmodel.AlertFieldPlainMessage).
+		Joins(dbmodel.AlertFieldAFK)
 }
