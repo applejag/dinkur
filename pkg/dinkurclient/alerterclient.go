@@ -121,19 +121,26 @@ func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 	return alerts, nil
 }
 
-func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur.Alert, error) {
+func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur.UpdatedAlert, error) {
 	res, err := invoke(ctx, c, c.alerter.UpdateAlert, &dinkurapiv1.UpdateAlertRequest{
 		Id:   uint64(edit.ID()),
 		Type: togrpc.AlertData(edit),
 	})
 	if err != nil {
-		return nil, convError(err)
+		return dinkur.UpdatedAlert{}, convError(err)
 	}
-	alert, err := fromgrpc.AlertPtrNoNil(res.Alert)
+	alertBefore, err := fromgrpc.AlertPtrNoNil(res.Before)
 	if err != nil {
-		return nil, convError(err)
+		return dinkur.UpdatedAlert{}, convError(err)
 	}
-	return alert, nil
+	alertAfter, err := fromgrpc.AlertPtrNoNil(res.After)
+	if err != nil {
+		return dinkur.UpdatedAlert{}, convError(err)
+	}
+	return dinkur.UpdatedAlert{
+		Before: alertBefore,
+		After:  alertAfter,
+	}, nil
 }
 
 func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error) {

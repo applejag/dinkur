@@ -120,8 +120,8 @@ func (*NilClient) GetAlertList(context.Context) ([]Alert, error) {
 
 // UpdateAlert is a dummy implementation of the dinkur.Client that only
 // returns the "client is nil" error.
-func (*NilClient) UpdateAlert(context.Context, EditAlert) (Alert, error) {
-	return nil, ErrClientIsNil
+func (*NilClient) UpdateAlert(context.Context, EditAlert) (UpdatedAlert, error) {
+	return UpdatedAlert{}, ErrClientIsNil
 }
 
 // DeleteAlert is a dummy implementation of the dinkur.Client that only

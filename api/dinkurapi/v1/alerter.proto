@@ -115,8 +115,10 @@ message UpdateAlertRequest {
 
 // UpdateAlertResponse holds the new values for the updated alert.
 message UpdateAlertResponse {
-  // Alert is the alert that was updated.
-  Alert alert = 1;
+  // Before is the alert before the update.
+  Alert before = 1;
+  // After is the alert state after the update.
+  Alert after = 2;
 }
 
 // DeleteAlertRequest holds the ID of the alert to delete.

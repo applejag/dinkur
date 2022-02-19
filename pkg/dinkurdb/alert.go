@@ -135,8 +135,8 @@ func (c *client) listDBAlertsAtom() ([]dbmodel.Alert, error) {
 	return dbAlerts, nil
 }
 
-func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur.Alert, error) {
-	return nil, errors.New("not implemented")
+func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur.UpdatedAlert, error) {
+	return dinkur.UpdatedAlert{}, errors.New("not implemented")
 }
 
 func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error) {

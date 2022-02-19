@@ -75,7 +75,7 @@ type Alerter interface {
 	CreateAlert(ctx context.Context, newAlert NewAlert) (Alert, error)
 	CreateOrUpdateAlertByType(ctx context.Context, newAlert NewAlert) (NewOrUpdatedAlert, error)
 	GetAlertList(ctx context.Context) ([]Alert, error)
-	UpdateAlert(ctx context.Context, edit EditAlert) (Alert, error)
+	UpdateAlert(ctx context.Context, edit EditAlert) (UpdatedAlert, error)
 	DeleteAlert(ctx context.Context, id uint) (Alert, error)
 	DeleteAlertByType(ctx context.Context, alertType AlertType) (Alert, error)
 }
@@ -132,13 +132,6 @@ type UpdatedEntry struct {
 	After  Entry
 }
 
-// NewOrUpdatedAlert is the response from a create-or-update call. The Before
-// field can be nil if the operation resulted in a created alert.
-type NewOrUpdatedAlert struct {
-	Before Alert // will be nil if alert was created
-	After  Alert
-}
-
 // NewEntry holds parameters used when creating a new entry.
 type NewEntry struct {
 	Name               string
@@ -161,4 +154,18 @@ type StartedEntry struct {
 type StreamedEntry struct {
 	Entry Entry
 	Event EventType
+}
+
+// NewOrUpdatedAlert is the response from a create-or-update call. The Before
+// field can be nil if the operation resulted in a created alert.
+type NewOrUpdatedAlert struct {
+	Before Alert // will be nil if alert was created
+	After  Alert
+}
+
+// UpdatedAlert is the response from an edited alert, with values for before the
+// edits were applied and after they were applied.
+type UpdatedAlert struct {
+	Before Alert
+	After  Alert
 }
