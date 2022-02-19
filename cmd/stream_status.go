@@ -53,9 +53,7 @@ var streamStatusCmd = &cobra.Command{
 				fmt.Println("Channel was closed.")
 				os.Exit(0)
 			}
-			logEv := log.Info().
-				WithTime("createdAt", ev.Status.CreatedAt).
-				WithTime("updatedAt", ev.Status.UpdatedAt)
+			logEv := log.Info()
 			if ev.Status.AFKSince == nil {
 				logEv = logEv.WithString("afkSince", "<null>")
 			} else {
