@@ -108,6 +108,9 @@ func (d *daemon) markAsReturnedFromAFK(ctx context.Context) {
 		AFKSince:  lastStatus.AFKSince,
 		BackSince: typ.Ref(time.Now()),
 	}
+	if newStatus.AFKSince == nil {
+		newStatus.AFKSince = typ.Ref(time.Now())
+	}
 	d.client.SetStatus(ctx, newStatus)
 	d.lastStatus = newStatus
 }
@@ -118,8 +121,11 @@ func (d *daemon) markAsAFK(ctx context.Context) {
 		return
 	}
 	newStatus := dinkur.EditStatus{
-		AFKSince:  typ.Ref(time.Now()),
+		AFKSince:  lastStatus.AFKSince,
 		BackSince: nil,
+	}
+	if newStatus.AFKSince == nil {
+		newStatus.AFKSince = typ.Ref(time.Now())
 	}
 	d.client.SetStatus(ctx, newStatus)
 	d.lastStatus = newStatus
