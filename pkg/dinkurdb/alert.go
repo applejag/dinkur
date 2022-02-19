@@ -85,7 +85,7 @@ func (c *client) CreateAlert(ctx context.Context, newAlert dinkur.NewAlert) (din
 
 func (c *client) createDBAlertAtom(newAlert dinkur.NewAlert) (dbmodel.Alert, error) {
 	var dbAlert dbmodel.Alert
-	switch alert := newAlert.(type) {
+	switch alert := newAlert.Alert.(type) {
 	case dinkur.AlertAFK:
 		dbAlert.AFK = &dbmodel.AlertAFK{
 			AFKSince:      alert.AFKSince.UTC(),
@@ -96,8 +96,10 @@ func (c *client) createDBAlertAtom(newAlert dinkur.NewAlert) (dbmodel.Alert, err
 		dbAlert.PlainMessage = &dbmodel.AlertPlainMessage{
 			Message: alert.Message,
 		}
+	case nil:
+		return dbmodel.Alert{}, errors.New("alert type was nil")
 	default:
-		return dbmodel.Alert{}, fmt.Errorf("unsupported alert type: %v", newAlert.Type())
+		return dbmodel.Alert{}, fmt.Errorf("unsupported alert type: %v", newAlert.Alert.Type())
 	}
 	if err := c.db.Create(&dbAlert).Error; err != nil {
 		return dbmodel.Alert{}, err
@@ -125,9 +127,6 @@ func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 }
 
 func (c *client) listDBAlertsAtom() ([]dbmodel.Alert, error) {
-	if err := c.assertConnected(); err != nil {
-		return nil, err
-	}
 	var dbAlerts []dbmodel.Alert
 	if err := c.dbAlertPreloaded().Find(&dbAlerts).Error; err != nil {
 		return nil, err
@@ -136,7 +135,89 @@ func (c *client) listDBAlertsAtom() ([]dbmodel.Alert, error) {
 }
 
 func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur.UpdatedAlert, error) {
+	if err := c.assertConnected(); err != nil {
+		return dinkur.UpdatedAlert{}, err
+	}
 	return dinkur.UpdatedAlert{}, errors.New("not implemented")
+}
+
+type updatedDBAlert struct {
+	before dbmodel.Alert
+	after  dbmodel.Alert
+}
+
+func (c *client) editDBAlert(edit dinkur.EditAlert) (updatedDBAlert, error) {
+	var update updatedDBAlert
+	err := c.transaction(func(tx *client) (tranErr error) {
+		update, tranErr = tx.editDBAlertNoTran(edit)
+		return
+	})
+	return update, err
+}
+
+func (c *client) editDBAlertNoTran(edit dinkur.EditAlert) (updatedDBAlert, error) {
+	dbAlert, err := c.getDBAlertAtom(edit.ID)
+	if err != nil {
+		return updatedDBAlert{}, fmt.Errorf("get alert to edit: %w", err)
+	}
+	var (
+		dbAlertToSave any
+		changed       bool
+	)
+	switch alert := edit.Alert.(type) {
+	case dinkur.AlertPlainMessage:
+		if dbAlert.PlainMessage == nil {
+			return updatedDBAlert{}, errors.New("cannot change alert type of existing alert")
+		}
+		dbAlertToSave, changed = c.editDBAlertPlainMessageNoTran(*dbAlert.PlainMessage, alert)
+	case dinkur.AlertAFK:
+		if dbAlert.AFK == nil {
+			return updatedDBAlert{}, errors.New("cannot change alert type of existing alert")
+		}
+		dbAlertToSave, changed = c.editDBAlertAFKNoTran(*dbAlert.AFK, alert)
+	case nil:
+		return updatedDBAlert{}, errors.New("cannot change alert type to nil")
+	default:
+		return updatedDBAlert{}, fmt.Errorf("unknown alert type: %T", edit.Alert)
+	}
+	if !changed {
+		return updatedDBAlert{
+			before: dbAlert,
+			after:  dbAlert,
+		}, nil
+	}
+	if err := c.db.Save(dbAlertToSave).Error; err != nil {
+		return updatedDBAlert{}, fmt.Errorf("saving changes to alert: %w", err)
+	}
+	dbAlertAfter, err := c.getDBAlertAtom(edit.ID)
+	if err != nil {
+		return updatedDBAlert{}, fmt.Errorf("get alert after edit: %w", err)
+	}
+	return updatedDBAlert{
+		before: dbAlert,
+		after:  dbAlertAfter,
+	}, nil
+}
+
+func (c *client) editDBAlertPlainMessageNoTran(before dbmodel.AlertPlainMessage, edit dinkur.AlertPlainMessage) (dbmodel.AlertPlainMessage, bool) {
+	if before.Message == edit.Message {
+		return before, false
+	}
+	before.Message = edit.Message
+	return before, true
+}
+
+func (c *client) editDBAlertAFKNoTran(before dbmodel.AlertAFK, edit dinkur.AlertAFK) (dbmodel.AlertAFK, bool) {
+	if before.AFKSince.UTC() == edit.AFKSince.UTC() &&
+		before.ActiveEntryID == edit.ActiveEntry.ID &&
+		(before.BackSince == nil) == (edit.BackSince == nil) &&
+		(before.BackSince != nil || before.BackSince.UTC() == edit.BackSince.UTC()) {
+		return before, false
+	}
+	before.AFKSince = edit.AFKSince
+	before.ActiveEntryID = edit.ActiveEntry.ID
+	before.BackSince = conv.TimePtrUTC(edit.BackSince)
+	return before, true
 }
 
 func (c *client) DeleteAlert(ctx context.Context, id uint) (dinkur.Alert, error) {

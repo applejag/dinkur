@@ -96,16 +96,16 @@ type Alert interface {
 
 // NewAlert defines a new alert to be created. The ID and other common fields
 // are ignored as they will be set on creation.
-type NewAlert interface {
-	AlertInterface
+type NewAlert struct {
+	Alert AlertInterface
 }
 
 // EditAlert defines an alert to be updated. The ID is used to identify the
 // alert, but the other common fields are ignored as they will be automatically
 // updated.
-type EditAlert interface {
-	AlertInterface
-	ID() uint
+type EditAlert struct {
+	ID    uint
+	Alert AlertInterface
 }
 
 // AlertType is an enum of the different alert types.

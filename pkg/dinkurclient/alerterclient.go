@@ -76,7 +76,7 @@ func (c *client) StreamAlert(ctx context.Context) (<-chan dinkur.StreamedAlert, 
 
 func (c *client) CreateAlert(ctx context.Context, newAlert dinkur.NewAlert) (dinkur.Alert, error) {
 	res, err := invoke(ctx, c, c.alerter.CreateAlert, &dinkurapiv1.CreateAlertRequest{
-		Type: togrpc.AlertData(newAlert),
+		Type: togrpc.AlertData(newAlert.Alert),
 	})
 	if err != nil {
 		return nil, convError(err)
@@ -90,7 +90,7 @@ func (c *client) CreateAlert(ctx context.Context, newAlert dinkur.NewAlert) (din
 
 func (c *client) CreateOrUpdateAlertByType(ctx context.Context, newAlert dinkur.NewAlert) (dinkur.NewOrUpdatedAlert, error) {
 	res, err := invoke(ctx, c, c.alerter.CreateOrUpdateAlert, &dinkurapiv1.CreateOrUpdateAlertRequest{
-		Type: togrpc.AlertData(newAlert),
+		Type: togrpc.AlertData(newAlert.Alert),
 	})
 	if err != nil {
 		return dinkur.NewOrUpdatedAlert{}, convError(err)
@@ -123,8 +123,8 @@ func (c *client) GetAlertList(ctx context.Context) ([]dinkur.Alert, error) {
 
 func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur.UpdatedAlert, error) {
 	res, err := invoke(ctx, c, c.alerter.UpdateAlert, &dinkurapiv1.UpdateAlertRequest{
-		Id:   uint64(edit.ID()),
-		Type: togrpc.AlertData(edit),
+		Id:   uint64(edit.ID),
+		Type: togrpc.AlertData(edit.Alert),
 	})
 	if err != nil {
 		return dinkur.UpdatedAlert{}, convError(err)
