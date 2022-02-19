@@ -141,7 +141,7 @@ func (d *daemon) CreateEntry(ctx context.Context, req *dinkurapiv1.CreateEntryRe
 	if err != nil {
 		return nil, convError(err)
 	}
-	d.onEntryMutation()
+	d.onEntryMutation(ctx)
 	return &dinkurapiv1.CreateEntryResponse{
 		PreviouslyActiveEntry: togrpc.EntryPtr(startedEntry.Stopped),
 		CreatedEntry:          togrpc.EntryPtr(&startedEntry.Started),
@@ -181,7 +181,7 @@ func (d *daemon) UpdateEntry(ctx context.Context, req *dinkurapiv1.UpdateEntryRe
 	if err != nil {
 		return nil, convError(err)
 	}
-	d.onEntryMutation()
+	d.onEntryMutation(ctx)
 	return &dinkurapiv1.UpdateEntryResponse{
 		Before: togrpc.EntryPtr(&update.Before),
 		After:  togrpc.EntryPtr(&update.After),
@@ -203,7 +203,7 @@ func (d *daemon) DeleteEntry(ctx context.Context, req *dinkurapiv1.DeleteEntryRe
 	if err != nil {
 		return nil, convError(err)
 	}
-	d.onEntryMutation()
+	d.onEntryMutation(ctx)
 	return &dinkurapiv1.DeleteEntryResponse{
 		DeletedEntry: togrpc.EntryPtr(&deletedEntry),
 	}, nil
@@ -220,7 +220,7 @@ func (d *daemon) StopActiveEntry(ctx context.Context, req *dinkurapiv1.StopActiv
 	if err != nil {
 		return nil, convError(err)
 	}
-	d.onEntryMutation()
+	d.onEntryMutation(ctx)
 	return &dinkurapiv1.StopActiveEntryResponse{
 		StoppedEntry: togrpc.EntryPtr(stoppedEntry),
 	}, nil

@@ -21,11 +21,13 @@ package dinkurd
 
 import (
 	"context"
+	"time"
 
 	dinkurapiv1 "github.com/dinkur/dinkur/api/dinkurapi/v1"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/fromgrpc"
 	"github.com/dinkur/dinkur/pkg/togrpc"
+	"gopkg.in/typ.v2"
 )
 
 func (d *daemon) StreamStatus(req *dinkurapiv1.StreamStatusRequest, stream dinkurapiv1.Statuses_StreamStatusServer) error {
@@ -82,4 +84,43 @@ func (d *daemon) GetStatus(ctx context.Context, req *dinkurapiv1.GetStatusReques
 	return &dinkurapiv1.GetStatusResponse{
 		Status: togrpc.Status(status),
 	}, nil
+}
+
+func (d *daemon) markAsNotAFK(ctx context.Context) {
+	lastStatus := d.lastStatus
+	if lastStatus.AFKSince == nil && lastStatus.BackSince == nil {
+		return
+	}
+	newStatus := dinkur.EditStatus{
+		AFKSince:  nil,
+		BackSince: nil,
+	}
+	d.client.SetStatus(ctx, newStatus)
+	d.lastStatus = newStatus
+}
+
+func (d *daemon) markAsReturnedFromAFK(ctx context.Context) {
+	lastStatus := d.lastStatus
+	if lastStatus.AFKSince != nil && lastStatus.BackSince != nil {
+		return
+	}
+	newStatus := dinkur.EditStatus{
+		AFKSince:  lastStatus.AFKSince,
+		BackSince: typ.Ref(time.Now()),
+	}
+	d.client.SetStatus(ctx, newStatus)
+	d.lastStatus = newStatus
+}
+
+func (d *daemon) markAsAFK(ctx context.Context) {
+	lastStatus := d.lastStatus
+	if lastStatus.AFKSince != nil && lastStatus.BackSince == nil {
+		return
+	}
+	newStatus := dinkur.EditStatus{
+		AFKSince:  typ.Ref(time.Now()),
+		BackSince: nil,
+	}
+	d.client.SetStatus(ctx, newStatus)
+	d.lastStatus = newStatus
 }

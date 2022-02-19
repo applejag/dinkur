@@ -127,10 +127,12 @@ type daemon struct {
 
 	afkDetector afkdetect.Detector
 	closeMutex  sync.Mutex
+
+	lastStatus dinkur.EditStatus
 }
 
-func (d *daemon) onEntryMutation() {
-	// TODO: Mark as not AFK
+func (d *daemon) onEntryMutation(ctx context.Context) {
+	d.markAsNotAFK(ctx)
 }
 
 func (d *daemon) assertConnected() error {
@@ -195,13 +197,12 @@ func (d *daemon) Close() (finalErr error) {
 }
 
 func (d *daemon) updateAFKStatusAsWeAreStarting(ctx context.Context) {
-	// must use new context as base context from Serve is cancelled by now
-	entry, err := d.client.GetActiveEntry(context.Background())
+	entry, err := d.client.GetActiveEntry(ctx)
 	if err != nil || entry == nil {
-		// TODO: Mark as not AFK
+		d.markAsNotAFK(ctx)
 		return
 	}
-	// TODO: Mark as returned if AFK
+	d.markAsReturnedFromAFK(ctx)
 }
 
 func (d *daemon) updateAFKStatusAsWeAreClosing() {
@@ -210,7 +211,7 @@ func (d *daemon) updateAFKStatusAsWeAreClosing() {
 	if err != nil || entry == nil {
 		return
 	}
-	// TODO: Mark as AFK
+	d.markAsAFK(context.Background())
 }
 
 func (d *daemon) listenForAFK(ctx context.Context) {
@@ -230,11 +231,12 @@ func (d *daemon) listenForAFK(ctx context.Context) {
 				continue
 			}
 			if entry == nil {
+				d.markAsNotAFK(ctx)
 				continue
 			}
-			// TODO:
+			d.markAsAFK(ctx)
 		case <-stoppedChan:
-			// TODO:
+			d.markAsReturnedFromAFK(ctx)
 		case <-done:
 			return
 		}

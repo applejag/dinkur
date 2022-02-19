@@ -75,8 +75,8 @@ func (c *client) GetStatus(ctx context.Context) (dinkur.Status, error) {
 
 func (c *client) getDBStatusAtom() (dbmodel.Status, error) {
 	var dbStatus dbmodel.Status
-	if err := c.db.First(&dbStatus).Error; err != nil {
-		return dbmodel.Status{}, nilNotFoundError(err)
+	if err := c.db.Find(&dbStatus).Error; err != nil {
+		return dbmodel.Status{}, err
 	}
 	return dbStatus, nil
 }
