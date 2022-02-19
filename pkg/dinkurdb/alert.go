@@ -138,7 +138,22 @@ func (c *client) UpdateAlert(ctx context.Context, edit dinkur.EditAlert) (dinkur
 	if err := c.assertConnected(); err != nil {
 		return dinkur.UpdatedAlert{}, err
 	}
-	return dinkur.UpdatedAlert{}, errors.New("not implemented")
+	dbUpdated, err := c.withContext(ctx).editDBAlert(edit)
+	if err != nil {
+		return dinkur.UpdatedAlert{}, err
+	}
+	dbAlertBefore, err := fromdb.Alert(dbUpdated.before)
+	if err != nil {
+		return dinkur.UpdatedAlert{}, err
+	}
+	dbAlertAfter, err := fromdb.Alert(dbUpdated.after)
+	if err != nil {
+		return dinkur.UpdatedAlert{}, err
+	}
+	return dinkur.UpdatedAlert{
+		Before: dbAlertBefore,
+		After:  dbAlertAfter,
+	}, nil
 }
 
 type updatedDBAlert struct {
