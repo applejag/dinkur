@@ -247,7 +247,7 @@ type updatedDBAlert struct {
 func (c *client) editDBAlert(edit dinkur.EditAlert) (updatedDBAlert, error) {
 	var update updatedDBAlert
 	err := c.transaction(func(tx *client) (tranErr error) {
-		dbAlert, err := tx.getDBAlertAtom(edit.ID)
+		dbAlert, err := tx.getDBAlertNoTran(edit.ID)
 		if err != nil {
 			return fmt.Errorf("get alert to edit: %w", err)
 		}
@@ -258,6 +258,10 @@ func (c *client) editDBAlert(edit dinkur.EditAlert) (updatedDBAlert, error) {
 }
 
 func (c *client) editDBAlertNoTran(dbAlert dbmodel.Alert, edit dinkur.EditAlert) (updatedDBAlert, error) {
+	dbAlertBefore, err := c.populateDBAlertWithNestedDataNoTran(dbAlert)
+	if err != nil {
+		return updatedDBAlert{}, fmt.Errorf("populate alert before edit: %w", err)
+	}
 	var (
 		dbAlertToSave any
 		changed       bool
@@ -287,12 +291,16 @@ func (c *client) editDBAlertNoTran(dbAlert dbmodel.Alert, edit dinkur.EditAlert)
 	if err := c.db.Save(dbAlertToSave).Error; err != nil {
 		return updatedDBAlert{}, fmt.Errorf("saving changes to alert: %w", err)
 	}
-	dbAlertAfter, err := c.getDBAlertAtom(edit.ID)
+	dbAlertAfter, err := c.getDBAlertNoTran(edit.ID)
 	if err != nil {
 		return updatedDBAlert{}, fmt.Errorf("get alert after edit: %w", err)
 	}
+	dbAlertAfter, err = c.populateDBAlertWithNestedDataNoTran(dbAlertAfter)
+	if err != nil {
+		return updatedDBAlert{}, fmt.Errorf("populate alert after edit: %w", err)
+	}
 	return updatedDBAlert{
-		before: dbAlert,
+		before: dbAlertBefore,
 		after:  dbAlertAfter,
 	}, nil
 }
@@ -399,30 +407,35 @@ func (c *client) getDBAlertByTypeNoTran(alertType dinkur.AlertType) (dbmodel.Ale
 }
 
 func (c *client) deleteDBAlertNoTran(id uint) (dbmodel.Alert, error) {
-	dbAlert, err := c.getDBAlertAtom(id)
+	dbAlert, err := c.getDBAlertNoTran(id)
 	if err != nil {
 		return dbmodel.Alert{}, fmt.Errorf("get alert by ID to delete: %w", err)
 	}
 	if err := c.db.Delete(&dbmodel.Alert{}, id).Error; err != nil {
 		return dbmodel.Alert{}, fmt.Errorf("delete alert: %w", err)
 	}
-	return dbAlert, nil
+	return c.populateDBAlertWithNestedDataNoTran(dbAlert)
 }
 
-func (c *client) getDBAlertAtom(id uint) (dbmodel.Alert, error) {
-	if err := c.assertConnected(); err != nil {
-		return dbmodel.Alert{}, err
-	}
+func (c *client) getDBAlertNoTran(id uint) (dbmodel.Alert, error) {
 	var dbAlert dbmodel.Alert
 	err := c.dbAlertPreloaded().First(&dbAlert, id).Error
 	if err != nil {
 		return dbmodel.Alert{}, err
 	}
+	return dbAlert, nil
+}
+
+func (c *client) populateDBAlertWithNestedDataNoTran(dbAlert dbmodel.Alert) (dbmodel.Alert, error) {
 	if dbAlert.AFK != nil {
-		err := c.db.First(&dbAlert.AFK.ActiveEntry, dbAlert.AFK.ActiveEntryID).Error
+		var dbEntry dbmodel.Entry
+		err := c.db.First(&dbEntry, dbAlert.AFK.ActiveEntryID).Error
 		if err != nil {
 			return dbmodel.Alert{}, err
 		}
+		afk := *dbAlert.AFK
+		afk.ActiveEntry = dbEntry
+		dbAlert.AFK = &afk
 	}
 	return dbAlert, nil
 }
