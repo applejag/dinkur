@@ -98,23 +98,8 @@ message UpdateAlertResponse {
 
 // DeleteAlertRequest holds the ID of the alert to delete.
 message DeleteAlertRequest {
-  oneof target {
-    // ID of the alert to delete.
-    uint64 id = 1;
-    // Type of alert to delete. Will delete the first alert of this type.
-    // Not all alert types are available as not all alert types support being
-    // deleted via this enum.
-    TYPE type = 2;
-  }
-  // TYPE is the alert type to delete. Not all alert types are available as not
-  // all alert types support being deleted via this enum.
-  enum TYPE {
-    // TYPE_UNSPECIFIED means the alert type enum is not properly initialized,
-    // and usage of it is considered undefined behavior.
-    TYPE_UNSPECIFIED = 0;
-    // TYPE_AFK is an
-    TYPE_AFK = 1;
-  }
+  // ID of the alert to delete.
+  uint64 id = 1;
 }
 
 // DeleteAlertResponse holds the alert that was just deleted.

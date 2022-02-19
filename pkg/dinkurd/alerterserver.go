@@ -88,6 +88,3 @@ func (d *daemon) DeleteAlert(_ context.Context, req *dinkurapiv1.DeleteAlertRequ
 		DeletedAlert: togrpc.Alert(deleted),
 	}, nil
 }
-
-func (d *daemon) deleteAFKAlert() error {
-}

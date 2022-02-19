@@ -75,7 +75,7 @@ type Alerter interface {
 	CreateAlert(ctx context.Context, newAlert NewAlert) (Alert, error)
 	GetAlertList(ctx context.Context) ([]Alert, error)
 	UpdateAlert(ctx context.Context, edit EditAlert) (Alert, error)
-	DeleteAlert(ctx context.Context, target DeleteAlertTarget) (Alert, error)
+	DeleteAlert(ctx context.Context, id uint) (Alert, error)
 }
 
 // StreamedAlert holds an alert and its event type.
@@ -152,8 +152,4 @@ type StartedEntry struct {
 type StreamedEntry struct {
 	Entry Entry
 	Event EventType
-}
-
-type DeleteAlertTarget interface {
-	uint | AlertType
 }
