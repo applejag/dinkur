@@ -132,9 +132,9 @@ type daemon struct {
 	oldAFKAlert *dinkur.AlertAFK
 }
 
-func (d *daemon) onEntryMutation(ctx context.Context) {
+func (d *daemon) onEntryMutation() {
 	d.oldAFKAlert = nil
-	go d.client.DeleteAlertByType(ctx, dinkur.AlertTypeAFK)
+	go d.client.DeleteAlertByType(context.Background(), dinkur.AlertTypeAFK)
 }
 
 func (d *daemon) assertConnected() error {
