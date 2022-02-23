@@ -233,11 +233,11 @@ func (c *client) editDBEntryNoTran(edit dinkur.EditEntry) (updatedDBEntry, error
 		anyEdit = true
 	}
 	if edit.Start != nil {
-		dbEntry.Start = *edit.Start
+		dbEntry.Start = edit.Start.UTC()
 		anyEdit = true
 	}
 	if edit.End != nil {
-		dbEntry.End = edit.End
+		dbEntry.End = typ.Ref(edit.End.UTC())
 		anyEdit = true
 	}
 	if dbEntry.Elapsed() < 0 {
