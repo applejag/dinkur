@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"gopkg.in/typ.v2"
+	"gopkg.in/typ.v4"
 )
 
 // TimePtr converts gRPC timestamp to Go time pointer.

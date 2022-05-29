@@ -22,7 +22,7 @@ package conv
 import (
 	"time"
 
-	"gopkg.in/typ.v2"
+	"gopkg.in/typ.v4"
 )
 
 // DerefOrZero will dereference the value, or return the zero value if it's nil.

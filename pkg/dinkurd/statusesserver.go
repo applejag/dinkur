@@ -27,7 +27,7 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/fromgrpc"
 	"github.com/dinkur/dinkur/pkg/togrpc"
-	"gopkg.in/typ.v2"
+	"gopkg.in/typ.v4"
 )
 
 func (d *daemon) StreamStatus(req *dinkurapiv1.StreamStatusRequest, stream dinkurapiv1.Statuses_StreamStatusServer) error {

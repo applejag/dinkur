@@ -33,7 +33,7 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/iver-wharf/wharf-core/pkg/gormutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
-	"gopkg.in/typ.v2"
+	"gopkg.in/typ.v4/chans"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -69,7 +69,7 @@ func NewClient(dsn string, opt Options) dinkur.Client {
 	return &client{
 		Options:   opt,
 		sqliteDsn: dsn,
-		entryObs: &typ.Publisher[entryEvent]{
+		entryObs: &chans.PubSub[entryEvent]{
 			PubTimeoutAfter: 10 * time.Second,
 			OnPubTimeout: func(ev entryEvent) {
 				log.Warn().
@@ -79,7 +79,7 @@ func NewClient(dsn string, opt Options) dinkur.Client {
 					Message("Timed out sending entry event.")
 			},
 		},
-		statusObs: &typ.Publisher[statusEvent]{
+		statusObs: &chans.PubSub[statusEvent]{
 			PubTimeoutAfter: 10 * time.Second,
 			OnPubTimeout: func(ev statusEvent) {
 				log.Warn().Message("Timed out sending status event.")
@@ -94,8 +94,8 @@ type client struct {
 	db             *gorm.DB
 	prevMigChecked bool
 	prevMigVersion dbmodel.MigrationVersion
-	entryObs       *typ.Publisher[entryEvent]
-	statusObs      *typ.Publisher[statusEvent]
+	entryObs       *chans.PubSub[entryEvent]
+	statusObs      *chans.PubSub[statusEvent]
 }
 
 type entryEvent struct {

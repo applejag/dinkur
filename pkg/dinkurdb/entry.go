@@ -33,7 +33,8 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/fromdb"
 	"github.com/dinkur/dinkur/pkg/timeutil"
-	"gopkg.in/typ.v2"
+	"gopkg.in/typ.v4"
+	"gopkg.in/typ.v4/slices"
 )
 
 func (c *client) GetActiveEntry(ctx context.Context) (*dinkur.Entry, error) {
@@ -104,7 +105,7 @@ func (c *client) GetEntryList(ctx context.Context, search dinkur.SearchEntry) ([
 	if err != nil {
 		return nil, err
 	}
-	return typ.Map(dbEntries, fromdb.Entry), nil
+	return slices.Map(dbEntries, fromdb.Entry), nil
 }
 
 func (c *client) listDBEntries(search dinkur.SearchEntry) ([]dbmodel.Entry, error) {
@@ -158,7 +159,7 @@ func (c *client) listDBEntries(search dinkur.SearchEntry) ([]dbmodel.Entry, erro
 	}
 	// we sorted in descending order to get the last entries.
 	// fix this by reversing "again"
-	typ.Reverse(dbEntries)
+	slices.Reverse(dbEntries)
 	return dbEntries, nil
 }
 

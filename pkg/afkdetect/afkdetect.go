@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"github.com/iver-wharf/wharf-core/pkg/logger"
-	"gopkg.in/typ.v2"
+	"gopkg.in/typ.v4/chans"
 )
 
 // Errors specific to AFK-detectors.
@@ -51,8 +51,8 @@ type Detector interface {
 	// cleaning up its Goroutines and hooks.
 	StopDetecting() error
 
-	StartedObs() *typ.Publisher[Started]
-	StoppedObs() *typ.Publisher[Stopped]
+	StartedObs() *chans.PubSub[Started]
+	StoppedObs() *chans.PubSub[Stopped]
 }
 
 // Started contains event data for when user has gone AFK.
@@ -76,13 +76,13 @@ var detectorHooks []detectorHookRegisterer
 // New creates a new AFK-detector.
 func New() Detector {
 	return &detector{
-		startedObs: typ.Publisher[Started]{
+		startedObs: chans.PubSub[Started]{
 			PubTimeoutAfter: 10 * time.Second,
 			OnPubTimeout: func(ev Started) {
 				log.Warn().Message("Timed out sending AFK started event.")
 			},
 		},
-		stoppedObs: typ.Publisher[Stopped]{
+		stoppedObs: chans.PubSub[Stopped]{
 			PubTimeoutAfter: 10 * time.Second,
 			OnPubTimeout: func(ev Stopped) {
 				log.Warn().Message("Timed out sending AFK stopped event.")
@@ -94,8 +94,8 @@ func New() Detector {
 type detector struct {
 	isAFKMutex sync.RWMutex
 	isAFK      bool
-	startedObs typ.Publisher[Started]
-	stoppedObs typ.Publisher[Stopped]
+	startedObs chans.PubSub[Started]
+	stoppedObs chans.PubSub[Stopped]
 
 	hooks          []detectorHook
 	startStopMutex sync.Mutex
@@ -196,10 +196,10 @@ func (d *detector) timerTickListener(ticker *time.Ticker) {
 	}
 }
 
-func (d *detector) StartedObs() *typ.Publisher[Started] {
+func (d *detector) StartedObs() *chans.PubSub[Started] {
 	return &d.startedObs
 }
 
-func (d *detector) StoppedObs() *typ.Publisher[Stopped] {
+func (d *detector) StoppedObs() *chans.PubSub[Stopped] {
 	return &d.stoppedObs
 }

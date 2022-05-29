@@ -23,7 +23,8 @@ import (
 	"github.com/dinkur/dinkur/pkg/conv"
 	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"gopkg.in/typ.v2"
+	"gopkg.in/typ.v4"
+	"gopkg.in/typ.v4/slices"
 )
 
 // Entry converts a dbmodel entry to a dinkur entry.
@@ -46,5 +47,5 @@ func EntryPtr(t *dbmodel.Entry) *dinkur.Entry {
 
 // EntrySlice converts a slice of dbmodel entries to dinkur entries.
 func EntrySlice(entries []dbmodel.Entry) []dinkur.Entry {
-	return typ.Map(entries, Entry)
+	return slices.Map(entries, Entry)
 }

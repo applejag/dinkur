@@ -27,7 +27,7 @@ import (
 	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/fromdb"
-	"gopkg.in/typ.v2"
+	"gopkg.in/typ.v4"
 )
 
 func (c *client) StreamStatus(ctx context.Context) (<-chan dinkur.StreamedStatus, error) {
