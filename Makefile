@@ -13,23 +13,23 @@ dinkur.exe:
 else
 dinkur:
 endif
-	go1.18rc1 build -tags='fts5' -ldflags='-s -w'
+	go build -tags='fts5' -ldflags='-s -w'
 
 install:
-	go1.18rc1 install -tags='fts5' -ldflags='-s -w'
+	go install -tags='fts5' -ldflags='-s -w'
 
 clean:
 	rm -rfv ./dinkur.exe ./dinkur
 
 tidy:
-	go1.18rc1 mod tidy
+	go mod tidy
 
 deps:
-	go1.18rc1 install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
-	go1.18rc1 install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
-	go1.18rc1 install github.com/mgechev/revive@latest
-	go1.18rc1 install golang.org/x/tools/cmd/goimports@latest
-	go1.18rc1 install github.com/yoheimuta/protolint/cmd/protolint@latest
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
+	go install github.com/mgechev/revive@latest
+	go install golang.org/x/tools/cmd/goimports@latest
+	go install github.com/yoheimuta/protolint/cmd/protolint@latest
 	python3 -m pip install --upgrade --user reuse
 	npm install
 
