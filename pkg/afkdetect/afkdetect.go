@@ -27,7 +27,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iver-wharf/wharf-core/pkg/logger"
+	"github.com/iver-wharf/wharf-core/v2/pkg/logger"
 	"gopkg.in/typ.v4/chans"
 )
 

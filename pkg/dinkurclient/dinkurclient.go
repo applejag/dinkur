@@ -27,7 +27,7 @@ import (
 	"math"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"github.com/iver-wharf/wharf-core/pkg/logger"
+	"github.com/iver-wharf/wharf-core/v2/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"

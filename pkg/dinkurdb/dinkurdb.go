@@ -31,8 +31,8 @@ import (
 
 	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/dinkur/dinkur/pkg/dinkur"
-	"github.com/iver-wharf/wharf-core/pkg/gormutil"
-	"github.com/iver-wharf/wharf-core/pkg/logger"
+	"github.com/iver-wharf/wharf-core/v2/pkg/gormutil"
+	"github.com/iver-wharf/wharf-core/v2/pkg/logger"
 	"gopkg.in/typ.v4/chans"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
