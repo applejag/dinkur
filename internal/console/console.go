@@ -160,8 +160,7 @@ func PrintEntryEdit(update dinkur.UpdatedEntry) {
 		t.CommitRow()
 	}
 	if t.Rows() == 0 {
-		entryEditNoneColor.Fprint(stdout, entryEditPrefix, entryEditNoChange)
-		fmt.Fprintln(&sb)
+		entryEditNoneColor.Fprintln(stdout, entryEditPrefix, entryEditNoChange)
 	} else {
 		t.Fprintln(stdout)
 	}
