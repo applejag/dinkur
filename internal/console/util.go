@@ -151,3 +151,17 @@ func uintWidth(i uint) int {
 		return 20
 	}
 }
+
+func timesEqual(a, b time.Time) bool {
+	return a.UnixMilli() == b.UnixMilli()
+}
+
+func timesPtrsEqual(a, b *time.Time) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return timesEqual(*a, *b)
+}
