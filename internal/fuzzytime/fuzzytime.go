@@ -85,7 +85,7 @@ func ParseKnownLayouts(s string) (time.Time, error) {
 
 // ParseWhen performs a fuzzy time parsing via the `when` package.
 func ParseWhen(s string) (time.Time, error) {
-	r, err := w.Parse(s, time.Now())
+	r, err := w.Parse(s, time.Now().Truncate(time.Second))
 	if err != nil {
 		return time.Time{}, err
 	}

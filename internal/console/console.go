@@ -141,27 +141,15 @@ func PrintEntryEdit(update dinkur.UpdatedEntry) {
 		writeCellEntryName(&t, update.After.Name)
 		t.CommitRow()
 	}
-	var (
-		oldStartUnix = update.Before.Start.UnixMilli()
-		oldEndUnix   int64
-		newStartUnix = update.After.Start.UnixMilli()
-		newEndUnix   int64
-	)
-	if update.Before.End != nil {
-		oldEndUnix = update.Before.End.Unix()
-	}
-	if update.After.End != nil {
-		newEndUnix = update.After.End.Unix()
-	}
-	if oldStartUnix != newStartUnix || oldEndUnix != newEndUnix {
+	if !timesEqual(update.Before.Start, update.After.Start) ||
+		!timesPtrsEqual(update.Before.End, update.After.End) {
 		writeCellEntryTimeSpanDuration(&t, update.Before.Start, update.Before.End, update.Before.Elapsed())
 		t.WriteCellColor(entryEditDelim, entryEditDelimColor)
 		writeCellEntryTimeSpanDuration(&t, update.After.Start, update.After.End, update.After.Elapsed())
 		t.CommitRow()
 	}
 	if t.Rows() == 0 {
-		entryEditNoneColor.Fprint(stdout, entryEditPrefix, entryEditNoChange)
-		fmt.Fprintln(&sb)
+		entryEditNoneColor.Fprintln(stdout, entryEditPrefix, entryEditNoChange)
 	} else {
 		t.Fprintln(stdout)
 	}
