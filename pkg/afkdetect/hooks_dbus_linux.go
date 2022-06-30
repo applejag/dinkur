@@ -56,14 +56,17 @@ func (h dbusHookRegisterer) Register(d *detector) (detectorHook, error) {
 		dbus.WithMatchInterface("org.gnome.ScreenSaver"),
 	); err != nil {
 		return nil, err
-	} else if err := conn.AddMatchSignal(
+	}
+
+	if err := conn.AddMatchSignal(
 		dbus.WithMatchInterface("org.gnome.Shell.Introspect"),
 		dbus.WithMatchMember("RunningApplicationsChanged"),
 	); err != nil {
 		return nil, err
-	} else {
-		go hook.handleDbusSignal()
 	}
+
+	go hook.handleDbusSignal()
+
 	return hook, nil
 }
 

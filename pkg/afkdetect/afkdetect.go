@@ -103,7 +103,7 @@ type detector struct {
 	tickChanStop   chan struct{}
 }
 
-func (d *detector) setIsAFK(isAFK bool) bool {
+func (d *detector) tryChangeIsAFK(isAFK bool) bool {
 	if d.isAFK == isAFK {
 		return false
 	}
@@ -112,7 +112,7 @@ func (d *detector) setIsAFK(isAFK bool) bool {
 }
 
 func (d *detector) markAsAFK() {
-	if !d.setIsAFK(true) {
+	if !d.tryChangeIsAFK(true) {
 		return
 	}
 	log.Debug().Message("User is now AFK.")
@@ -120,7 +120,7 @@ func (d *detector) markAsAFK() {
 }
 
 func (d *detector) markAsNoLongerAFK() {
-	if !d.setIsAFK(false) {
+	if !d.tryChangeIsAFK(false) {
 		return
 	}
 	log.Debug().Message("User is no longer AFK.")
