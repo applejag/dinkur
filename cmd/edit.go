@@ -33,6 +33,7 @@ func init() {
 	var (
 		flagID        uint
 		flagAppend    bool
+		flagRelative  bool
 		flagStart     = &pflagutil.Time{}
 		flagEnd       = &pflagutil.Time{}
 		flagAfterID   uint
@@ -52,12 +53,14 @@ a specific entry using the --id or -i flag.`,
 			log.Debug().
 				WithStringer("start", flagStart).
 				WithStringer("end", flagEnd).
+				WithBool("relative", flagRelative).
 				WithBool("append", flagAppend).
 				Message("Flags")
 			edit := dinkur.EditEntry{
 				IDOrZero:           flagID,
 				Start:              flagStart.TimePtr(),
 				End:                flagEnd.TimePtr(),
+				Relative:           flagRelative,
 				AppendName:         flagAppend,
 				StartAfterIDOrZero: flagAfterID,
 				EndBeforeIDOrZero:  flagBeforeID,
@@ -76,9 +79,9 @@ a specific entry using the --id or -i flag.`,
 	}
 
 	RootCmd.AddCommand(editCmd)
-
 	editCmd.Flags().VarP(flagStart, "start", "s", `start time of entry`)
 	editCmd.Flags().VarP(flagEnd, "end", "e", `end time of entry; entry will be unmarked as active if set`)
+	editCmd.Flags().BoolVarP(&flagRelative, "relative", "r", flagRelative, `change only time of day for the entry, ignores dates in start and end timestamps`)
 	editCmd.Flags().BoolVarP(&flagAppend, "append", "z", flagAppend, `add name to the end of the existing name, instead of replacing it`)
 	editCmd.Flags().UintVarP(&flagID, "id", "i", 0, `ID of entry (default is active or latest entry)`)
 	editCmd.RegisterFlagCompletionFunc("id", entryIDComplete)

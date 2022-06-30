@@ -171,6 +171,7 @@ func (d *daemon) UpdateEntry(ctx context.Context, req *dinkurapiv1.UpdateEntryRe
 		Name:               conv.ZeroAsNil(req.Name),
 		Start:              fromgrpc.TimePtr(req.Start),
 		End:                fromgrpc.TimePtr(req.End),
+		Relative:           req.Relative,
 		IDOrZero:           id,
 		AppendName:         req.AppendName,
 		StartAfterIDOrZero: startAfterID,
