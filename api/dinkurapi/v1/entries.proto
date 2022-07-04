@@ -227,6 +227,16 @@ message UpdateEntryRequest {
   // "start after ID or zero" field is considered undefined behavior, and should
   // be avoided.
   bool start_after_last = 8;
+  // StartFuzzy is the new entry start timestamp, but will be parsed fuzzy.
+  // This is ignored if empty string or if Start is supplied.
+  //
+  // No change to the entry start timestamp is applied if this is set to empty.
+  string start_fuzzy = 9;
+  // EndFuzzy is the new entry end timestamp, but will be parsed fuzzy.
+  // This is ignored if empty string or if End is supplied.
+  //
+  // No change to the entry end timestamp is applied if this is set to empty.
+  string end_fuzzy = 10;
 }
 
 // UpdateEntryResponse holds the before and after state of the updated entry.

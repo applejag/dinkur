@@ -23,6 +23,7 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/internal/pflagutil"
@@ -47,10 +48,11 @@ func init() {
 		Long:    ``,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
+			now := time.Now()
 			newEntry := dinkur.NewEntry{
 				Name:               strings.Join(args, " "),
-				Start:              flagStart.TimePtr(),
-				End:                flagEnd.TimePtr(),
+				Start:              flagStart.TimePtr(now),
+				End:                flagEnd.TimePtr(now),
 				StartAfterIDOrZero: flagAfterID,
 				EndBeforeIDOrZero:  flagBeforeID,
 				StartAfterLast:     flagAfterLast,

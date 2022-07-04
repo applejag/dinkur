@@ -28,6 +28,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/dinkur/dinkur/internal/fuzzytime"
 	"github.com/dinkur/dinkur/pkg/conv"
 	"github.com/dinkur/dinkur/pkg/dbmodel"
 	"github.com/dinkur/dinkur/pkg/dinkur"
@@ -236,9 +237,24 @@ func (c *client) editDBEntryNoTran(edit dinkur.EditEntry) (updatedDBEntry, error
 	if edit.Start != nil {
 		dbEntry.Start = edit.Start.UTC()
 		anyEdit = true
+	} else if edit.StartFuzzy != "" {
+		t, err := fuzzytime.Parse(edit.StartFuzzy, entryBeforeEdit.Start.Local())
+		if err != nil {
+			return updatedDBEntry{}, fmt.Errorf("parse fuzzy start time: %w", err)
+		}
+		dbEntry.Start = t.UTC()
+		anyEdit = true
 	}
 	if edit.End != nil {
 		dbEntry.End = typ.Ref(edit.End.UTC())
+		anyEdit = true
+	} else if edit.EndFuzzy != "" {
+		t, err := fuzzytime.Parse(edit.EndFuzzy, conv.TimeOrNow(entryBeforeEdit.End).Local())
+		if err != nil {
+			return updatedDBEntry{}, fmt.Errorf("parse fuzzy end time: %w", err)
+		}
+		t = t.UTC()
+		dbEntry.End = &t
 		anyEdit = true
 	}
 	if dbEntry.Elapsed() < 0 {

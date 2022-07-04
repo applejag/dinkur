@@ -56,3 +56,11 @@ func TimePtrLocal(t *time.Time) *time.Time {
 	}
 	return typ.Ref((*t).Local())
 }
+
+// TimeOrNow deferences a time pointer, or returns time.Now if it's nil.
+func TimeOrNow(t *time.Time) time.Time {
+	if t == nil {
+		return time.Now()
+	}
+	return *t
+}

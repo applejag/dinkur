@@ -170,7 +170,9 @@ func (d *daemon) UpdateEntry(ctx context.Context, req *dinkurapiv1.UpdateEntryRe
 	edit := dinkur.EditEntry{
 		Name:               conv.ZeroAsNil(req.Name),
 		Start:              fromgrpc.TimePtr(req.Start),
+		StartFuzzy:         req.StartFuzzy,
 		End:                fromgrpc.TimePtr(req.End),
+		EndFuzzy:           req.EndFuzzy,
 		IDOrZero:           id,
 		AppendName:         req.AppendName,
 		StartAfterIDOrZero: startAfterID,

@@ -56,8 +56,8 @@ a specific entry using the --id or -i flag.`,
 				Message("Flags")
 			edit := dinkur.EditEntry{
 				IDOrZero:           flagID,
-				Start:              flagStart.TimePtr(),
-				End:                flagEnd.TimePtr(),
+				StartFuzzy:         flagStart.Source(),
+				EndFuzzy:           flagEnd.Source(),
 				AppendName:         flagAppend,
 				StartAfterIDOrZero: flagAfterID,
 				EndBeforeIDOrZero:  flagBeforeID,

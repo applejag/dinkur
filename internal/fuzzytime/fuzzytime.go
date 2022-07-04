@@ -49,17 +49,17 @@ func init() {
 // Parse attempts to parse the string literal "now", a delta time, a list of
 // known formats, and lastly via the `when` fuzzy parsing package, and returns
 // the time on the first match it finds.
-func Parse(s string) (time.Time, error) {
+func Parse(s string, base time.Time) (time.Time, error) {
 	if strings.EqualFold(s, "now") {
 		return time.Now(), nil
 	}
-	if t, ok := ParseDelta(s); ok {
+	if t, ok := ParseDelta(s, base); ok {
 		return t, nil
 	}
 	if t, err := ParseKnownLayouts(s); err == nil {
 		return t, nil
 	}
-	return ParseWhen(s)
+	return ParseWhen(s, base)
 }
 
 var knownLayouts = []string{
@@ -84,8 +84,8 @@ func ParseKnownLayouts(s string) (time.Time, error) {
 }
 
 // ParseWhen performs a fuzzy time parsing via the `when` package.
-func ParseWhen(s string) (time.Time, error) {
-	r, err := w.Parse(s, time.Now().Truncate(time.Second))
+func ParseWhen(s string, base time.Time) (time.Time, error) {
+	r, err := w.Parse(s, base.Truncate(time.Second))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -97,7 +97,7 @@ func ParseWhen(s string) (time.Time, error) {
 
 // ParseDelta attempts to parse the string as a time.Duration if it is prefixed
 // with a sign ("+" or "-"), and adds that to the current time.
-func ParseDelta(s string) (time.Time, bool) {
+func ParseDelta(s string, base time.Time) (time.Time, bool) {
 	if len(s) < 3 {
 		return time.Time{}, false
 	}
@@ -108,5 +108,5 @@ func ParseDelta(s string) (time.Time, bool) {
 	if err != nil {
 		return time.Time{}, false
 	}
-	return time.Now().Add(d), true
+	return base.Add(d), true
 }
