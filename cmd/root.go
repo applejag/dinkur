@@ -84,6 +84,19 @@ Track how you spend time on your entries with Dinkur.
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		activeEntry := dinkur.Entry{
+			Name:  "working on stuff",
+			Start: time.Now().Add(-60 * time.Minute),
+			End:   nil,
+		}
+		afkSince := time.Now().Add(-24 * time.Minute)
+		_, err := console.PromptAFKResolution(activeEntry, afkSince)
+		fmt.Println()
+		if err != nil {
+			console.PrintFatal("Prompt error:", err)
+		}
+		os.Exit(0)
+
 		if flagLicenseWarranty {
 			fmt.Println(license.Warranty)
 		} else if flagLicenseConditions {

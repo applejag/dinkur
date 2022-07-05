@@ -108,21 +108,11 @@ func PromptAFKResolution(activeEntry dinkur.Entry, afkSince time.Time) (AFKResol
 		return AFKResolution{}, nil
 	}
 
-	sb.WriteString("How do you want to save this away time?\n")
+	writeEntryResolveOptions(&sb, activeEntry, afkSince, now)
 
-	sb.WriteString("  1. Leave the active entry as-is and continue with the invoked command.\n")
-
-	sb.WriteString("  2. Discard the away time I was away, changing active entry to ")
-	writeEntryTimeSpanNowDuration(&sb, activeEntry.Start, &afkSince, afkSince.Sub(activeEntry.Start))
-	sb.WriteString(".\n")
-
-	sb.WriteString("  3. Save the away time as a new entry ")
-	writeEntryTimeSpanNowDuration(&sb, afkSince, nil, now.Sub(afkSince))
-	sb.WriteString("  (naming it in a later prompt).\n")
-
+	sb.WriteByte('\n')
 	sb.WriteByte(' ')
 	promptCtrlCHelpColor.Fprint(&sb, "(press Ctrl+C to abort)")
-	sb.WriteByte('\n')
 	sb.WriteByte('\n')
 
 	fmt.Fprint(stderr, sb.String())
@@ -158,6 +148,73 @@ func PromptAFKResolution(activeEntry dinkur.Entry, afkSince time.Time) (AFKResol
 	default:
 		return AFKResolution{}, errors.New("no answer chosen")
 	}
+}
+
+func oldWriteEntryResolveOptions(sb *strings.Builder, activeEntry dinkur.Entry, afkSince, now time.Time) {
+	sb.WriteString("How do you want to save this away time?\n")
+
+	sb.WriteString("  1. Leave the active entry as-is and continue with the invoked command.\n")
+
+	sb.WriteString("  2. Discard the away time I was away, changing active entry to ")
+	writeEntryTimeSpanNowDuration(sb, activeEntry.Start, &afkSince, afkSince.Sub(activeEntry.Start))
+	sb.WriteString(".\n")
+
+	sb.WriteString("  3. Save the away time as a new entry ")
+	writeEntryTimeSpanNowDuration(sb, afkSince, nil, now.Sub(afkSince))
+	sb.WriteString("  (naming it in a later prompt).\n")
+}
+
+func writeEntryResolveOptions(sb *strings.Builder, activeEntry dinkur.Entry, afkSince, now time.Time) {
+	const (
+		maxDelimiter = "-----------------------------------------"
+		maxSpaces    = "                                         "
+		linePrefix   = "   "
+		line2Prefix  = "         "
+	)
+	elapsed := activeEntry.Elapsed()
+
+	sb.WriteString(" Option 1:            Leave as-is\n")
+	sb.WriteString(linePrefix)
+	width := writeTimeAutoLayoutColor(sb, activeEntry.Start, entryStartColor)
+	sb.WriteString(" {")
+	sb.WriteString(maxDelimiter[width:])
+	sb.WriteString("} ")
+	entryEndNilColor.Fprint(sb, entryEndNilTextNow)
+	sb.WriteByte('\n')
+	{
+		var nameSB strings.Builder
+		segWidth := writeEntryName(&nameSB, activeEntry.Name)
+		nameSB.WriteByte(' ')
+		segWidth++
+		segWidth += writeEntryDuration(&nameSB, elapsed)
+		leftPad := (len(maxSpaces)-segWidth)/2 - 1
+		sb.WriteString(line2Prefix)
+		sb.WriteString(maxSpaces[:leftPad])
+		sb.WriteString(nameSB.String())
+	}
+	sb.WriteString("\n\n")
+
+	sb.WriteString(" Option 2: Discard ")
+	writeEntryDurationWithDelim(sb, elapsed)
+	sb.WriteByte('\n')
+	sb.WriteString(linePrefix)
+	width = writeTimeAutoLayoutColor(sb, activeEntry.Start, entryStartColor)
+	sb.WriteString(" {")
+	sb.WriteString(maxDelimiter[width:])
+	sb.WriteString("} ")
+	entryEndNilColor.Fprint(sb, entryEndNilTextNow)
+	sb.WriteString("\n\n")
+
+	sb.WriteString(" Option 3: New entry ")
+	writeEntryDurationWithDelim(sb, elapsed)
+	sb.WriteByte('\n')
+	sb.WriteString(linePrefix)
+	width = writeTimeAutoLayoutColor(sb, activeEntry.Start, entryStartColor)
+	sb.WriteString(" {")
+	sb.WriteString(maxDelimiter[width:])
+	sb.WriteString("} ")
+	entryEndNilColor.Fprint(sb, entryEndNilTextNow)
+	sb.WriteByte('\n')
 }
 
 func promptAFKSaveAsNewEntry(activeEntry dinkur.Entry, afkSince time.Time) (AFKResolution, error) {

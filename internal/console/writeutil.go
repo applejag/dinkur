@@ -34,6 +34,15 @@ func writeTimeColor(w io.Writer, t time.Time, layout string, c *color.Color) int
 	return len(formatted)
 }
 
+func writeTimeAutoLayoutColor(w io.Writer, t time.Time, c *color.Color) int {
+	today := newDate(time.Now().Date())
+	layout := timeFormatShort
+	if today != newDate(t.Date()) {
+		layout = timeFormatLong
+	}
+	return writeTimeColor(w, t, layout, c)
+}
+
 func writeEntryID(w io.Writer, id uint) int {
 	entryIDColor.Fprintf(w, "#%d", id)
 	return uintWidth(id) + 1
