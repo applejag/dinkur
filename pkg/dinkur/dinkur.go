@@ -108,9 +108,6 @@ type EditEntry struct {
 	//
 	// No change to the entry end timestamp is applied if this is set to nil.
 	End *time.Time
-	// Relative changes only the time of day, ignoring the date in the start
-	// and end timestamps.
-	Relative bool
 	// AppendName changes the name field to append the name to the entry's
 	// existing name (delimited with a space) instead of replacing it.
 	AppendName         bool

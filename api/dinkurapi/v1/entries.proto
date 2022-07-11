@@ -227,9 +227,6 @@ message UpdateEntryRequest {
   // "start after ID or zero" field is considered undefined behavior, and should
   // be avoided.
   bool start_after_last = 8;
-  // Relative preserves the date of the Start and End timestamps, changing only
-  // the time of day.
-  bool relative = 9;
 }
 
 // UpdateEntryResponse holds the before and after state of the updated entry.

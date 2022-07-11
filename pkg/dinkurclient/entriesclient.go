@@ -90,7 +90,6 @@ func (c *client) UpdateEntry(ctx context.Context, edit dinkur.EditEntry) (dinkur
 		Name:               conv.DerefOrZero(edit.Name),
 		Start:              togrpc.TimestampPtr(edit.Start),
 		End:                togrpc.TimestampPtr(edit.End),
-		Relative:           edit.Relative,
 		AppendName:         edit.AppendName,
 		StartAfterIdOrZero: uint64(edit.StartAfterIDOrZero),
 		EndBeforeIdOrZero:  uint64(edit.EndBeforeIDOrZero),

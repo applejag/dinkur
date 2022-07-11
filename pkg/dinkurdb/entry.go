@@ -234,29 +234,11 @@ func (c *client) editDBEntryNoTran(edit dinkur.EditEntry) (updatedDBEntry, error
 		anyEdit = true
 	}
 	if edit.Start != nil {
-		if edit.Relative {
-			old := entryBeforeEdit.Start
-			new := edit.Start
-			dbEntry.Start = time.Date(
-				old.Year(), old.Month(), old.Day(),
-				new.Hour(), new.Minute(), new.Second(), new.Nanosecond(), new.Location(),
-			)
-		} else {
-			dbEntry.Start = edit.Start.UTC()
-		}
+		dbEntry.Start = edit.Start.UTC()
 		anyEdit = true
 	}
 	if edit.End != nil {
-		if edit.Relative {
-			old := entryBeforeEdit.End
-			new := edit.End
-			dbEntry.End = typ.Ref(time.Date(
-				old.Year(), old.Month(), old.Day(),
-				new.Hour(), new.Minute(), new.Second(), new.Nanosecond(), new.Location(),
-			))
-		} else {
-			dbEntry.End = typ.Ref(edit.End.UTC())
-		}
+		dbEntry.End = typ.Ref(edit.End.UTC())
 		anyEdit = true
 	}
 	if dbEntry.Elapsed() < 0 {

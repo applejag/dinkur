@@ -1,15 +1,14 @@
 {
-  "go.lintTool": "revive",
-  "go.formatTool": "goimports",
-  "go.alternateTools": {
-    "go": "go1.18",
-  },
-  "[go]": {
-    "editor.insertSpaces": false,
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": true
+    "go.lintTool": "revive",
+    "go.formatTool": "goimports",
+    "go.alternateTools": {
+      "go": "go1.18rc1",
+    },
+    "[go]": {
+      "editor.insertSpaces": false,
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+      }
     }
-  },
-  "editor.formatOnSave": true
 }
