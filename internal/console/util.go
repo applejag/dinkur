@@ -89,7 +89,7 @@ func (g *entryWeekGroup) new(t time.Time) group {
 
 func (g *entryWeekGroup) check(t time.Time) bool {
 	w := newWeek(t.ISOWeek())
-	return w != g.week
+	return w == g.week
 }
 
 func (g *entryWeekGroup) count() int {
