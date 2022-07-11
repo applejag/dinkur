@@ -104,10 +104,20 @@ type EditEntry struct {
 	//
 	// No change to the entry start timestamp is applied if this is set to nil.
 	Start *time.Time
+	// StartFuzzy is the new entry start timestamp, but will be parsed fuzzy.
+	// This is ignored if empty string or if Start is supplied.
+	//
+	// No change to the entry start timestamp is applied if this is set to empty.
+	StartFuzzy string
 	// End is the new entry end timestamp.
 	//
 	// No change to the entry end timestamp is applied if this is set to nil.
 	End *time.Time
+	// EndFuzzy is the new entry end timestamp, but will be parsed fuzzy.
+	// This is ignored if empty string or if End is supplied.
+	//
+	// No change to the entry end timestamp is applied if this is set to empty.
+	EndFuzzy string
 	// AppendName changes the name field to append the name to the entry's
 	// existing name (delimited with a space) instead of replacing it.
 	AppendName         bool

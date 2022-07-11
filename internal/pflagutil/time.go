@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/dinkur/dinkur/internal/fuzzytime"
+	"gopkg.in/typ.v4"
 )
 
 // TimeDefaultLayout is the layout used when showing a Time flag value in the
@@ -34,8 +35,10 @@ var TimeDefaultLayout = "Jan 02 15:04"
 // flags. The fuzzytime package is used to parse the user-provided flag
 // string value.
 type Time struct {
-	Now  bool
-	time *time.Time
+	Now    bool
+	source string
+	valid  bool
+	parsed time.Time
 }
 
 // String returns a formatted string of the underlying time. If the Now field
@@ -47,20 +50,22 @@ func (t *Time) String() string {
 	if t.Now {
 		return "now"
 	}
-	if t.time == nil {
+	if !t.valid {
 		return ""
 	}
-	return time.Time(*t.time).Format(TimeDefaultLayout)
+	return t.parsed.Format(TimeDefaultLayout)
 }
 
 // Set attempts to parse the string as a time.Time and updates its internal
 // state on success, or returns a parsing error if it fails.
 func (t *Time) Set(s string) error {
-	parsed, err := fuzzytime.Parse(s)
+	parsed, err := fuzzytime.Parse(s, time.Now())
 	if err != nil {
 		return err
 	}
-	t.time = &parsed
+	t.valid = true
+	t.parsed = parsed
+	t.source = s
 	t.Now = false
 	return nil
 }
@@ -72,25 +77,40 @@ func (t *Time) Type() string {
 
 // Time returns the time.Time value. If the Now field is set, time.Now() is
 // returned instead.
-func (t *Time) Time() time.Time {
-	if t.Now {
+func (t *Time) Time(base time.Time) time.Time {
+	if t.Now || !t.valid {
 		return time.Now()
 	}
-	return time.Time(*t.time)
+	parsed, _ := fuzzytime.Parse(t.source, base)
+	return parsed
 }
 
 // TimePtr returns the time.Time value, or nil if the object is nil. If the Now
 // field is set, time.Now() is returned instead.
-func (t *Time) TimePtr() *time.Time {
+func (t *Time) TimePtr(base time.Time) *time.Time {
 	if t == nil {
 		return nil
 	}
 	if t.Now {
-		now := time.Now()
-		return &now
+		return typ.Ref(time.Now())
 	}
-	if t.time == nil {
+	if !t.valid {
 		return nil
 	}
-	return (*time.Time)(t.time)
+	parsed, _ := fuzzytime.Parse(t.source, base)
+	return &parsed
+}
+
+// Source returns the source string that was used to create this time.
+func (t *Time) Source() string {
+	if t == nil {
+		return ""
+	}
+	if t.Now {
+		return "now"
+	}
+	if !t.valid {
+		return ""
+	}
+	return t.source
 }
