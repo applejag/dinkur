@@ -33,7 +33,7 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
-func checkIfNonInteractiveTTY() bool {
+func isNonInteractiveTTY() bool {
 	return os.Getenv("TERM") == "dumb" ||
 		(!isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()))
 }
@@ -98,7 +98,7 @@ func PromptAFKResolution(activeEntry dinkur.Entry, afkSince time.Time) (AFKResol
 	writeEntryTimeSpanActiveDuration(&sb, activeEntry.Start, activeEntry.End, activeEntry.Elapsed())
 	sb.WriteString("\n\n")
 
-	if checkIfNonInteractiveTTY() {
+	if isNonInteractiveTTY() {
 		promptWarnIconColor.Fprint(&sb, promptWarnIconText)
 		sb.WriteString(" The terminal seems to be non-interactive. Skipping prompt.\n")
 		promptWarnIconColor.Fprint(&sb, promptWarnIconText)
@@ -183,6 +183,40 @@ func promptAFKSaveAsNewEntry(activeEntry dinkur.Entry, afkSince time.Time) (AFKR
 			StartAfterIDOrZero: activeEntry.ID,
 		},
 	}, nil
+}
+
+// PromptDupEntryResolution asks the user for how to resolve creating a new
+// duplicate entry.
+func PromptDupEntryResolution(activeEntry dinkur.Entry) (bool, error) {
+	var sb strings.Builder
+
+	promptWarnIconColor.Fprint(&sb, promptWarnIconText)
+	sb.WriteString(" Note: Possible duplicate entry with current ")
+	writeEntryID(&sb, activeEntry.ID)
+	sb.WriteByte(' ')
+	writeEntryName(&sb, activeEntry.Name)
+	sb.WriteByte('\n')
+
+	if isNonInteractiveTTY() {
+		promptWarnIconColor.Fprint(&sb, promptWarnIconText)
+		sb.WriteString(" The terminal seems to be non-interactive. Skipping prompt.\n")
+		fmt.Fprintln(stderr, sb.String())
+		return true, nil
+	}
+
+	fmt.Fprint(stderr, sb.String())
+
+	prompt := &survey.Confirm{
+		Message: "Still create duplicate entry?",
+	}
+	var ok bool
+	if err := survey.AskOne(prompt, &ok); err != nil {
+		return false, err
+	}
+	if !ok {
+		entryEditNoneColor.Fprintln(stdout, entryEditPrefix, entryEditNoChange)
+	}
+	return ok, nil
 }
 
 func promptNonEmptyString(prompt survey.Prompt) (string, error) {
