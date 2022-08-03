@@ -48,9 +48,13 @@ func init() {
 		Long:    ``,
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
+			newName := strings.Join(args, " ")
+			if checkIfDuplicateEntry(newName) {
+				return
+			}
 			now := time.Now()
 			newEntry := dinkur.NewEntry{
-				Name:               strings.Join(args, " "),
+				Name:               newName,
 				Start:              flagStart.TimePtr(now),
 				End:                flagEnd.TimePtr(now),
 				StartAfterIDOrZero: flagAfterID,
@@ -73,6 +77,26 @@ func init() {
 	inCmd.Flags().BoolVarP(&flagAfterLast, "after-last", "L", false, `sets --start time to the end time of latest entry`)
 	inCmd.Flags().UintVarP(&flagBeforeID, "before-id", "b", 0, `sets --end time to the start time of entry with ID`)
 	inCmd.RegisterFlagCompletionFunc("before-id", entryIDComplete)
+}
+
+func checkIfDuplicateEntry(newName string) bool {
+	activeEntry, err := c.GetActiveEntry(rootCtx)
+	if err != nil {
+		console.PrintFatal("Error checking active entry:", err)
+	}
+	if activeEntry == nil {
+		return false
+	}
+	trimmedOld := strings.TrimSpace(activeEntry.Name)
+	trimmedNew := strings.TrimSpace(newName)
+	if !strings.EqualFold(trimmedOld, trimmedNew) {
+		return false
+	}
+	yes, err := console.PromptDupEntryResolution(*activeEntry)
+	if err != nil {
+		console.PrintFatal("Prompt error:", err)
+	}
+	return !yes
 }
 
 func printStartedEntry(startedEntry dinkur.StartedEntry) {
