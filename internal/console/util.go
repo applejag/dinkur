@@ -75,7 +75,7 @@ type day struct {
 
 func (d day) String() string {
 	s := []string{"日", "月", "火", "水", "木", "金", "土"}[d.weekDay]
-	return fmt.Sprintf("%d:%s", d.day, s)
+	return fmt.Sprintf("%02d:%s", d.day, s)
 }
 
 func (week) new(t time.Time) groupable {
@@ -89,7 +89,7 @@ type week struct {
 }
 
 func (w week) String() string {
-	return fmt.Sprintf("%d", w.week)
+	return fmt.Sprintf("%02d", w.week)
 }
 
 func (month) new(t time.Time) groupable {
