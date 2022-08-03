@@ -20,6 +20,7 @@
 package console
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -57,7 +58,12 @@ func writeCellEntryNameSearched(t *table, name string, reg *regexp.Regexp) {
 	t.WriteCellWidth(sb.String(), width)
 }
 
-func writeCellDate(t *table, d date) {
+func writeCellWeek(t *table, w fmt.Stringer) {
+	weekStr := w.String()
+	t.WriteCellColor(weekStr, entryWeekColor)
+}
+
+func writeCellDate(t *table, d fmt.Stringer) {
 	dateStr := d.String()
 	t.WriteCellColor(dateStr, entryDateColor)
 }

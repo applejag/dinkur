@@ -45,6 +45,7 @@ var (
 	entryNameQuote            = "`"
 	entryNameFormat           = entryNameQuote + "%s" + entryNameQuote
 	entryTimeDelimColor       = color.New(color.FgHiBlack)
+	entryWeekColor            = color.New(color.FgGreen)
 	entryDateColor            = color.New(color.FgGreen)
 	entryStartColor           = color.New(color.FgGreen)
 	entryEndColor             = color.New(color.FgGreen)
@@ -63,12 +64,13 @@ var (
 	fatalLabelColor = color.New(color.FgHiRed, color.Bold)
 	fatalValueColor = color.New(color.FgRed)
 
-	tableEmptyColor     = color.New(color.FgHiBlack, color.Italic)
-	tableEmptyText      = "No results to display."
-	tableHeaderColor    = color.New(color.FgHiBlack)
-	tableSummaryColor   = color.New(color.FgHiBlack, color.Italic)
-	tableCellEmptyText  = "-"
-	tableCellEmptyColor = color.New(color.FgHiBlack)
+	tableEmptyColor       = color.New(color.FgHiBlack, color.Italic)
+	tableEmptyText        = "No results to display."
+	tableHeaderColor      = color.New(color.FgHiBlack)
+	tableSummaryColor     = color.New(color.FgHiBlack, color.Italic)
+	tableWeekSummaryColor = color.New(color.FgHiBlack)
+	tableCellEmptyText    = "-"
+	tableCellEmptyColor   = color.New(color.FgHiBlack)
 
 	usageHeaderColor = color.New(color.FgYellow, color.Underline, color.Italic)
 	usageHelpColor   = color.New(color.FgHiBlack, color.Italic)
@@ -180,28 +182,44 @@ func PrintEntryListSearched(entries []dinkur.Entry, searchStart, searchEnd strin
 	var t table
 	t.SetSpacing("  ")
 	t.SetPrefix("  ")
-	t.WriteColoredRow(tableHeaderColor, "ID", "NAME", "DAY", "START", "END", "DURATION")
-	for i, group := range groupEntriesByDate(entries) {
+	t.WriteColoredRow(tableHeaderColor, "ID", "NAME", "WEEK", "DAY", "START", "END", "DURATION")
+	weekGroups := groupEntries(&entryWeekGroup{}, entries)
+	for i, weekGroup := range weekGroups {
 		if i > 0 {
-			t.CommitRow() // commit empty delimiting row
+			t.CommitRow() // commit empty delimiting row between different weeks
 		}
-		for i, entry := range group.entries {
-			writeCellEntryID(&t, entry.ID)
-			if reg != nil {
-				writeCellEntryNameSearched(&t, entry.Name, reg)
-			} else {
-				writeCellEntryName(&t, entry.Name)
+		dateGroups := groupEntries(&entryDateGroup{}, weekGroup.getEntries())
+		for j, dateGroup := range dateGroups {
+			for k, entry := range dateGroup.getEntries() {
+				writeCellEntryID(&t, entry.ID)
+				if reg != nil {
+					writeCellEntryNameSearched(&t, entry.Name, reg)
+				} else {
+					writeCellEntryName(&t, entry.Name)
+				}
+				if j == 0 && k == 0 {
+					writeCellWeek(&t, weekGroup)
+				} else {
+					t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+				}
+				if k == 0 {
+					writeCellDate(&t, dateGroup)
+				} else {
+					t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+				}
+				writeCellEntryStartEnd(&t, entry.Start, entry.End)
+				writeCellDuration(&t, entry.Elapsed())
+				if j == len(dateGroups)-1 && k == len(dateGroup.getEntries())-1 {
+					weekSum := sumEntries(weekGroup.getEntries())
+					weekDuration := FormatDuration(weekSum.duration)
+					cellStr := fmt.Sprintf("Σ Week %s = %s", weekGroup, weekDuration)
+					t.WriteCellColor(cellStr, tableWeekSummaryColor)
+				}
+				t.CommitRow()
 			}
-			if i == 0 {
-				writeCellDate(&t, group.date)
-			} else {
-				t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
-			}
-			writeCellEntryStartEnd(&t, entry.Start, entry.End)
-			writeCellDuration(&t, entry.Elapsed())
-			t.CommitRow()
 		}
 	}
+
 	sum := sumEntries(entries)
 	t.CommitRow() // commit empty delimiting row
 	endStr := entryEndNilTextActive
@@ -211,6 +229,7 @@ func PrintEntryListSearched(entries []dinkur.Entry, searchStart, searchEnd strin
 	t.WriteColoredRow(tableSummaryColor,
 		tableCellEmptyText, // ID
 		fmt.Sprintf("TOTAL: %d entries", len(entries)), // NAME
+		tableCellEmptyText,                // WEEK
 		tableCellEmptyText,                // DAY
 		sum.start.Format(timeFormatShort), // START
 		endStr,                            // END
