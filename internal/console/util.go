@@ -41,12 +41,13 @@ func FormatDuration(d time.Duration) string {
 type group interface {
 	fmt.Stringer
 
-	new(t time.Time) group
+	new(_g groupable) group
 
 	check(t time.Time) bool
 	count() int
 	addEntry(entry dinkur.Entry)
 	getEntries() []dinkur.Entry
+	getGroupBy() groupable
 }
 
 func newDate(year int, month time.Month, day int) date {
@@ -63,7 +64,22 @@ func (d date) String() string {
 	return fmt.Sprintf("%s-%d", d.month.String()[:3], d.day)
 }
 
-func newWeek(year, _week int) week {
+func (day) new(t time.Time) groupable {
+	return day{t.Day(), int(t.Weekday())}
+}
+
+type day struct {
+	day     int
+	weekDay int
+}
+
+func (d day) String() string {
+	s := []string{"日", "月", "火", "水", "木", "金", "土"}[d.weekDay]
+	return fmt.Sprintf("%d:%s", d.day, s)
+}
+
+func (week) new(t time.Time) groupable {
+	year, _week := t.ISOWeek()
 	return week{year, _week}
 }
 
@@ -76,68 +92,59 @@ func (w week) String() string {
 	return fmt.Sprintf("%d", w.week)
 }
 
-type entryWeekGroup struct {
-	week    week
+func (month) new(t time.Time) groupable {
+	year, _month := t.Year(), t.Month()
+	return month{year, _month}
+}
+
+type month struct {
+	year  int
+	month time.Month
+}
+
+func (m month) String() string {
+	return fmt.Sprintf("%s", m.month.String()[:3])
+}
+
+type groupable interface {
+	fmt.Stringer
+	new(t time.Time) groupable
+}
+
+type entryGroup struct {
+	groupBy groupable
+
 	entries []dinkur.Entry
 }
 
-func (g *entryWeekGroup) new(t time.Time) group {
-	return &entryWeekGroup{
-		week: newWeek(t.ISOWeek()),
+func (g *entryGroup) new(_g groupable) group {
+	return &entryGroup{
+		groupBy: _g,
 	}
 }
 
-func (g *entryWeekGroup) check(t time.Time) bool {
-	w := newWeek(t.ISOWeek())
-	return w == g.week
+func (g *entryGroup) String() string {
+	return g.groupBy.String()
 }
 
-func (g *entryWeekGroup) count() int {
-	return len(g.entries)
-}
-
-func (g *entryWeekGroup) addEntry(entry dinkur.Entry) {
+func (g *entryGroup) addEntry(entry dinkur.Entry) {
 	g.entries = append(g.entries, entry)
 }
 
-func (g *entryWeekGroup) getEntries() []dinkur.Entry {
-	return g.entries
+func (g *entryGroup) check(t time.Time) bool {
+	return g.groupBy.new(t) == g.groupBy
 }
 
-func (g *entryWeekGroup) String() string {
-	return g.week.String()
-}
-
-type entryDateGroup struct {
-	date    date
-	entries []dinkur.Entry
-}
-
-func (g *entryDateGroup) new(t time.Time) group {
-	return &entryDateGroup{
-		date: newDate(t.Date()),
-	}
-}
-
-func (g *entryDateGroup) check(t time.Time) bool {
-	d := newDate(t.Date())
-	return d == g.date
-}
-
-func (g *entryDateGroup) count() int {
+func (g *entryGroup) count() int {
 	return len(g.entries)
 }
 
-func (g *entryDateGroup) addEntry(entry dinkur.Entry) {
-	g.entries = append(g.entries, entry)
-}
-
-func (g *entryDateGroup) getEntries() []dinkur.Entry {
+func (g *entryGroup) getEntries() []dinkur.Entry {
 	return g.entries
 }
 
-func (g *entryDateGroup) String() string {
-	return g.date.String()
+func (g *entryGroup) getGroupBy() groupable {
+	return g.groupBy
 }
 
 // groupEntries assumes the slice is already sorted on entry.Start
@@ -151,7 +158,7 @@ func groupEntries(g group, entries []dinkur.Entry) []group {
 			if g.count() > 0 {
 				groups = append(groups, g)
 			}
-			g = g.new(t.Start)
+			g = g.new(g.getGroupBy().new(t.Start))
 		}
 		g.addEntry(t)
 	}
