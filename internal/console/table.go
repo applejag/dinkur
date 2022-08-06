@@ -64,10 +64,6 @@ func (t *table) WriteCellColor(s string, c *color.Color) {
 	t.WriteCellWidth(c.Sprint(s), utf8.RuneCountInString(s))
 }
 
-func (t *table) WriteCellColorWidth(s string, c *color.Color, width int) {
-	t.WriteCellWidth(c.Sprint(s), width)
-}
-
 func (t *table) WriteCellWidth(s string, width int) {
 	t.pendingRow = append(t.pendingRow, tableCell{s, width})
 }

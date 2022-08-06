@@ -70,8 +70,7 @@ func writeCellWeek(t *table, w fmt.Stringer) {
 
 func writeCellDay(t *table, d fmt.Stringer) {
 	dayStr := d.String()
-	// 5 = 2 digit date plus ':' plus japanese character (2 bytes)
-	t.WriteCellColorWidth(dayStr, entryDayColor, 5)
+	t.WriteCellColor(dayStr, entryDayColor)
 }
 
 func writeCellTimeColor(t *table, ti time.Time, layout string, c *color.Color) {
