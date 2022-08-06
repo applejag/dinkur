@@ -234,8 +234,8 @@ func PrintEntryListSearched(entries []dinkur.Entry, searchStart, searchEnd strin
 					if lastEntryOfWeek {
 						weekSum := sumEntries(weekGroup.getEntries())
 						weekDuration := FormatDuration(weekSum.duration)
-						cellStr := fmt.Sprintf("Σ Week %s = %s", weekGroup, weekDuration)
-						t.WriteCellColor(cellStr, tableWeekSummaryColor)
+						weekSumStr := fmt.Sprintf("Σ Week %s = %s", weekGroup, weekDuration)
+						t.WriteCellColor(weekSumStr, tableWeekSummaryColor)
 
 						lastWeekInMonthGroup := weekGroupIndex == len(weekGroups)-1
 						lastEntryOfMonth := lastEntryOfWeek && lastWeekInMonthGroup
@@ -243,18 +243,17 @@ func PrintEntryListSearched(entries []dinkur.Entry, searchStart, searchEnd strin
 							t.CommitRow()
 							monthSum := sumEntries(monthGroup.getEntries())
 							monthDuration := FormatDuration(monthSum.duration)
-							cellStr := fmt.Sprintf("Σ Month %s = %s", monthGroup, monthDuration)
-							t.WriteColoredRow(
-								tableMonthSummaryColor,
-								tableCellEmptyText,
-								tableCellEmptyText,
-								tableCellEmptyText,
-								tableCellEmptyText,
-								tableCellEmptyText,
-								tableCellEmptyText,
-								tableCellEmptyText,
-								tableCellEmptyText,
-								cellStr,
+							monthSumStr := fmt.Sprintf("Σ Month %s = %s", monthGroup, monthDuration)
+							t.WriteColoredRow(tableMonthSummaryColor,
+								tableCellEmptyText, // ID
+								tableCellEmptyText, // NAME
+								tableCellEmptyText, // WEEK
+								tableCellEmptyText, // MONTH
+								tableCellEmptyText, // DAY
+								tableCellEmptyText, // START
+								tableCellEmptyText, // END
+								tableCellEmptyText, // DURATION
+								monthSumStr,
 							)
 						}
 					}
