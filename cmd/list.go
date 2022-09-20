@@ -107,6 +107,8 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 					searchStart, searchEnd = "", ""
 				}
 				console.PrintEntryListSearched(entries, searchStart, searchEnd)
+			case "pretty-compact", "pc":
+				console.PrintEntryListCompact(entries)
 			case "json":
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")
@@ -173,7 +175,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 	listCmd.Flags().VarP(flagEnd, "end", "e", "list entries ending before or at date time")
 	listCmd.Flags().VarP(flagRange, "range", "r", "baseline time range")
 	listCmd.RegisterFlagCompletionFunc("range", pflagutil.TimeRangeCompletion)
-	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "json", "json-line", "yaml", "xml", "xml-line", "csv", "csv-header"`)
+	listCmd.Flags().StringVarP(&flagOutput, "output", "o", flagOutput, `set output format: "pretty", "pretty-compact [pc]", "json", "json-line", "yaml", "xml", "xml-line", "csv", "csv-header"`)
 	listCmd.RegisterFlagCompletionFunc("output", outputFormatComplete)
 	listCmd.Flags().BoolVar(&flagNoHighlight, "no-highlight", false, `disables search highlighting in "pretty" output`)
 }

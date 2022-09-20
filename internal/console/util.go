@@ -38,6 +38,18 @@ func FormatDuration(d time.Duration) string {
 	return fmt.Sprintf("%d:%02d:%02d", hours, minutes, seconds)
 }
 
+type group interface {
+	fmt.Stringer
+
+	new(_g groupable) group
+
+	check(t time.Time) bool
+	count() int
+	addEntry(entry dinkur.Entry)
+	getEntries() []dinkur.Entry
+	getGroupBy() groupable
+}
+
 func newDate(year int, month time.Month, day int) date {
 	return date{year, month, day}
 }
@@ -52,30 +64,105 @@ func (d date) String() string {
 	return fmt.Sprintf("%s-%d", d.month.String()[:3], d.day)
 }
 
-type entryDateGroup struct {
-	date    date
+func (day) new(t time.Time) groupable {
+	return day{t.Day(), int(t.Weekday())}
+}
+
+type day struct {
+	day     int
+	weekDay int
+}
+
+func (d day) String() string {
+	return fmt.Sprintf("%02d", d.day)
+}
+
+func (week) new(t time.Time) groupable {
+	year, _week := t.ISOWeek()
+	return week{year, _week}
+}
+
+type week struct {
+	year int
+	week int
+}
+
+func (w week) String() string {
+	return fmt.Sprintf("%02d", w.week)
+}
+
+func (month) new(t time.Time) groupable {
+	year, _month := t.Year(), t.Month()
+	return month{year, _month}
+}
+
+type month struct {
+	year  int
+	month time.Month
+}
+
+func (m month) String() string {
+	return fmt.Sprintf("%s", m.month.String()[:3])
+}
+
+type groupable interface {
+	fmt.Stringer
+	new(t time.Time) groupable
+}
+
+type entryGroup struct {
+	groupBy groupable
+
 	entries []dinkur.Entry
 }
 
-// groupEntriesByDate assumes the slice is already sorted on entry.Start
-func groupEntriesByDate(entries []dinkur.Entry) []entryDateGroup {
+func (g *entryGroup) new(_g groupable) group {
+	return &entryGroup{
+		groupBy: _g,
+	}
+}
+
+func (g *entryGroup) String() string {
+	return g.groupBy.String()
+}
+
+func (g *entryGroup) addEntry(entry dinkur.Entry) {
+	g.entries = append(g.entries, entry)
+}
+
+func (g *entryGroup) check(t time.Time) bool {
+	return g.groupBy.new(t) == g.groupBy
+}
+
+func (g *entryGroup) count() int {
+	return len(g.entries)
+}
+
+func (g *entryGroup) getEntries() []dinkur.Entry {
+	return g.entries
+}
+
+func (g *entryGroup) getGroupBy() groupable {
+	return g.groupBy
+}
+
+// groupEntries assumes the slice is already sorted on entry.Start
+func groupEntries(g group, entries []dinkur.Entry) []group {
 	if len(entries) == 0 {
 		return nil
 	}
-	var groups []entryDateGroup
-	var group entryDateGroup
+	var groups []group
 	for _, t := range entries {
-		d := newDate(t.Start.Date())
-		if d != group.date {
-			if len(group.entries) > 0 {
-				groups = append(groups, group)
+		if !g.check(t.Start) {
+			if g.count() > 0 {
+				groups = append(groups, g)
 			}
-			group = entryDateGroup{date: d}
+			g = g.new(g.getGroupBy().new(t.Start))
 		}
-		group.entries = append(group.entries, t)
+		g.addEntry(t)
 	}
-	if len(group.entries) > 0 {
-		groups = append(groups, group)
+	if g.count() > 0 {
+		groups = append(groups, g)
 	}
 	return groups
 }

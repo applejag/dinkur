@@ -20,6 +20,7 @@
 package console
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -57,9 +58,19 @@ func writeCellEntryNameSearched(t *table, name string, reg *regexp.Regexp) {
 	t.WriteCellWidth(sb.String(), width)
 }
 
-func writeCellDate(t *table, d date) {
-	dateStr := d.String()
-	t.WriteCellColor(dateStr, entryDateColor)
+func writeCellMonth(t *table, m fmt.Stringer) {
+	monthStr := m.String()
+	t.WriteCellColor(monthStr, entryMonthColor)
+}
+
+func writeCellWeek(t *table, w fmt.Stringer) {
+	weekStr := w.String()
+	t.WriteCellColor(weekStr, entryWeekColor)
+}
+
+func writeCellDay(t *table, d fmt.Stringer) {
+	dayStr := d.String()
+	t.WriteCellColor(dayStr, entryDayColor)
 }
 
 func writeCellTimeColor(t *table, ti time.Time, layout string, c *color.Color) {
@@ -84,7 +95,8 @@ func writeCellEntryStartEnd(t *table, start time.Time, end *time.Time) {
 	writeCellTimeColor(t, start, timeFormatShort, entryStartColor)
 	if end != nil {
 		var endLayout = timeFormatShort
-		if newDate(end.Date()) != newDate(start.Date()) {
+		d := day{}
+		if d.new(*end) != d.new(start) {
 			endLayout = timeFormatLong
 		}
 		writeCellTimeColor(t, *end, endLayout, entryEndColor)
