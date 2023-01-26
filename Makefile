@@ -10,7 +10,7 @@ else
 OUT_FILE = dinkur
 endif
 
-GO_FILES = $(shell git ls-files "*.go")
+GO_FILES = $(shell git ls-files "*.go" ":!:api")
 
 .PHONY: all
 all: grpc build docs
