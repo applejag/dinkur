@@ -11,8 +11,9 @@ SPDX-License-Identifier: CC-BY-4.0
   <h1 style="color: #c43000">Dinkur</h1>
   <p>Task and time tracking CLI and framework.</p>
 
-  [![REUSE status](https://api.reuse.software/badge/github.com/dinkur/dinkur)](https://api.reuse.software/info/github.com/dinkur/dinkur)
-  [![Codacy Badge](https://app.codacy.com/project/badge/Grade/956b94a743244ce2a971ce572e05be3e)](https://www.codacy.com/gh/dinkur/dinkur/dashboard?utm_source=github.com&utm_medium=referral&utm_content=dinkur/dinkur&utm_campaign=Badge_Grade)
+[![REUSE status](https://api.reuse.software/badge/github.com/dinkur/dinkur)](https://api.reuse.software/info/github.com/dinkur/dinkur)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/956b94a743244ce2a971ce572e05be3e)](https://www.codacy.com/gh/dinkur/dinkur/dashboard?utm_source=github.com\&utm_medium=referral\&utm_content=dinkur/dinkur\&utm_campaign=Badge_Grade)
+
 </div>
 
 ## Install
@@ -107,11 +108,11 @@ how to set up your development environment, if you so feel inclined.
 
 <!--lint disable maximum-line-length-->
 
-| Project         | License?       | CLI? | GUI? | Sync?    | AFK detect?    | OS?                   |
-| --------------- | -------------- | ---- | ---- | -------- | -------------- | --------------------- |
-| [Grindstone][g] | Proprietary    | ❌   | ✅   | ✅ _($)_ | ✅ _(Windows)_ | Windows, Android, iOS |
-| [𝑓𝑓][ff]        | FOSS _(GPLv3)_ | ✅   | ✅   | ✅       | ❌             | Linux, Mac, Android   |
-| [timetrap][t]   | OSS _(MIT)_    | ✅   | ❌   | ❌       | ❌             | Windows, Linux, Mac   |
+| Project         | License?       | CLI? | GUI? | Sync?   | AFK detect?   | OS?                   |
+| --------------- | -------------- | ---- | ---- | ------- | ------------- | --------------------- |
+| [Grindstone][g] | Proprietary    | ❌    | ✅    | ✅ *($)* | ✅ *(Windows)* | Windows, Android, iOS |
+| [𝑓𝑓][ff]      | FOSS *(GPLv3)* | ✅    | ✅    | ✅       | ❌             | Linux, Mac, Android   |
+| [timetrap][t]   | OSS *(MIT)*    | ✅    | ❌    | ❌       | ❌             | Windows, Linux, Mac   |
 
 <!--lint enable maximum-line-length-->
 
@@ -129,5 +130,7 @@ and documentation is licensed under Creative Commons Attribution 4.0
 International ([LICENSES/CC-BY-4.0.txt](LICENSES/CC-BY-4.0.txt)).
 
 [g]: https://epiforge.com/grindstone
+
 [ff]: https://github.com/ff-notes/ff
+
 [t]: https://github.com/samg/timetrap

@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # User story: Name of story
 
-As a _role_, I can _capability_, so that _receive benefit_.
+As a *role*, I can *capability*, so that *receive benefit*.
 
 ## Prerequisites
 
