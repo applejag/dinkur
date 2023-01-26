@@ -77,11 +77,11 @@ lint: lint-md lint-go lint-proto lint-license
 lint-fix: lint-md-fix lint-go-fix lint-proto-fix
 
 .PHONY: lint-md
-lint-md:
+lint-md: node_modules
 	npx remark . .github
 
 .PHONY: lint-md-fix
-lint-md-fix:
+lint-md-fix: node_modules
 	npx remark . .github -o
 
 .PHONY: lint-go
