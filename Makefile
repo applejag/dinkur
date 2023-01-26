@@ -57,7 +57,7 @@ node_modules:
 .PHONY: docs
 docs: docs/cmd/*.md
 
-docs/cmd/dinkur_%.md: cmd/%.go
+docs/cmd/dinkur_%.md: cmd/%.go internal/cmd/docgen/docgen.go
 	go run internal/cmd/docgen/docgen.go docs/cmd
 
 .PHONY: grpc
