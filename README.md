@@ -30,10 +30,10 @@ $ go install -tags='fts5' -ldflags='-s -w' github.com/dinkur/dinkur@latest
 > The `-ldflag='-s -w'` removes debug symbols, reducing the binary size from
 > about 34M down to 13M.
 
-For you CLI-power users, we recommend aliasing it to `ur`.
+For you CLI-power users, we recommend aliasing it to `u`.
 
 ```sh
-alias ur=dinkur
+alias u=dinkur
 ```
 
 ### CLI Autocompletion
@@ -74,20 +74,20 @@ dinkur --client=grpc status
 ## Usage
 
 ```console
-$ ur in Speedrun Minecraft
+$ u in Speedrun Minecraft
                 ID  NAME                  START  END      DURATION
 Started entry:  #1  `Speedrun Minecraft`  18:39  active…  -
 
-$ ur in Boil minute-rice
+$ u in Boil minute-rice
                 ID  NAME                  START  END      DURATION
 Stopped entry:  #1  `Speedrun Minecraft`  18:39  18:39    0:00:06
 Started entry:  #2  `Boil minute-rice`    18:39  active…  -
 
-$ ur out
+$ u out
                 ID  NAME                START  END    DURATION
 Stopped entry:  #2  `Boil minute-rice`  18:39  18:40  0:01:01
 
-$ ur list
+$ u list
   ID  NAME                  DAY     START  END    DURATION
 
 
