@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2020 James Mills / prologic
+# SPDX-License-Identifier: MIT
+
+name: remark-lint
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  remark-lint:
+    name: remark-lint
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: npm
+      - name: install remark presets
+        run: npm install
+      - name: remark-lint
+        uses: reviewdog/action-remark-lint@v5
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-check
