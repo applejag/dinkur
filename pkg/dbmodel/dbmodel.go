@@ -18,6 +18,8 @@
 // You should have received a copy of the GNU General Public License along
 // with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Package dbmodel contains the binding types used by GORM to map to the
+// database tables and rows.
 package dbmodel
 
 import (
