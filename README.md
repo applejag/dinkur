@@ -18,7 +18,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 ## Install
 
-Requires [Go](https://go.dev/) v1.18beta1 (or higher)
+Requires [Go](https://go.dev/) v1.19 (or higher)
 
 ```console
 $ go install -tags='fts5' -ldflags='-s -w' github.com/dinkur/dinkur@latest
@@ -89,8 +89,6 @@ Stopped entry:  #2  `Boil minute-rice`  18:39  18:40  0:01:01
 
 $ u list
   ID  NAME                  DAY     START  END    DURATION
-
-
   #1  `Speedrun Minecraft`  Jan-20  18:39  18:39  0:00:06
   #2  `Boil minute-rice`    -       18:39  18:40  0:01:01
 
