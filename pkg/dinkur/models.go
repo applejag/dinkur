@@ -23,9 +23,6 @@ import "time"
 
 // TimeFields contains time metadata fields used by multiple other models.
 type TimeFields struct {
-	// ID is a unique identifier for this entry. The same ID will never be used
-	// twice for a given database.
-	ID uint `json:"id" yaml:"id" xml:"Id"`
 	// CreatedAt is when the object was created.
 	CreatedAt time.Time `json:"createdAt" yaml:"createdAt" xml:"CreatedAt"`
 	// UpdatedAt stores when the object was last updated/edited.
