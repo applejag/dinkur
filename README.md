@@ -18,7 +18,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 ## Install
 
-Requires [Go](https://go.dev/) v1.19 (or higher)
+Requires [Go](https://go.dev/) v1.20 (or higher)
 
 ```console
 $ go install -tags='fts5' -ldflags='-s -w' github.com/dinkur/dinkur@latest
