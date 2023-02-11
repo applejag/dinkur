@@ -22,7 +22,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -30,14 +29,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dinkur/dinkur/internal/cfgpath"
 	"github.com/dinkur/dinkur/internal/console"
 	"github.com/dinkur/dinkur/internal/license"
+	"github.com/dinkur/dinkur/pkg/config"
 	"github.com/dinkur/dinkur/pkg/dinkur"
 	"github.com/dinkur/dinkur/pkg/dinkurclient"
 	"github.com/dinkur/dinkur/pkg/dinkurdb"
 	"github.com/fatih/color"
 	"github.com/iver-wharf/wharf-core/v2/pkg/logger"
+	"github.com/iver-wharf/wharf-core/v2/pkg/logger/consolejson"
 	"github.com/iver-wharf/wharf-core/v2/pkg/logger/consolepretty"
 	"github.com/mattn/go-colorable"
 	"github.com/spf13/cobra"
@@ -45,15 +45,13 @@ import (
 )
 
 var (
-	rootCtx         = context.Background()
-	rootCtxDone     func()
-	cfgFile         = cfgpath.ConfigPath
-	dataFile        = cfgpath.DataPath
-	flagDataMkdir   = true
-	flagColor       = "auto"
-	flagClient      = "db"
-	flagVerbose     = false
-	flagGrpcAddress = "localhost:59122"
+	cfg     = config.Default
+	cfgFile string
+
+	rootCtx     = context.Background()
+	rootCtxDone func()
+
+	flagVerbose = false
 
 	flagLicenseWarranty   bool
 	flagLicenseConditions bool
@@ -71,17 +69,10 @@ var RootCmd = &cobra.Command{
 	Long: license.Header + `
 Track how you spend time on your entries with Dinkur.
 `,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		switch strings.ToLower(flagColor) {
-		case "auto":
-			// Do nothing, fatih/color is on auto by default
-		case "never":
-			color.NoColor = true
-		case "always":
-			color.NoColor = false
-		default:
-			console.PrintFatal("Error parsing --color:", fmt.Errorf(`invalid value %q: only "auto", "always", or "never" may be used`, flagColor))
-		}
+	SilenceErrors: true,
+	SilenceUsage:  true,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		return readConfig(cmd)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if flagLicenseWarranty {
@@ -97,18 +88,22 @@ Track how you spend time on your entries with Dinkur.
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	// Set up logger initially, before real config is read
+	initLogger()
+
 	defer c.Close()
 	err := RootCmd.Execute()
 	if rootCtxDone != nil {
 		rootCtxDone()
 	}
 	if err != nil {
+		log.Error().Messagef("Failed: %s", err)
 		os.Exit(1)
 	}
 }
 
 func init() {
-	cobra.OnInitialize(initLogger, initConfig, initContext)
+	cobra.OnInitialize(initLogger, initContext)
 
 	RootCmd.SetOut(colorable.NewColorableStdout())
 	RootCmd.SetErr(colorable.NewColorableStderr())
@@ -116,48 +111,80 @@ func init() {
 
 	RootCmd.Flags().BoolVar(&flagLicenseConditions, "license-c", false, "show program's license conditions")
 	RootCmd.Flags().BoolVar(&flagLicenseWarranty, "license-w", false, "show program's license warranty")
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", cfgFile, "config file")
-	RootCmd.PersistentFlags().StringVar(&dataFile, "data", dataFile, "database file")
-	RootCmd.PersistentFlags().BoolVar(&flagDataMkdir, "data-mkdir", flagDataMkdir, "create directory for data if it doesn't exist")
-	RootCmd.PersistentFlags().StringVar(&flagColor, "color", flagColor, `colored output: "auto", "always", or "never"`)
-	RootCmd.RegisterFlagCompletionFunc("color", colorComplete)
-	RootCmd.PersistentFlags().StringVar(&flagClient, "client", flagClient, `Dinkur client: "db" or "grpc"`)
-	RootCmd.RegisterFlagCompletionFunc("client", clientComplete)
-	RootCmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", flagVerbose, `enables debug logging`)
-	RootCmd.PersistentFlags().StringVar(&flagGrpcAddress, "grpc-address", flagGrpcAddress, `address of Dinkur daemon gRPC API`)
 
-	//viper.BindPFlag("data", RootCmd.PersistentFlags().Lookup("data"))
-	//viper.BindPFlag("data-mkdir", RootCmd.PersistentFlags().Lookup("data-mkdir"))
-	viper.BindPFlag("client", RootCmd.PersistentFlags().Lookup("client"))
-	//viper.SetDefault("data", dataFile)
-	//viper.SetDefault("data-mkdir", flagDataMkdir)
-	viper.SetDefault("client", flagClient)
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", cfgFile, "config file")
+
+	RootCmd.PersistentFlags().Var(&cfg.Client, "client", `Dinkur client: "sqlite" or "grpc"`)
+	RootCmd.RegisterFlagCompletionFunc("client", clientComplete)
+
+	RootCmd.PersistentFlags().String("sqlite.path", cfg.Sqlite.Path, "database file")
+	RootCmd.PersistentFlags().Bool("sqlite.mkdir", cfg.Sqlite.Mkdir, "create directory for data if it doesn't exist")
+
+	RootCmd.PersistentFlags().String("grpc.address", cfg.GRPC.Address, "address of Dinkur daemon gRPC API")
+
+	RootCmd.PersistentFlags().Var(&cfg.Log.Level, "log.level", `logging severity: "debug", "info", "warn", "error", or "panic"`)
+	RootCmd.RegisterFlagCompletionFunc("log.format", logFormatComplete)
+
+	RootCmd.PersistentFlags().Var(&cfg.Log.Format, "log.format", `logging format: "pretty" or "json"`)
+	RootCmd.RegisterFlagCompletionFunc("log.format", logFormatComplete)
+
+	RootCmd.PersistentFlags().Var(&cfg.Log.Color, "log.color", `logging colored output: "auto", "always", or "never"`)
+	RootCmd.RegisterFlagCompletionFunc("log.color", logColorComplete)
+
+	RootCmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", flagVerbose, `enables debug logging (short for --log.level=debug)`)
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	viper.SetConfigFile(cfgFile)
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		log.Debug().WithString("config", viper.ConfigFileUsed()).Message("Using config file.")
-	} else if !errors.As(err, &viper.ConfigFileNotFoundError{}) && !errors.Is(err, os.ErrNotExist) {
-		console.PrintFatal("Error reading config:", err)
+func readConfig(cmd *cobra.Command) error {
+	v := viper.New()
+	if err := v.BindPFlags(cmd.Root().PersistentFlags()); err != nil {
+		return err
 	}
+
+	var newCfg *config.Config
+	var err error
+	if cmd.Flag("config").Changed {
+		newCfg, err = config.ReadFile(v, cfgFile)
+	} else {
+		newCfg, err = config.ReadStandardFiles(v)
+	}
+	if err != nil {
+		return fmt.Errorf("read config: %w", err)
+	}
+	cfg = *newCfg
+
+	// Set up logger again, now that we've read in the new config
+	initLogger()
+
+	log.Debug().
+		WithString("file", cfg.FileUsed()).
+		Message("Loaded configuration.")
+
+	return nil
 }
 
 func initLogger() {
-	level := logger.LevelInfo
+	logger.ClearOutputs()
+	level := logger.Level(cfg.Log.Level)
 	if flagVerbose {
 		level = logger.LevelDebug
 	}
-	prettyConf := consolepretty.DefaultConfig
-	prettyConf.DisableDate = true
-	prettyConf.DisableCaller = true
-	prettyConf.Writer = colorable.NewColorableStderr()
-	logger.AddOutput(level, consolepretty.New(prettyConf))
+	switch cfg.Log.Color {
+	case config.LogColorAuto:
+		// Do nothing, fatih/color is on auto by default
+	case config.LogColorNever:
+		color.NoColor = true
+	case config.LogColorAlways:
+		color.NoColor = false
+	}
+	if cfg.Log.Format == config.LogFormatPretty {
+		prettyConf := consolepretty.DefaultConfig
+		prettyConf.DisableDate = true
+		prettyConf.DisableCaller = true
+		prettyConf.Writer = colorable.NewColorableStderr()
+		logger.AddOutput(level, consolepretty.New(prettyConf))
+	} else {
+		logger.AddOutput(level, consolejson.Default)
+	}
 }
 
 func initContext() {
@@ -173,15 +200,15 @@ func connectClientOrExit() {
 }
 
 func connectClient(skipMigrate bool) (dinkur.Client, error) {
-	switch strings.ToLower(viper.GetString("client")) {
-	case "db":
+	switch cfg.Client {
+	case config.ClientTypeSqlite:
 		log.Debug().Message("Using DB client.")
 		dbClient, err := connectToDBClient(skipMigrate)
 		if err != nil {
 			return nil, fmt.Errorf("DB client: %w", err)
 		}
 		return dbClient, nil
-	case "grpc":
+	case config.ClientTypeGRPC:
 		log.Debug().Message("Using gRPC client.")
 		grpcClient, err := connectToGRPCClient()
 		if err != nil {
@@ -189,12 +216,12 @@ func connectClient(skipMigrate bool) (dinkur.Client, error) {
 		}
 		return grpcClient, nil
 	default:
-		return nil, fmt.Errorf(`invalid value %q: only "db" or "grpc" may be used`, flagClient)
+		return nil, fmt.Errorf(`invalid value %q: only "sqlite" or "grpc" may be used`, cfg.Client)
 	}
 }
 
 func connectToGRPCClient() (dinkur.Client, error) {
-	c := dinkurclient.NewClient(flagGrpcAddress, dinkurclient.Options{})
+	c := dinkurclient.NewClient(cfg.GRPC.Address, dinkurclient.Options{})
 	if err := c.Connect(rootCtx); err != nil {
 		return nil, err
 	}
@@ -253,15 +280,15 @@ func promptAFKResolution(c dinkur.Client, activeEntry dinkur.Entry, afkSince tim
 }
 
 func connectToDBClient(skipMigrate bool) (dinkur.Client, error) {
-	c := dinkurdb.NewClient(dataFile, dinkurdb.Options{
-		MkdirAll:             flagDataMkdir,
+	c := dinkurdb.NewClient(cfg.Sqlite.Path, dinkurdb.Options{
+		MkdirAll:             cfg.Sqlite.Mkdir,
 		DebugLogging:         flagVerbose,
 		SkipMigrateOnConnect: skipMigrate,
 	})
 	return c, c.Connect(rootCtx)
 }
 
-func colorComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+func logColorComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return []string{
 		"auto\tuse colored terminal output iff session is interactive (default)",
 		"always\talways use colored terminal output; may cause issues when piping output",
@@ -269,10 +296,27 @@ func colorComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompD
 	}, cobra.ShellCompDirectiveDefault
 }
 
+func logFormatComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+	return []string{
+		"pretty\tprint human-readable log messages (default)",
+		"json\tprint machine-readable log messages",
+	}, cobra.ShellCompDirectiveDefault
+}
+
+func logLevelComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+	return []string{
+		"debug",
+		"info\t(default)",
+		"warn",
+		"error",
+		"panic",
+	}, cobra.ShellCompDirectiveDefault
+}
+
 func clientComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return []string{
 		"grpc\tuse grpc client towards a Dinkur daemon",
-		"db\tuse database client directly towards an Sqlite3 file (default)",
+		"sqlite\tuse database client directly towards an Sqlite3 file (default)",
 	}, cobra.ShellCompDirectiveDefault
 }
 

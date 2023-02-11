@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/dinkur/dinkur/raw/main/dinkur.schema.json",
+  "$ref": "#/$defs/config",
+  "$defs": {
+    "clientType": {
+      "type": "string",
+      "enum": [
+        "sqlite",
+        "grpc"
+      ],
+      "title": "Client connection type"
+    },
+    "config": {
+      "properties": {
+        "client": {
+          "$ref": "#/$defs/clientType"
+        },
+        "sqlite": {
+          "$ref": "#/$defs/sqlite"
+        },
+        "gRPC": {
+          "$ref": "#/$defs/gRPC"
+        },
+        "daemon": {
+          "$ref": "#/$defs/daemon"
+        },
+        "log": {
+          "$ref": "#/$defs/log"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "daemon": {
+      "properties": {
+        "bindAddress": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "gRPC": {
+      "properties": {
+        "address": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "log": {
+      "properties": {
+        "format": {
+          "$ref": "#/$defs/logFormat"
+        },
+        "level": {
+          "$ref": "#/$defs/logLevel"
+        },
+        "color": {
+          "$ref": "#/$defs/logColor"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "logColor": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "never",
+        "always"
+      ],
+      "title": "Logging coloring",
+      "default": "auto"
+    },
+    "logFormat": {
+      "type": "string",
+      "enum": [
+        "pretty",
+        "json"
+      ],
+      "title": "Logging format"
+    },
+    "logLevel": {
+      "type": "string",
+      "enum": [
+        "debug",
+        "info",
+        "warn",
+        "error",
+        "panic"
+      ],
+      "title": "Logging level"
+    },
+    "sqlite": {
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "mkdir": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

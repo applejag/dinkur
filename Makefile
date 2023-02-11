@@ -18,7 +18,7 @@ all: grpc build docs
 .PHONY: build
 build: $(OUT_FILE)
 
-$(OUT_FILE): $(GO_FILES)
+$(OUT_FILE): $(GO_FILES) dinkur.schema.json
 	go build -o dinkur -tags='fts5' -ldflags='-s -w'
 
 .PHONY: install
@@ -55,10 +55,13 @@ node_modules:
 	npm install
 
 .PHONY: docs
-docs: docs/cmd/*.md
+docs: docs/cmd/*.md dinkur.schema.json
 
 docs/cmd/dinkur_%.md: cmd/%.go internal/cmd/docgen/docgen.go
 	go run internal/cmd/docgen/docgen.go docs/cmd
+
+dinkur.schema.json: $(GO_FILES) cmd/config_schema.go
+	go run . config schema --output dinkur.schema.json
 
 .PHONY: grpc
 grpc: api/dinkurapi/v1/*.pb.go api/dinkurapi/v1/*_grpc.pb.go

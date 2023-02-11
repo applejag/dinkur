@@ -1,8 +1,5 @@
-// Dinkur the task time tracking utility.
-// <https://github.com/dinkur/dinkur>
+// SPDX-FileCopyrightText: 2022 Risk.Ident GmbH <contact@riskident.com>
 //
-// Copyright (C) 2021 Kalle Fagerberg
-// SPDX-FileCopyrightText: 2021 Kalle Fagerberg
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // This program is free software: you can redistribute it and/or modify it
@@ -18,12 +15,33 @@
 // You should have received a copy of the GNU General Public License along
 // with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package main
+package casing
 
 import (
-	"github.com/dinkur/dinkur/cmd"
+	"strings"
+	"unicode"
 )
 
-func main() {
-	cmd.Execute()
+var camelCaseReplacer = strings.NewReplacer(
+	"ID", "Id",
+	"URL", "Url",
+	"HTTP", "Http",
+	"JSON", "Json",
+	"YAML", "Yaml",
+	"API", "Api",
+)
+
+// ToCamelCase is a very stupid implementation for converting
+// PascalCase to camelCase.
+//
+// NOTE: If we need to convert user-provided strings to camelCase,
+// then we should replace this with the community strcase package.
+func ToCamelCase(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	s = camelCaseReplacer.Replace(s)
+	b := []byte(s)
+	b[0] = byte(unicode.ToLower(rune(b[0])))
+	return string(b)
 }

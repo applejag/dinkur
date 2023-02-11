@@ -22,7 +22,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"os/signal"
 	"syscall"
@@ -49,16 +48,9 @@ authentication token can be used, is outputted to the console.`,
 			console.PrintFatal("Error connecting to database for daemon:", err)
 		}
 		opt := dinkurd.DefaultOptions
+		opt.BindAddress = cfg.Daemon.BindAddress
 		d := dinkurd.NewDaemon(dbClient, opt)
 		defer d.Close()
-		enc := json.NewEncoder(os.Stdout)
-		enc.Encode(struct {
-			Port      uint16  `json:"port"`
-			AuthToken *string `json:"authToken"`
-		}{
-			Port:      opt.Port,
-			AuthToken: nil,
-		})
 		if err := d.Serve(contextWithOSInterrupt(rootCtx)); err != nil {
 			console.PrintFatal("Error starting daemon:", err)
 		}
@@ -67,16 +59,6 @@ authentication token can be used, is outputted to the console.`,
 
 func init() {
 	RootCmd.AddCommand(daemonCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// daemonCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// daemonCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func contextWithOSInterrupt(ctx context.Context) context.Context {

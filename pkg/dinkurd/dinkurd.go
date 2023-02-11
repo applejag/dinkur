@@ -70,18 +70,15 @@ func convError(err error) error {
 
 // Options for the daemon server.
 type Options struct {
-	// Host is the hostname to bind the server to.
-	// Use 0.0.0.0 to allow any IP address.
-	Host string
-	// Port is the port the server will listen on.
-	Port uint16
+	// BindAddress is the hostname/IP and port to bind the server to.
+	// Use 0.0.0.0 for IP to allow any IP address.
+	BindAddress string
 }
 
 // DefaultOptions values are used for any zero values used when creating a new
 // daemon instance.
 var DefaultOptions = Options{
-	Host: "localhost",
-	Port: 59122,
+	BindAddress: "localhost:59122",
 }
 
 // Daemon is the Dinkur daemon service interface.
@@ -103,11 +100,8 @@ type Daemon interface {
 // DefaultOptions values are only used for any zero valued fields in the
 // opt parameter.
 func NewDaemon(client dinkur.Client, opt Options) Daemon {
-	if opt.Host == "" {
-		opt.Host = DefaultOptions.Host
-	}
-	if opt.Port == 0 {
-		opt.Port = DefaultOptions.Port
+	if opt.BindAddress == "" {
+		opt.BindAddress = DefaultOptions.BindAddress
 	}
 	return &daemon{
 		Options:     opt,
@@ -152,7 +146,7 @@ func (d *daemon) Serve(ctx context.Context) error {
 	if d.grpcServer != nil || d.listener != nil {
 		return ErrAlreadyServing
 	}
-	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", d.Host, d.Port))
+	lis, err := net.Listen("tcp", d.BindAddress)
 	if err != nil {
 		return fmt.Errorf("bind hostname and port: %w", err)
 	}

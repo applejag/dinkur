@@ -44,7 +44,7 @@ func main() {
 	}
 
 	cmd.RootCmd.PersistentFlags().Lookup("config").DefValue = "~/.config/dinkur/config.yaml"
-	cmd.RootCmd.PersistentFlags().Lookup("data").DefValue = "~/.local/share/dinkur/dinkur.db"
+	cmd.RootCmd.PersistentFlags().Lookup("sqlite.path").DefValue = "~/.local/share/dinkur/dinkur.db"
 	if err := doc.GenMarkdownTree(cmd.RootCmd, path); err != nil {
 		log.Fatalln("Error generating markdown tree:", err)
 	}

@@ -1,8 +1,5 @@
-// Dinkur the task time tracking utility.
-// <https://github.com/dinkur/dinkur>
+// SPDX-FileCopyrightText: 2022 Risk.Ident GmbH <contact@riskident.com>
 //
-// Copyright (C) 2021 Kalle Fagerberg
-// SPDX-FileCopyrightText: 2021 Kalle Fagerberg
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // This program is free software: you can redistribute it and/or modify it
@@ -18,12 +15,30 @@
 // You should have received a copy of the GNU General Public License along
 // with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package main
+package cmd
 
 import (
-	"github.com/dinkur/dinkur/cmd"
+	"os"
+
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
-func main() {
-	cmd.Execute()
+// configCmd represents the config command
+var configCmd = &cobra.Command{
+	Use:   "config",
+	Short: "Prints the parsed config",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		color.HiBlack("# yaml-language-server: $schema=https://github.com/dinkur/dinkur/raw/main/dinkur.schema.json")
+		enc := yaml.NewEncoder(os.Stdout)
+		enc.SetIndent(2)
+		defer enc.Close()
+		return enc.Encode(cfg)
+	},
+}
+
+func init() {
+	RootCmd.AddCommand(configCmd)
 }

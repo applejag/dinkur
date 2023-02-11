@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/dinkur/dinkur/internal/console"
+	"github.com/dinkur/dinkur/pkg/config"
 	"github.com/spf13/cobra"
 )
 
@@ -34,7 +35,7 @@ var streamEntriesCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Short: "Testing entry streaming",
 	Run: func(cmd *cobra.Command, args []string) {
-		if flagClient != "grpc" {
+		if cfg.Client != config.ClientTypeGRPC {
 			console.PrintFatal("Error running test:", `--client must be set to "grpc"`)
 		}
 		connectClientOrExit()
