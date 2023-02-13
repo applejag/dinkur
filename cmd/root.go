@@ -120,7 +120,8 @@ func init() {
 	RootCmd.PersistentFlags().String("sqlite.path", cfg.Sqlite.Path, "database file")
 	RootCmd.PersistentFlags().Bool("sqlite.mkdir", cfg.Sqlite.Mkdir, "create directory for data if it doesn't exist")
 
-	RootCmd.PersistentFlags().String("grpc.address", cfg.GRPC.BindAddress, "address of Dinkur daemon gRPC API")
+	RootCmd.PersistentFlags().String("grpc.address", cfg.GRPC.Address, "address for connecting to Dinkur daemon gRPC API")
+	RootCmd.PersistentFlags().String("daemon.address", cfg.Daemon.BindAddress, "bind address for serving Dinkur daemon gRPC API")
 
 	RootCmd.PersistentFlags().Var(&cfg.Log.Level, "log.level", `logging severity: "debug", "info", "warn", "error", or "panic"`)
 	RootCmd.RegisterFlagCompletionFunc("log.format", logFormatComplete)
@@ -221,7 +222,7 @@ func connectClient(skipMigrate bool) (dinkur.Client, error) {
 }
 
 func connectToGRPCClient() (dinkur.Client, error) {
-	c := dinkurclient.NewClient(cfg.GRPC.BindAddress, dinkurclient.Options{})
+	c := dinkurclient.NewClient(cfg.GRPC.Address, dinkurclient.Options{})
 	if err := c.Connect(rootCtx); err != nil {
 		return nil, err
 	}
