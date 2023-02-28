@@ -164,7 +164,9 @@ func readConfig(cmd *cobra.Command) error {
 }
 
 func initLogger() {
+	longestLen := logger.LongestScopeNameLength
 	logger.ClearOutputs()
+	logger.LongestScopeNameLength = longestLen
 	level := logger.Level(cfg.Log.Level)
 	if flagVerbose {
 		level = logger.LevelDebug
